@@ -74,6 +74,8 @@ else()
     message(STATUS "fastText not found or ENABLE_FASTTEXT=OFF — falling back to base Inference only")
 endif()
 
+target_link_libraries(ContextualClassifier PUBLIC UrmClient)
+
 # Installation rules
 install(TARGETS ContextualClassifier DESTINATION lib)
 if(FASTTEXT_FOUND)

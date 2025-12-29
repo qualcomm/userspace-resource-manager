@@ -3747,18 +3747,18 @@ namespace SignalApplicationTests {
         LOG_START
 
         std::vector<std::string> keys = {
-            "/sys/fs/cgroup/camera-cgroup/cgroup.procs",
+            "/sys/fs/cgroup/focused.slice/main-cgroup/cgroup.procs",
             "/sys/fs/cgroup/user.slice/cgroup.procs",
             "/sys/fs/cgroup/system.slice/cpu.weight",
             "/sys/fs/cgroup/system.slice/cpuset.cpus",
             "/sys/fs/cgroup/user.slice/cpuset.cpus",
             "/sys/fs/cgroup/user.slice/cpu.weight",
             "/sys/fs/cgroup/user.slice/memory.high",
-            "/sys/fs/cgroup/camera-cgroup/cpuset.cpus",
-            "/sys/fs/cgroup/camera-cgroup/cpu.weight",
-            "/sys/fs/cgroup/camera-cgroup/cpu.weight.nice",
-            "/sys/fs/cgroup/camera-cgroup/memory.low",
-            "/sys/fs/cgroup/camera-cgroup/memory.min",
+            "/sys/fs/cgroup/focused.slice/main-cgroup/cpuset.cpus",
+            "/sys/fs/cgroup/focused.slice/main-cgroup/cpu.weight",
+            "/sys/fs/cgroup/focused.slice/main-cgroup/cpu.weight.nice",
+            "/sys/fs/cgroup/focused.slice/main-cgroup/memory.low",
+            "/sys/fs/cgroup/focused.slice/main-cgroup/memory.min",
             "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq",
             "/sys/devices/system/cpu/cpufreq/policy4/scaling_max_freq",
             "/sys/devices/system/cpu/cpufreq/policy7/scaling_max_freq",
@@ -3914,7 +3914,7 @@ namespace CGroupApplicationTests {
     static void TestCgroupWriteAndResetBasicCase() {
         LOG_START
 
-        std::string testResourceName = "/sys/fs/cgroup/audio-cgroup/cpu.uclamp.min";
+        std::string testResourceName = "/sys/fs/cgroup/focused.slice/main-cgroup/cpu.uclamp.min";
 
         std::string originalValueString = AuxRoutines::readFromFile(testResourceName);
         int32_t originalValue = C_STOI(originalValueString);
@@ -3952,7 +3952,7 @@ namespace CGroupApplicationTests {
     static void TestCgroupWriteAndReset1() {
         LOG_START
 
-        std::string testResourceName = "/sys/fs/cgroup/audio-cgroup/cpu.uclamp.min";
+        std::string testResourceName = "/sys/fs/cgroup/focused.slice/main-cgroup/cpu.uclamp.min";
 
         std::string originalValueString = AuxRoutines::readFromFile(testResourceName);
         int32_t originalValue = C_STOI(originalValueString);
@@ -4008,7 +4008,7 @@ namespace CGroupApplicationTests {
     static void TestCgroupWriteAndReset2() {
         LOG_START
 
-        std::string testResourceName = "/sys/fs/cgroup/audio-cgroup/cpu.uclamp.min";
+        std::string testResourceName = "/sys/fs/cgroup/focused.slice/main-cgroup/cpu.uclamp.min";
 
         std::string originalValueString = AuxRoutines::readFromFile(testResourceName);
         int32_t originalValue = C_STOI(originalValueString);
@@ -4067,7 +4067,7 @@ namespace CGroupApplicationTests {
     static void TestCgroupWriteAndReset3() {
         LOG_START
 
-        std::string testResourceName = "/sys/fs/cgroup/audio-cgroup/cpu.uclamp.max";
+        std::string testResourceName = "/sys/fs/cgroup/focused.slice/main-cgroup/cpu.uclamp.max";
 
         std::string originalValueString = AuxRoutines::readFromFile(testResourceName);
         std::cout<<"["<<__LINE__<<"]"<<" cpu.uclamp.max Original Value: "<<originalValueString<<std::endl;
@@ -4130,7 +4130,7 @@ namespace CGroupApplicationTests {
     static void TestCgroupWriteAndReset4() {
         LOG_START
 
-        std::string testResourceName = "/sys/fs/cgroup/audio-cgroup/memory.max";
+        std::string testResourceName = "/sys/fs/cgroup/focused.slice/main-cgroup/memory.max";
 
         std::string originalValueString = AuxRoutines::readFromFile(testResourceName);
         int32_t originalValue = C_STOI(originalValueString);
@@ -4196,8 +4196,8 @@ namespace CGroupApplicationTests {
     static void TestCgroupWriteAndReset5() {
         LOG_START
 
-        std::string testResourceName1 = "/sys/fs/cgroup/camera-cgroup/cpu.uclamp.min";
-        std::string testResourceName2 = "/sys/fs/cgroup/audio-cgroup/cpu.uclamp.min";
+        std::string testResourceName1 = "/sys/fs/cgroup/focused.slice/main-cgroup/cpu.uclamp.min";
+        std::string testResourceName2 = "/sys/fs/cgroup/focused.slice/main-cgroup/cpu.uclamp.min";
 
         std::string originalValueString = AuxRoutines::readFromFile(testResourceName1);
         int32_t originalValue1 = C_STOI(originalValueString);
@@ -4264,7 +4264,7 @@ namespace CGroupApplicationTests {
     static void TestCgroupWriteAndReset6() {
         LOG_START
 
-        std::string testResourceName = "/sys/fs/cgroup/audio-cgroup/cpuset.cpus";
+        std::string testResourceName = "/sys/fs/cgroup/focused.slice/main-cgroup/cpuset.cpus";
 
         std::string originalValueString = AuxRoutines::readFromFile(testResourceName);
 

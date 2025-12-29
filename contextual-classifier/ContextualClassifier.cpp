@@ -10,6 +10,7 @@
 #include "RestuneInternal.h"
 #include "Extensions.h"
 #include "Inference.h"
+#include "UrmAPIs.h"
 
 #include <algorithm>
 #include <chrono>
@@ -51,6 +52,8 @@ Inference *ContextualClassifier::GetInferenceObject() {
 ContextualClassifier::ContextualClassifier() {
     mInference = GetInferenceObject();
 }
+// Global perf handle store, used across threads
+static std::unordered_map<int, int> g_pid_perf_handle;
 
 ContextualClassifier::~ContextualClassifier() {
     Terminate();
@@ -161,6 +164,13 @@ void ContextualClassifier::ClassifierMain() {
 
                 // Step 2: Move focused app "threads" + any threads from per-app config
                 // to appropriate cgroups
+                // Step 1: Move the process to focused-cgroup
+                // Also involves removing the process already there from focused.
+                const int perf_handle = move_pid_to_cgroup(ev.pid, CAMERA_C_GROUP_ID);
+
+                // Step 2: Move the "threads" from per-app config to appropriate cgroups
+
+                // Code for determining per-app config threads
                 AppConfig* appConfig =
                     AppConfigs::getInstance()->getAppConfig(comm);
 
@@ -197,6 +207,70 @@ void ContextualClassifier::ClassifierMain() {
             RemoveActions(ev.pid, ev.tgid);
         }
     }
+}
+
+/* Add process_pid to focus cgroup
+Create a resource list with the cgroup id and process pid
+This is a temporary solution to pass the cgroup id and process pid to the resource manager.
+In future, we will have a proper resource management system. 
+For now, we are using a simple approach to move the process to the cgroup.
+The resource list will be passed to the resource manager to create the cgroup and add the process to it. */
+int ContextualClassifier::move_pid_to_cgroup(int process_pid, int cgroupId)
+{
+    
+    if(g_pid_perf_handle.find(process_pid) != g_pid_perf_handle.end())
+    {
+        syslog(LOG_DEBUG, "PID %d already in focus cgroup", process_pid);
+        return g_pid_perf_handle[process_pid];
+    }
+
+    // Store the new handle for this process
+    // g_pid_perf_handle[process_pid] = perf_handle;
+    // If there was a previous handle, remove it
+    // int prev_handle = g_pid_perf_handle[process_pid]; 
+    // Optional: untune previous handle if API requires it
+    // untuneResources(g_pid_perf_handle[prev_handle]);  
+
+    // TODO: Make this dynamic based on number of cgroups available.
+    // TODO: Add error handling for when cgroup creation fails.
+    
+    // Hardcoded 1 as we are using only one cgroup for now. 
+    SysResource* resourceList = new SysResource[1];
+    // memset OR: resourceList[0] = SysResource{};
+    memset(&resourceList[0], 0, sizeof(SysResource));
+    resourceList[0].mResCode = RES_CGRP_MOVE_PID;
+    resourceList[0].mResInfo = 0x00000000;
+    // First value represents the cgroup id and rest of the values represent the pids which needs to be added in the cgroup
+    int32_t* resourceVec = new int32_t[2];
+    resourceVec[0] = cgroupId;
+    resourceVec[1] = process_pid;
+    resourceList[0].mNumValues = 2;
+    // TODO: Which approach to copy values is better?
+    // resourceList[0].mResValue.values = resourceVec;
+    // TODO: Do we need to delete resourceList[0].mResValue.values after use?
+    resourceList[0].mResValue.values = new int32_t[resourceList[0].mNumValues];
+    for(int32_t k = 0; k < resourceList[0].mNumValues; k++) {
+        resourceList[0].mResValue.values[k] = resourceVec[k];
+    }
+    
+    int32_t properties = 0;
+    // Set the Priority as High
+    properties = SET_REQUEST_PRIORITY(properties, REQ_PRIORITY_HIGH);
+
+    const int perf_handle = tuneResources(-1, properties, 1, resourceList);
+
+    // Clean up temporaries
+    delete[] resourceVec;
+    delete[] resourceList;
+
+    if (perf_handle < 0) {
+        syslog(LOG_WARNING, "PID %d: move_pid_to_cgroup failed", process_pid);
+        return perf_handle;
+    } 
+    
+    g_pid_perf_handle[process_pid] = perf_handle;
+    syslog(LOG_DEBUG, "Stored perf handle=%d for PID %d", perf_handle, process_pid);
+    return perf_handle;
 }
 
 int ContextualClassifier::HandleProcEv() {

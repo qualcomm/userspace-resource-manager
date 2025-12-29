@@ -19,6 +19,8 @@
 // Used to define the new config value, relative to the already configured value
 #define OPT_WITHREL 0X00000004
 
+#define CAMERA_C_GROUP_ID 0x00000004
+
 /**
  * @struct SysResource
  * @brief Used to store information regarding Resources / Tunables which need to be

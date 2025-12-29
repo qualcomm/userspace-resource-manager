@@ -363,6 +363,7 @@ static void moveProcessToCGroup(void* context) {
         return;
     }
 
+    // mCgroupName has the entire name from InitConfig.yaml. Ex- system.slice/camera-cgroup
     const std::string cGroupName = cGroupConfig->mCgroupName;
     if(cGroupName.length() == 0) {
         return;
