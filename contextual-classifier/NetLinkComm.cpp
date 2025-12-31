@@ -118,10 +118,10 @@ int NetLinkComm::RecvEvent(ProcEvent &ev) {
     ev.type = CC_IGNORE;
 
     switch (nlcn_msg.proc_ev.what) {
-    case PROC_EVENT_NONE:
+    case proc_event::PROC_EVENT_NONE:
         // No actionable event.
         break;
-    case PROC_EVENT_FORK:
+    case proc_event::PROC_EVENT_FORK:
         LOGD(CLASSIFIER_TAG,
              format_string("fork: parent tid=%d pid=%d -> child tid=%d pid=%d",
                            nlcn_msg.proc_ev.event_data.fork.parent_pid,
@@ -129,7 +129,7 @@ int NetLinkComm::RecvEvent(ProcEvent &ev) {
                            nlcn_msg.proc_ev.event_data.fork.child_pid,
                            nlcn_msg.proc_ev.event_data.fork.child_tgid));
         break;
-    case PROC_EVENT_EXEC:
+    case proc_event::PROC_EVENT_EXEC:
         LOGD(CLASSIFIER_TAG,
              format_string("Received PROC_EVENT_EXEC for tid=%d pid=%d",
                            nlcn_msg.proc_ev.event_data.exec.process_pid,
@@ -139,7 +139,7 @@ int NetLinkComm::RecvEvent(ProcEvent &ev) {
         ev.type = CC_APP_OPEN;
         rc = CC_APP_OPEN;
         break;
-    case PROC_EVENT_UID:
+    case proc_event::PROC_EVENT_UID:
         LOGD(CLASSIFIER_TAG,
              format_string("uid change: tid=%d pid=%d from %d to %d",
                            nlcn_msg.proc_ev.event_data.id.process_pid,
@@ -147,7 +147,7 @@ int NetLinkComm::RecvEvent(ProcEvent &ev) {
                            nlcn_msg.proc_ev.event_data.id.r.ruid,
                            nlcn_msg.proc_ev.event_data.id.e.euid));
         break;
-    case PROC_EVENT_GID:
+    case proc_event::PROC_EVENT_GID:
         LOGD(CLASSIFIER_TAG,
              format_string("gid change: tid=%d pid=%d from %d to %d",
                            nlcn_msg.proc_ev.event_data.id.process_pid,
@@ -155,7 +155,7 @@ int NetLinkComm::RecvEvent(ProcEvent &ev) {
                            nlcn_msg.proc_ev.event_data.id.r.rgid,
                            nlcn_msg.proc_ev.event_data.id.e.egid));
         break;
-    case PROC_EVENT_EXIT:
+    case proc_event::PROC_EVENT_EXIT:
         LOGD(CLASSIFIER_TAG,
              format_string("exit: tid=%d pid=%d exit_code=%d",
                            nlcn_msg.proc_ev.event_data.exit.process_pid,
