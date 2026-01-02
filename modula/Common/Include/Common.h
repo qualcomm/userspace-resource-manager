@@ -199,6 +199,8 @@ X(CLUSTER_PLUS_CORE_0,        0x00000201) \
 X(CLUSTER_PLUS_CORE_1,        0x00000202) \
 X(CLUSTER_PLUS_CORE_2,        0x00000203) \
 X(CLUSTER_PLUS_CORE_3,        0x00000204) \
+/* misc */                                \
+X(DEFAULT_SIGNAL_TYPE,        0x00000000) \
 
 enum ResCodesDef {
 #define X(name, value) name = value,

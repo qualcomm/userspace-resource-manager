@@ -749,7 +749,7 @@ namespace SignalVerification {
     static void TestNullOrInvalidRequestVerification() {
         LOG_START
 
-        int64_t handle = tuneSignal(1, -2, RequestPriority::REQ_PRIORITY_HIGH, "app-name", "scenario-zip", 0, nullptr);
+        int64_t handle = tuneSignal(1, 0, -2, RequestPriority::REQ_PRIORITY_HIGH, "app-name", "scenario-zip", 0, nullptr);
         std::cout<<LOG_BASE<<"Handle Returned: "<<handle<<std::endl;
 
         assert(handle == RC_REQ_SUBMISSION_FAILURE);
@@ -782,7 +782,15 @@ namespace SignalVerification {
         assert(originalValue == testResourceOriginalValue);
 
         int64_t handle =
-            tuneSignal(0x8000010d, 5000, RequestPriority::REQ_PRIORITY_HIGH, "app-name", "scenario-zip", 0, nullptr);
+            tuneSignal(
+                CUSTOM(CONSTRUCT_RES_CODE(0x0001, 0x0d)),
+                DEFAULT_SIGNAL_TYPE,
+                5000,
+                RequestPriority::REQ_PRIORITY_HIGH,
+                "app-name",
+                "scenario-zip",
+                0, nullptr);
+
         std::cout<<LOG_BASE<<"Handle Returned: "<<handle<<std::endl;
 
         std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -817,7 +825,15 @@ namespace SignalVerification {
         assert(originalValue == testResourceOriginalValue);
 
         int64_t handle =
-            tuneSignal(0x8000020d, 5000, RequestPriority::REQ_PRIORITY_HIGH, "app-name", "scenario-zip", 0, nullptr);
+            tuneSignal(
+                CUSTOM(CONSTRUCT_SIG_CODE(0x0002, 0x0d)),
+                DEFAULT_SIGNAL_TYPE,
+                5000,
+                RequestPriority::REQ_PRIORITY_HIGH,
+                "app-name",
+                "scenario-zip",
+                0, nullptr);
+
         std::cout<<LOG_BASE<<"Handle Returned: "<<handle<<std::endl;
 
         std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -853,8 +869,15 @@ namespace SignalVerification {
         originalValue = C_STOI(value);
         assert(originalValue == testResourceOriginalValue);
 
-        int64_t handle =
-            tuneSignal(0x8000000d, 5000, RequestPriority::REQ_PRIORITY_HIGH, "app-name", "scenario-zip", 0, nullptr);
+        int64_t handle = tuneSignal(
+            CUSTOM(CONSTRUCT_SIG_CODE(0x0000, 0x0d)),
+            DEFAULT_SIGNAL_TYPE,
+            5000,
+            RequestPriority::REQ_PRIORITY_HIGH,
+            "app-name",
+            "scenario-zip",
+            0, nullptr);
+
         std::cout<<LOG_BASE<<"Handle Returned: "<<handle<<std::endl;
 
         std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -886,8 +909,15 @@ namespace SignalVerification {
         originalValue = C_STOI(value);
         assert(originalValue == testResourceOriginalValue);
 
-        int64_t handle =
-            tuneSignal(0x8000030d, 5000, RequestPriority::REQ_PRIORITY_HIGH, "app-name", "scenario-zip", 0, nullptr);
+        int64_t handle = tuneSignal(
+            CUSTOM(CONSTRUCT_SIG_CODE(0x0003, 0x0d)),
+            DEFAULT_SIGNAL_TYPE,
+            5000,
+            RequestPriority::REQ_PRIORITY_HIGH,
+            "app-name",
+            "scenario-zip",
+            0, nullptr);
+
         std::cout<<LOG_BASE<<"Handle Returned: "<<handle<<std::endl;
 
         std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -3606,6 +3636,7 @@ namespace SignalApplicationTests {
         int64_t handle =
             tuneSignal(
                 CUSTOM(CONSTRUCT_SIG_CODE(0x0004, 0x0d)),
+                0,
                 5000,
                 RequestPriority::REQ_PRIORITY_HIGH,
                 "app-name",
@@ -3663,6 +3694,7 @@ namespace SignalApplicationTests {
         int64_t handle =
             tuneSignal(
                 CUSTOM(CONSTRUCT_SIG_CODE(0x0005, 0x0d)),
+                0,
                 5000,
                 RequestPriority::REQ_PRIORITY_HIGH,
                 "app-name",
@@ -3715,7 +3747,16 @@ namespace SignalApplicationTests {
         originalValue = C_STOI(value);
 
         int64_t handle =
-            tuneSignal(0x8000040d, -1, RequestPriority::REQ_PRIORITY_HIGH, "app-name", "scenario-zip", 0, nullptr);
+            tuneSignal(
+                CUSTOM(CONSTRUCT_SIG_CODE(0x0004, 0x0d)),
+                DEFAULT_SIGNAL_TYPE,
+                -1,
+                RequestPriority::REQ_PRIORITY_HIGH,
+                "app-name",
+                "scenario-zip",
+                0,
+                nullptr);
+
         std::cout<<LOG_BASE<<"Handle Returned: "<<handle<<std::endl;
 
         std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -3774,7 +3815,13 @@ namespace SignalApplicationTests {
         list[1] = getppid();
         list[2] = 2010;
 
-        int64_t handle = tuneSignal(0x8000090d, 0, 0, "", "", 3, list);
+        int64_t handle = tuneSignal(
+            CUSTOM(CONSTRUCT_SIG_CODE(0x0009, 0x0d)),
+            DEFAULT_SIGNAL_TYPE,
+            0, 0, "", "",
+            3,
+            list);
+
         assert(handle > 0);
 
         std::this_thread::sleep_for(std::chrono::seconds(3));
@@ -3859,7 +3906,11 @@ namespace SignalApplicationTests {
         }
 
         // Tune the Signal
-        int64_t handle = tuneSignal(0x80000a0d, 0, 0, "", "", 0, nullptr);
+        int64_t handle = tuneSignal(
+            CUSTOM(CONSTRUCT_SIG_CODE(0x000a, 0x0d)),
+            DEFAULT_SIGNAL_TYPE,
+            0, 0, "", "", 0, nullptr);
+
         assert(handle > 0);
 
         std::this_thread::sleep_for(std::chrono::seconds(2));

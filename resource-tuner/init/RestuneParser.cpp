@@ -728,6 +728,7 @@ ErrCode RestuneParser::parseSignalConfigYamlNode(const std::string& filePath, in
                 ADD_TO_SIGNAL_BUILDER(SIGNAL_CONFIGS_ELEM_DERIVATIVES, addDerivative);
                 ADD_TO_SIGNAL_BUILDER(SIGNAL_CONFIGS_ELEM_SIGID, setSignalID);
                 ADD_TO_SIGNAL_BUILDER(SIGNAL_CONFIGS_ELEM_CATEGORY, setSignalCategory);
+                ADD_TO_SIGNAL_BUILDER(SIGNAL_CONFIGS_ELEM_SIGTYPE, setSignalType);
                 ADD_TO_SIGNAL_BUILDER(SIGNAL_CONFIGS_ELEM_NAME, setName);
                 ADD_TO_SIGNAL_BUILDER(SIGNAL_CONFIGS_ELEM_TIMEOUT, setTimeout);
                 ADD_TO_SIGNAL_BUILDER(SIGNAL_CONFIGS_ELEM_ENABLE, setIsEnabled);

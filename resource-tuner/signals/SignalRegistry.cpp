@@ -49,31 +49,35 @@ void SignalRegistry::registerSignal(SignalInfo* signalInfo, int8_t isBuSpecified
         return;
     }
 
-    uint32_t signalBitmap = 0;
-    signalBitmap |= ((uint32_t)signalInfo->mSignalID << 8);
-    signalBitmap |= ((uint32_t)signalInfo->mSignalCategory);
+    uint64_t signalBitmap = 0;
+    signalBitmap |= ((uint32_t)signalInfo->mSignalCategory << 16);
+    signalBitmap |= ((uint32_t)signalInfo->mSignalID);
+
+    // Add the sub-type
+    signalBitmap <<= 32; // Make Room
+    signalBitmap |= (uint32_t)signalInfo->mSigType;
 
     // Check for any conflict
-    if(this->mSystemIndependentLayerMappings.find(signalBitmap) !=
-        this->mSystemIndependentLayerMappings.end()) {
+    if(this->mSILMappings.find(signalBitmap) !=
+       this->mSILMappings.end()) {
         // Signal with the specified Category and SigID already exists
         // Overwrite it.
 
-        int32_t signalTableIndex = getSignalTableIndex(signalBitmap);
+        int32_t signalTableIndex = this->getSignalTableIndex(signalBitmap);
         this->mSignalsConfigs[signalTableIndex] = signalInfo;
 
         if(isBuSpecified) {
-            this->mSystemIndependentLayerMappings.erase(signalBitmap);
-            signalBitmap |= (1 << 31);
+            this->mSILMappings.erase(signalBitmap);
+            signalBitmap |= (1 << 63);
 
-            this->mSystemIndependentLayerMappings[signalBitmap] = signalTableIndex;
+            this->mSILMappings[signalBitmap] = signalTableIndex;
         }
     } else {
         if(isBuSpecified) {
-            signalBitmap |= (1 << 31);
+            signalBitmap |= (1 << 63);
         }
 
-        this->mSystemIndependentLayerMappings[signalBitmap] = this->mTotalSignals;
+        this->mSILMappings[signalBitmap] = this->mTotalSignals;
         this->mSignalsConfigs.push_back(signalInfo);
 
         this->mTotalSignals++;
@@ -84,13 +88,30 @@ std::vector<SignalInfo*> SignalRegistry::getSignalConfigs() {
     return this->mSignalsConfigs;
 }
 
-SignalInfo* SignalRegistry::getSignalConfigById(uint32_t signalCode) {
-    if(this->mSystemIndependentLayerMappings.find(signalCode) == this->mSystemIndependentLayerMappings.end()) {
-        TYPELOGV(SIGNAL_REGISTRY_SIGNAL_NOT_FOUND, signalCode);
+SignalInfo* SignalRegistry::getSignalConfigById(uint64_t sigID) {
+    if(this->mSILMappings.find(sigID) == this->mSILMappings.end()) {
+        TYPELOGV(SIGNAL_REGISTRY_SIGNAL_NOT_FOUND, sigID);
         return nullptr;
     }
 
-    int32_t mResourceTableIndex = this->mSystemIndependentLayerMappings[signalCode];
+    int32_t mResourceTableIndex = this->mSILMappings[sigID];
+    return this->mSignalsConfigs[mResourceTableIndex];
+}
+
+SignalInfo* SignalRegistry::getSignalConfigById(uint32_t sigCode, uint32_t sigType) {
+    // Create the 64-bit index
+    uint64_t signalBitmap = sigCode;
+
+    // Add the sub-type
+    signalBitmap <<= 32; // Make Room
+    signalBitmap |= sigType;
+
+    if(this->mSILMappings.find(signalBitmap) == this->mSILMappings.end()) {
+        TYPELOGV(SIGNAL_REGISTRY_SIGNAL_NOT_FOUND, signalBitmap);
+        return nullptr;
+    }
+
+    int32_t mResourceTableIndex = this->mSILMappings[signalBitmap];
     return this->mSignalsConfigs[mResourceTableIndex];
 }
 
@@ -98,24 +119,12 @@ int32_t SignalRegistry::getSignalsConfigCount() {
     return this->mTotalSignals;
 }
 
-void SignalRegistry::displaySignals() {
-    for(int32_t i = 0; i < this->mTotalSignals; i++) {
-        auto& signal = this->mSignalsConfigs[i];
-
-        LOGD("RESTUNE_SIGNAL_REGISTRY", "Signal Name: " + signal->mSignalName);
-        LOGD("RESTUNE_SIGNAL_REGISTRY", "Signal OpID: " + std::to_string(signal->mSignalID));
-        LOGD("RESTUNE_SIGNAL_REGISTRY", "Signal SignalCategory: " + std::to_string(signal->mSignalCategory));
-
-        LOGD("RESTUNE_SIGNAL_REGISTRY", "====================================");
-    }
-}
-
-int32_t SignalRegistry::getSignalTableIndex(uint32_t signalCode) {
-    if(this->mSystemIndependentLayerMappings.find(signalCode) == this->mSystemIndependentLayerMappings.end()) {
+int32_t SignalRegistry::getSignalTableIndex(uint64_t signalCode) {
+    if(this->mSILMappings.find(signalCode) == this->mSILMappings.end()) {
         return -1;
     }
 
-    return this->mSystemIndependentLayerMappings[signalCode];
+    return this->mSILMappings[signalCode];
 }
 
 SignalRegistry::~SignalRegistry() {
@@ -133,6 +142,7 @@ SignalInfoBuilder::SignalInfoBuilder() {
 
     this->mSignalInfo->mSignalID = 0;
     this->mSignalInfo->mSignalCategory = 0;
+    this->mSignalInfo->mSigType = 0;
     this->mSignalInfo->mSignalName = "";
     this->mSignalInfo->mTimeout = 1;
 
@@ -170,6 +180,29 @@ ErrCode SignalInfoBuilder::setSignalCategory(const std::string& categoryString) 
     this->mSignalInfo->mSignalCategory = 0;
     try {
         this->mSignalInfo->mSignalCategory = (uint8_t)stoi(categoryString, nullptr, 0);
+
+    } catch(const std::invalid_argument& e) {
+        TYPELOGV(SIGNAL_REGISTRY_PARSING_FAILURE, e.what());
+        return RC_INVALID_VALUE;
+
+    } catch(const std::out_of_range& e) {
+        TYPELOGV(SIGNAL_REGISTRY_PARSING_FAILURE, e.what());
+        return RC_INVALID_VALUE;
+    }
+
+    return RC_SUCCESS;
+}
+
+ErrCode SignalInfoBuilder::setSignalType(const std::string& typeString) {
+    if(this->mSignalInfo == nullptr) {
+        return RC_MEMORY_ALLOCATION_FAILURE;
+    }
+
+    this->mSignalInfo->mSigType = 0;
+
+    try {
+        this->mSignalInfo->mSigType = (uint32_t)stol(typeString, nullptr, 0);
+
     } catch(const std::invalid_argument& e) {
         TYPELOGV(SIGNAL_REGISTRY_PARSING_FAILURE, e.what());
         return RC_INVALID_VALUE;

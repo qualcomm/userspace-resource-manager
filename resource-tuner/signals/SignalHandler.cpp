@@ -42,8 +42,11 @@ static int8_t getRequestPriority(int8_t clientPermissions, int8_t reqSpecifiedPr
  *            - 0: otherwise.
  */
 static int8_t VerifyIncomingRequest(Signal* signal) {
+    std::shared_ptr<SignalRegistry> sigRegistry = SignalRegistry::getInstance();
+
     // Check if a Signal with the given ID exists in the Registry
-    SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigById(signal->getSignalCode());
+    SignalInfo* signalInfo =
+        sigRegistry->getSignalConfigById(signal->getSignalCode(), signal->getSignalType());
 
     // Basic sanity: Invalid ResCode
     if(signalInfo == nullptr) {
@@ -141,7 +144,12 @@ static int8_t VerifyIncomingRequest(Signal* signal) {
 
 static Request* createResourceTuningRequest(Signal* signal) {
     try {
-        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigById(signal->getSignalCode());
+        std::shared_ptr<SignalRegistry> sigRegistry = SignalRegistry::getInstance();
+
+        // Check if a Signal with the given ID exists in the Registry
+        SignalInfo* signalInfo =
+            sigRegistry->getSignalConfigById(signal->getSignalCode(), signal->getSignalType());
+
         if(signalInfo == nullptr) return nullptr;
 
         Request* request = MPLACED(Request);

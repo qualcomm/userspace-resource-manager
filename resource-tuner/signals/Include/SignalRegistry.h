@@ -24,14 +24,19 @@
  */
 typedef struct {
     /**
+     * @brief Category of the Signal
+     */
+    uint8_t mSignalCategory;
+
+    /**
      * @brief 16-bit Signal ID
      */
     uint16_t mSignalID;
 
     /**
-     * @brief Category of the Signal
+     * @brief Signal Sub-Type
      */
-    uint8_t mSignalCategory;
+    uint32_t mSigType;
 
     /**
      * @brief Signal Name, for ex: EARLY_WAKEUP
@@ -66,10 +71,10 @@ typedef struct {
 class SignalRegistry {
 private:
     static std::shared_ptr<SignalRegistry> signalRegistryInstance;
+
     int32_t mTotalSignals;
     std::vector<SignalInfo*> mSignalsConfigs;
-
-    std::unordered_map<uint32_t, int32_t> mSystemIndependentLayerMappings;
+    std::unordered_map<uint64_t, int32_t> mSILMappings;
 
     SignalRegistry();
 
@@ -95,11 +100,11 @@ public:
     *          - A pointer to the SignalInfo object
     *          - nullptr, if no SignalInfo object with the given Signal ID exists.
     */
-    SignalInfo* getSignalConfigById(uint32_t signalCode);
+    SignalInfo* getSignalConfigById(uint64_t sigID);
+    SignalInfo* getSignalConfigById(uint32_t sigCode, uint32_t sigType);
 
     int32_t getSignalsConfigCount();
-    int32_t getSignalTableIndex(uint32_t signalCode);
-    void displaySignals();
+    int32_t getSignalTableIndex(uint64_t signalID);
 
     static std::shared_ptr<SignalRegistry> getInstance() {
         if(signalRegistryInstance == nullptr) {
@@ -127,6 +132,7 @@ public:
 
     ErrCode setSignalID(const std::string& signalOpIdString);
     ErrCode setSignalCategory(const std::string& categoryString);
+    ErrCode setSignalType(const std::string& typeString);
     ErrCode setName(const std::string& signalName);
     ErrCode setTimeout(const std::string& timeoutString);
     ErrCode setIsEnabled(const std::string& isEnabledString);

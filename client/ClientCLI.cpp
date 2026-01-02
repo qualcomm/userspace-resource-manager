@@ -144,7 +144,7 @@ static void sendPropRequest(const char* prop) {
 static void sendTuneSignal(const char* scode) {
     std::cout<<"Sending tuneSignal request for SigCode: "<<scode<<std::endl;
     uint32_t sigCode = (uint32_t)stol(std::string(scode), nullptr, 0);
-    int64_t handle = tuneSignal(sigCode, 0, 0, "", "", 0, nullptr);
+    int64_t handle = tuneSignal(sigCode, 0, 0, 0, "", "", 0, nullptr);
     if(handle == -1) {
         std::cout<<"Failed to send tuneSignal Request"<<std::endl;
     } else {
