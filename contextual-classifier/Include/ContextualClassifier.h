@@ -52,6 +52,8 @@ class ContextualClassifier {
     void ClassifierMain();
     int32_t HandleProcEv();
 
+    int move_pid_to_cgroup(int process_pid, int cgroupId);
+
     int32_t ClassifyProcess(pid_t pid, pid_t tgid, const std::string &comm,
                         uint32_t &ctxDetails);
     void ApplyActions(std::string comm, int32_t sigId, int32_t sigType);
