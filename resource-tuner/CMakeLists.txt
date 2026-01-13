@@ -2,7 +2,6 @@
 pkg_check_modules(LIBYAML REQUIRED yaml-0.1)
 
 # Optional Modules
-option(BUILD_TESTS "Testing" OFF)
 option(BUILD_STATE_DETECTOR "Display Detector" OFF)
 
 # Restune Core Lib
@@ -35,6 +34,3 @@ target_include_directories(RestuneCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/signal
 target_include_directories(RestuneCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/init/Include)
 install(TARGETS RestuneCore LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-if(BUILD_TESTS)
-  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
-endif()
