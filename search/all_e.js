@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['feature_20init_20relay_20and_20teardown_20capabilities_0',['2. Defining feature init, relay and teardown capabilities',['../ext_features.html#autotoc_md140',1,'']]],
+  ['features_1',['features',['../ext_features.html#autotoc_md138',1,'1. Making Use of Relay Signals and Features'],['../index.html#autotoc_md93',1,'Resource Tuner Features']]],
+  ['features_20guide_2',['Features Guide',['../ext_features.html',1,'']]],
+  ['field_20descriptions_3',['field descriptions',['../index.html#autotoc_md69',1,'Field Descriptions'],['../index.html#autotoc_md66',1,'Field Descriptions'],['../index.html#autotoc_md63',1,'Field Descriptions'],['../index.html#autotoc_md60',1,'Field Descriptions']]],
+  ['fields_20description_4',['Fields Description',['../index.html#autotoc_md53',1,'']]],
+  ['fields_20description_20for_20cache_20info_20config_5',['Fields Description for Cache Info Config',['../index.html#autotoc_md46',1,'']]],
+  ['fields_20description_20for_20cgroup_20config_6',['Fields Description for CGroup Config',['../index.html#autotoc_md44',1,'']]],
+  ['fields_20description_20for_20mpam_20group_20config_7',['Fields Description for Mpam Group Config',['../index.html#autotoc_md45',1,'']]],
+  ['file_8',['file',['../index.html#autotoc_md40',1,'Overiding with Custom Extension File'],['../index.html#autotoc_md52',1,'Overiding with Custom Extension File'],['../index.html#autotoc_md59',1,'Overiding with Custom Properties File'],['../usage.html#autotoc_md128',1,'Sample Device Config file'],['../usage.html#autotoc_md131',1,'Sample Properties config file.']]],
+  ['file_20with_20two_20resources_9',['Sample Resource config file with two resources.',['../usage.html#autotoc_md119',1,'']]],
+  ['files_20format_10',['Config Files Format',['../index.html#autotoc_md36',1,'']]],
+  ['flexible_20packaging_11',['10. Flexible Packaging',['../index.html#autotoc_md106',1,'']]],
+  ['flexible_20packaging_3a_20packaging_20required_20modules_12',['Flexible Packaging: Packaging required modules',['../index.html#autotoc_md6',1,'']]],
+  ['for_20a_20resource_13',['List Of Resource Types (Use this table to get the value of ResType for a Resource)',['../index.html#autotoc_md74',1,'']]],
+  ['for_20cache_20info_20config_14',['Fields Description for Cache Info Config',['../index.html#autotoc_md46',1,'']]],
+  ['for_20cgroup_20config_15',['Fields Description for CGroup Config',['../index.html#autotoc_md44',1,'']]],
+  ['for_20efficiency_16',['11. Pre-Allocate Capacity for efficiency',['../index.html#autotoc_md107',1,'']]],
+  ['for_20mpam_20group_20config_17',['Fields Description for Mpam Group Config',['../index.html#autotoc_md45',1,'']]],
+  ['format_18',['format',['../index.html#autotoc_md36',1,'Config Files Format'],['../index.html#autotoc_md72',1,'Resource Format']]],
+  ['formulation_20guide_19',['&quot;Tune&quot; Requests Formulation Guide',['../requests_formulation.html',1,'']]],
+  ['framework_20',['Userspace Resource Manager: A System Resource Tuning Framework',['../index.html',1,'']]],
+  ['functionalities_21',['2. How to override the Resource tune and untune functionalities.',['../usage.html#autotoc_md122',1,'']]]
+];
