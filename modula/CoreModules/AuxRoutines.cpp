@@ -152,6 +152,60 @@ int32_t AuxRoutines::fetchComm(pid_t pid, std::string &comm) {
     return 0;
 }
 
+FlatBuffEncoder::FlatBuffEncoder() {
+    this->mBuffer = nullptr;
+    this->mCurPtr = nullptr;
+    this->mRunningIndex = 0;
+}
+
+void FlatBuffEncoder::setBuf(char* buffer) {
+    this->mBuffer = buffer;
+    this->mCurPtr = buffer;
+    this->mRunningIndex = 0;
+}
+
+FlatBuffEncoder FlatBuffEncoder::appendString(const char* valStr) {
+    if(this->mRunningIndex == -1 || this->mBuffer == nullptr) {
+        return *this;
+    }
+
+    const char* charIterator = valStr;
+    char* charPointer = reinterpret_cast<char*>(this->mCurPtr);
+
+    while(*charIterator != '\0') {
+        if(this->mRunningIndex != -1 && this->mRunningIndex + 1 < REQ_BUFFER_SIZE) {
+            try {
+                ASSIGN_AND_INCR(charPointer, *charIterator);
+                this->mRunningIndex++;
+                this->mCurPtr = reinterpret_cast<char*>(charPointer);
+
+            } catch(const std::exception& e) {
+                this->mRunningIndex = -1;
+                break;
+            }
+        } else {
+            // Prevent further updates on the current buffer
+            this->mRunningIndex = REQ_BUFFER_SIZE;
+            break;
+        }
+
+        charIterator++;
+    }
+
+    if(this->mRunningIndex >= 0 && this->mRunningIndex < REQ_BUFFER_SIZE) {
+        return this->append<char>('\0');
+    }
+
+    return *this;
+}
+
+int8_t FlatBuffEncoder::isBufSane() {
+    if(this->mRunningIndex >= REQ_BUFFER_SIZE || this->mBuffer == nullptr) {
+        return false;
+    }
+    return true;
+}
+
 int64_t AuxRoutines::generateUniqueHandle() {
     const std::lock_guard<std::mutex> lock(handleGenLock);
 

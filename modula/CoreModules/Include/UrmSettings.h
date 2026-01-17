@@ -43,7 +43,6 @@ private:
 
 public:
     static const int32_t desiredThreadCount = 15;
-    static const int32_t maxPendingQueueSize = 17;
     static const int32_t maxScalingCapacity = 30;
 
     // Support both versions: Common and Custom

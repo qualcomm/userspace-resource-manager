@@ -20,7 +20,7 @@ int32_t Message::getClientTID() const {
 }
 
 int8_t Message::getPriority() const {
-    return (int8_t)(this->mProperties & (((int32_t) 1 << 8)) - 1);
+    return (int8_t)(this->mProperties & ((((int32_t) 1 << 8)) - 1));
 }
 
 int64_t Message::getDuration() const {
@@ -32,7 +32,7 @@ int32_t Message::getProperties() const {
 }
 
 int8_t Message::getProcessingModes() const {
-    return (int8_t) ((this->mProperties >> 8) & (((int32_t) 1 << 8)) - 1);
+    return (int8_t) ((this->mProperties >> 8) & ((((int32_t) 1 << 8)) - 1));
 }
 
 void Message::setRequestType(int8_t reqType) {

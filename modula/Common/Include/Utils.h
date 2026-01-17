@@ -25,7 +25,7 @@ enum ModuleID : int8_t {
  * @enum RequestType
  * @brief Enumeration for different types of Resource-Tuner Requests.
  */
-enum RequestType {
+enum RequestType : int8_t {
     REQ_RESOURCE_TUNING,
     REQ_RESOURCE_RETUNING,
     REQ_RESOURCE_UNTUNING,

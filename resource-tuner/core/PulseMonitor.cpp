@@ -3,28 +3,6 @@
 
 #include "PulseMonitor.h"
 
-// retuns pid of all running process right now
-static int8_t getAllRunningProcess(std::unordered_set<int64_t>& processId) {
-    DIR* proc = opendir("/proc");
-    struct dirent* ent;
-
-    if(proc == nullptr) {
-        TYPELOGV(ERRNO_LOG, "opendir", strerror(errno));
-        return -1;
-    }
-
-    while((ent = readdir(proc)) != nullptr) {
-        if(!isdigit(*ent->d_name)) {
-            continue;
-        }
-        int64_t tgid = strtol(ent->d_name, nullptr, 10);
-        processId.insert(tgid);
-    }
-    closedir(proc);
-
-    return 0;
-}
-
 std::shared_ptr<PulseMonitor> PulseMonitor::mPulseMonitorInstance = nullptr;
 
 PulseMonitor::PulseMonitor() {
@@ -35,20 +13,15 @@ PulseMonitor::PulseMonitor() {
 // Check for optimizations
 int8_t PulseMonitor::checkForDeadClients() {
     // stores pid of all the running process right now
-    std::unordered_set<int64_t> processIds;
     std::vector<int32_t> clientList;
-
-    if(getAllRunningProcess(processIds) < 0) {
-        return -1;
-    }
 
     // This method will internally acquire a shared lock on the table.
     ClientDataManager::getInstance()->getActiveClientList(clientList);
 
     // Delete the clients if they are dead.
     for(int32_t pid: clientList) {
-        if(processIds.find(pid) == processIds.end()) {
-            // Client is dead, Schedule it for deletion.
+        if(!AuxRoutines::fileExists(COMM(pid))) {
+        // Client is dead, Schedule it for deletion.
             LOGD("RESTUNE_PULSE_MONITOR", "Client with PID: " + std::to_string(pid) + " is dead.");
             ClientGarbageCollector::getInstance()->submitClientThreadsForCleanup(pid);
             ClientDataManager::getInstance()->deleteClientPID(pid);

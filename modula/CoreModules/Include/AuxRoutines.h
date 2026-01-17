@@ -17,6 +17,7 @@
 #include "Request.h"
 #include "Signal.h"
 #include "UrmSettings.h"
+#include "ClientEndpoint.h"
 
 class AuxRoutines {
 private:
@@ -37,6 +38,63 @@ public:
 
     static int64_t generateUniqueHandle();
     static int64_t getCurrentTimeInMilliseconds();
+};
+
+
+// Following are some client-lib centric utilities
+class FlatBuffEncoder {
+private:
+    char* mBuffer;
+    void* mCurPtr;
+    int32_t mRunningIndex;
+
+public:
+    FlatBuffEncoder();
+
+    template <typename T>
+    FlatBuffEncoder& append(T val) {
+        if(this->mRunningIndex == -1 || this->mBuffer == nullptr) {
+            return *this;
+        }
+
+        if(this->mRunningIndex + sizeof(T) < REQ_BUFFER_SIZE) {
+            T* tPtr = (T*)(this->mCurPtr);
+            try {
+                ASSIGN_AND_INCR(tPtr, val);
+                this->mRunningIndex += sizeof(T);
+                this->mCurPtr = reinterpret_cast<char*>(tPtr);
+
+            } catch(const std::exception& e) {
+                this->mRunningIndex = -1;
+            }
+        } else {
+            // Prevent further updates on the current buffer
+            this->mRunningIndex = REQ_BUFFER_SIZE;
+        }
+
+        return *this;
+    }
+
+    FlatBuffEncoder appendString(const char* valStr);
+
+    void setBuf(char* buffer);
+    int8_t isBufSane();
+};
+
+class ConnectionManager {
+private:
+    std::shared_ptr<ClientEndpoint> connection;
+
+public:
+    ConnectionManager(std::shared_ptr<ClientEndpoint> connection) {
+        this->connection = connection;
+    }
+
+    ~ConnectionManager() {
+        if(this->connection != nullptr) {
+            this->connection->closeConnection();
+        }
+    }
 };
 
 #endif
