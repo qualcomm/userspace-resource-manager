@@ -46,11 +46,18 @@ if(FLORET_FOUND)
     add_definitions(-DUSE_FLORET=1)
 
     # Define the ML inference library that actually uses FLORET
-    add_library(ml_inference_lib STATIC
+    add_library(ml_inference_lib SHARED
         FeatureExtractor.cpp
         FeaturePruner.cpp
         MLInference.cpp
     )
+
+    set_target_properties(ml_inference_lib PROPERTIES
+        VERSION 1.0.0
+        SOVERSION 1
+    )
+
+    target_link_libraries(ContextualClassifier PRIVATE ml_inference_lib)
 
     target_link_libraries(ml_inference_lib
         PRIVATE
