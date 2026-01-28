@@ -23,6 +23,8 @@
 #define SCANNER_TAG "FeatureExtractor"
 #define LOG_LINES 20
 
+std::unordered_map<std::string, std::unordered_set<std::string>> FeatureExtractor::mTokenIgnoreMap;
+
 static std::string format_string(const char *fmt, ...) {
     char buffer[1024];
     va_list args;
