@@ -4,10 +4,11 @@
 #ifndef ML_INFERENCE_H
 #define ML_INFERENCE_H
 
+#include "AuxRoutines.h"
 #include "Inference.h"
 #include <vector>
 
-#include <fasttext/fasttext.h>
+#include <floret/fasttext.h>
 #include <mutex>
 #include <string>
 
@@ -15,7 +16,7 @@ class MLInference : public Inference {
   public:
     MLInference(const std::string &ft_model_path);
     ~MLInference();
-    int Classify(int process_pid) override;
+    CC_TYPE Classify(int process_pid) override;
   private:
     // Derived implementation using fastText.
     uint32_t predict(int pid,

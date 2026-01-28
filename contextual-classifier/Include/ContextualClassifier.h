@@ -113,6 +113,9 @@ private:
 public:
     ContextualClassifier();
     ~ContextualClassifier();
+    Inference *getInference() {
+        return mInference;
+    }
 
     ErrCode Init();
     ErrCode Terminate();
