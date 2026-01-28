@@ -27,7 +27,7 @@
 #define CLASSIFIER_CONFIGS_DIR "/etc/urm/classifier/"
 
 const std::string FT_MODEL_PATH =
-    CLASSIFIER_CONFIGS_DIR "fasttext_model_supervised.bin";
+    CLASSIFIER_CONFIGS_DIR "floret_model_supervised.bin";
 const std::string IGNORE_PROC_PATH =
     CLASSIFIER_CONFIGS_DIR "classifier-blocklist.txt";
 const std::string ALLOW_LIST_PATH =
