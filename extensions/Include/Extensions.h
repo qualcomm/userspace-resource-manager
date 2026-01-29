@@ -71,8 +71,7 @@ public:
     static PostProcessingCallback getPostProcessingCallback(const std::string& identifier);
 };
 
-#define CONCAT_IMPL(a, b) a##b
-#define CONCAT(a, b) CONCAT_IMPL(a, b)
+#define CONCAT(a, b) a ## b
 
 /**
  * \def URM_REGISTER_RES_APPLIER_CB(resCode, resourceApplierCallback)

@@ -20,7 +20,8 @@ int32_t SocketClient::initiateConnection() {
     struct sockaddr_un addr;
     memset(&addr, 0, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
-    if(snprintf(addr.sun_path, UNIX_PATH_MAX, RESTUNE_SOCKET_PATH) >= UNIX_PATH_MAX) {
+    size_t written = snprintf(addr.sun_path, UNIX_PATH_MAX, RESTUNE_SOCKET_PATH);
+    if(written >= UNIX_PATH_MAX) {
         LOGE("RESTUNE_SOCKET_CLIENT", "Socket path too long");
         close(this->sockFd);
         this->sockFd = -1;

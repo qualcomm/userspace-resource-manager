@@ -696,7 +696,7 @@ ErrCode RestuneParser::parseSignalConfigYamlNode(const std::string& filePath, in
                         rc = resourceBuilder->setNumValues(resValues.size());
                     }
 
-                    for(int32_t idx = 0; idx < resValues.size(); idx++) {
+                    for(size_t idx = 0; idx < resValues.size(); idx++) {
                         if(RC_IS_OK(rc)) {
                             rc = resourceBuilder->addValue(idx, resValues[idx]);
                         }
@@ -971,7 +971,7 @@ ErrCode RestuneParser::parsePerAppConfigYamlNode(const std::string& filePath) {
                             return RC_YAML_INVALID_SYNTAX;
                         }
                     }
-                    for(int32_t i = 0; i < itemArray.size(); i++) {
+                    for(size_t i = 0; i < itemArray.size(); i++) {
                         if(RC_IS_OK(rc)) {
                             rc = appConfigBuider->addSigCode(i, itemArray[i]);
                             if(RC_IS_NOTOK(rc)) {

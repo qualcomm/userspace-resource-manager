@@ -157,7 +157,7 @@ void TargetRegistry::generatePolicyBasedMapping(std::vector<std::string>& policy
 
     // Now, Create the Logical to Physical Mappings
     // Note the Clusters are arranged in increasing order of Capacities
-    for(int32_t i = 0; i < clusterConfigs.size(); i++) {
+    for(size_t i = 0; i < clusterConfigs.size(); i++) {
         this->mLogicalToPhysicalClusterMapping[i] = clusterConfigs[i].second.second->mPhysicalID;
     }
 }
@@ -235,7 +235,7 @@ void TargetRegistry::getClusterIdBasedMapping() {
 
     // Now, Create the Logical to Physical Mappings
     // Note the Clusters are arranged in increasing order of Capacities
-    for(int32_t i = 0; i < clusterConfigs.size(); i++) {
+    for(size_t i = 0; i < clusterConfigs.size(); i++) {
         this->mLogicalToPhysicalClusterMapping[i] = clusterConfigs[i].second->mPhysicalID;
     }
 }

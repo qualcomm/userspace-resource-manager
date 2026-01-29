@@ -38,7 +38,7 @@ public:
         ServerOnlineCheckCallback mServerOnlineCheckCb,
         MessageReceivedCallback mMessageRecvCb);
 
-    ~SocketServer();
+    virtual ~SocketServer();
 
     virtual int32_t ListenForClientRequests();
     virtual int32_t closeConnection();
