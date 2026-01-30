@@ -38,6 +38,8 @@ endif()
 
 # Build Tests conditionally
 if(BUILD_TESTS)
+  include(CTest)      
+  enable_testing()     # turns on CTest collection
   add_subdirectory(tests/resource-tuner)
   add_subdirectory(tests/contextual-classifier)
 endif()
