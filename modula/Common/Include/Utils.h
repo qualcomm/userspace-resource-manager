@@ -133,6 +133,7 @@ typedef void (*MessageReceivedCallback)(int32_t, MsgForwardInfo*);
 #define LOGGER_LOGGING_LEVEL "urm.logging.level"
 #define LOGGER_LOGGING_LEVEL_TYPE "urm.logging.level.exact"
 #define LOGGER_LOGGING_OUTPUT_REDIRECT "urm.logging.redirect_to"
+#define URM_MAX_PLUGIN_COUNT "urm.extensions_lib.count"
 
 #define COMM(pid) ("/proc/" + std::to_string(pid) + "/comm")
 #define COMM_S(pidstr) ("/proc/" + pidstr + "/comm")

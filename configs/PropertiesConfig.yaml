@@ -37,3 +37,6 @@ PropertyConfigs:
   - Name: urm.logging.redirect_to
     # Possible values: FILE, SYSLOG, FTRACE, LOGCAT.
     Value: "SYSLOG"
+
+  - Name: urm.extensions_lib.count
+    Value: "3"

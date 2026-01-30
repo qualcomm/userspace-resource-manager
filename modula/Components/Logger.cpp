@@ -311,14 +311,14 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
 
         case CommonMessageTypes::NOTIFY_EXTENSIONS_LOAD_FAILED:
             vsnprintf(buffer, sizeof(buffer),
-                      "Error loading extension lib, Error: %s", args);
+                      "Error loading extension lib: [%s], Error: [%s]", args);
 
             Logger::log(LOG_ERR, "RESTUNE_SERVER_INIT", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_EXTENSIONS_LIB_LOADED_SUCCESS:
             Logger::log(LOG_INFO, "RESTUNE_SERVER_INIT", funcName,
-                        "Extension library present and successfully loaded");
+                        "Successfully Loaded: [%d] extension plugins");
             break;
 
         case CommonMessageTypes::NOTIFY_COCO_TABLE_INSERT_START:

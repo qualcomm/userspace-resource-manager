@@ -2,7 +2,6 @@
     - SeLinux Rules enablement
     - Enable Classifier on meta-qcom builds
     - Analyze CodeQL reported issues
-    - Documentation Reordering
 
 2. Process tasks (GitHub actions and repo workflow)
     - Enable Axiom CI tests
@@ -11,9 +10,8 @@
     - Integrate and Enable ARMOR
 
 3. Implementation specific
-    - Adding irq resources
-    - Client API requests encoding / decoding support
+    - Client API requests encoding / decoding support (Making Buffers smaller for efficiency)
     - Client CLI improvements, to support all types of requests
     - Focused cgroup creation
     - Memory Leaks analysis and reduction. Major issues are resolved, still observing some lost blocks.
-    - Coordination Table changes (will add details here).
+    - Tests Cleanup

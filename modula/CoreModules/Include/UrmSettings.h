@@ -25,6 +25,7 @@ typedef struct {
     uint32_t mCleanupBatchSize;
     double mPenaltyFactor;
     double mRewardFactor;
+    uint32_t mPluginCount;
 } MetaConfigs;
 
 typedef struct {
@@ -42,8 +43,8 @@ private:
     static int32_t serverOnlineStatus;
 
 public:
-    static const int32_t desiredThreadCount = 15;
-    static const int32_t maxScalingCapacity = 30;
+    static const int32_t desiredThreadCount = 5;
+    static const int32_t maxScalingCapacity = 10;
 
     // Support both versions: Common and Custom
     static const std::string mCommonResourceFilePath;
@@ -64,7 +65,7 @@ public:
     static const std::string mDeviceNamePath;
     static const std::string mBaseCGroupPath;
     static const std::string mPersistenceFile;
-    static const std::string mExtensionsPluginLibPath;
+    static const std::string mExtensionPluginsLibPath;
 
     // Target Information Stores
     static MetaConfigs metaConfigs;

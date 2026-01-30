@@ -21,7 +21,10 @@
 #include "SignalRegistry.h"
 #include "RestuneParser.h"
 
-static void* extensionsLibHandle = nullptr;
+#define MAX_EXTENSION_LIB_HANDLES 3
+static void** extensionLibHandles = nullptr;
+
+// Request Listener and Handler Threads
 static std::thread restuneHandlerThread;
 static std::thread resourceTunerListener;
 
@@ -37,16 +40,40 @@ static void restoreToSafeState() {
 // Load the Extensions Plugin lib if it is available
 // If the lib is not present, we simply return Success. Since this lib is optional
 static ErrCode loadExtensionsLib() {
-    std::string libPath = UrmSettings::mExtensionsPluginLibPath;
+    if(extensionLibHandles == nullptr) {
+        extensionLibHandles = (void**) calloc(MAX_EXTENSION_LIB_HANDLES, sizeof(void*));
+        if(extensionLibHandles == nullptr) {
+            return RC_MODULE_INIT_FAILURE;
+        }
+    }
+    std::string libDirPath = UrmSettings::mExtensionPluginsLibPath;
 
-    // Check if the library file exists
-    extensionsLibHandle = dlopen(libPath.c_str(), RTLD_NOW);
-    if(extensionsLibHandle == nullptr) {
-        TYPELOGV(NOTIFY_EXTENSIONS_LOAD_FAILED, dlerror());
-        return RC_SUCCESS;  // Return success regardless, since this is an extension.
+    DIR* dir = opendir(libDirPath.c_str());
+    if(dir == nullptr) {
+        return RC_SUCCESS; // Return success regardless, since this is an extension.
     }
 
-    TYPELOGD(NOTIFY_EXTENSIONS_LIB_LOADED_SUCCESS);
+    uint32_t extLibHandleIndex = 0;
+    int32_t libsLoaded = 0;
+    struct dirent* entry;
+    while(((entry = readdir(dir)) != nullptr) &&
+          (extLibHandleIndex < UrmSettings::metaConfigs.mPluginCount)) {
+        std::string libPath = libDirPath + "/" + entry->d_name;
+
+        // Check if the library file exists
+        extensionLibHandles[extLibHandleIndex] = dlopen(libPath.c_str(), RTLD_NOW);
+        if(extensionLibHandles[extLibHandleIndex] != nullptr) {
+            libsLoaded++;
+        } else {
+            TYPELOGV(NOTIFY_EXTENSIONS_LOAD_FAILED, libPath.c_str(), dlerror());
+        }
+        extLibHandleIndex++;
+    }
+    closedir(dir);
+
+    if(libsLoaded > 0) {
+        TYPELOGV(NOTIFY_EXTENSIONS_LIB_LOADED_SUCCESS, libsLoaded);
+    }
     return RC_SUCCESS;
 }
 
@@ -136,7 +163,8 @@ static ErrCode fetchMetaConfigs() {
         submitPropGetRequest(RATE_LIMITER_REWARD_FACTOR, resultBuffer, "0.4");
         UrmSettings::metaConfigs.mRewardFactor = std::stod(resultBuffer);
 
-        initLogger();
+        submitPropGetRequest(URM_MAX_PLUGIN_COUNT, resultBuffer, "3");
+        UrmSettings::metaConfigs.mPluginCount = (uint32_t)std::stol(resultBuffer);
 
     } catch(const std::invalid_argument& e) {
         TYPELOGV(META_CONFIG_PARSE_FAILURE, e.what());
@@ -171,18 +199,22 @@ static ErrCode parseUtil(const std::string& filePath,
     return opStatus;
 }
 
-static ErrCode fetchProperties() {
+static ErrCode fetchCommonProperties() {
     ErrCode opStatus = RC_SUCCESS;
 
     // Parse Common Properties Configs
     std::string filePath = UrmSettings::mCommonPropertiesFilePath;
     opStatus = parseUtil(filePath, COMMON_PROPERTIES, ConfigType::PROPERTIES_CONFIG);
-    if(RC_IS_NOTOK(opStatus)) {
-        // Common Properties Parsing Failed
-        return opStatus;
+    if(RC_IS_OK(opStatus)) {
+        return fetchMetaConfigs();
     }
+    return opStatus;
+}
 
-    filePath = Extensions::getPropertiesConfigFilePath();
+static ErrCode fetchCustomProperties() {
+    ErrCode opStatus = RC_SUCCESS;
+
+    std::string filePath = Extensions::getPropertiesConfigFilePath();
     // Parse Custom Properties Configs provided via Extension Interface (if any)
     if(filePath.length() > 0) {
         TYPELOGV(NOTIFY_CUSTOM_CONFIG_FILE, "Property", filePath.c_str());
@@ -429,12 +461,27 @@ static ErrCode init(void* arg) {
     // Mandatory Configs include: Properties Configs, Resource Configs and Signal Configs (if Signal
     // module is plugged in)
 
+    // Fetch common properties
+    if(RC_IS_NOTOK(fetchCommonProperties())) {
+        TYPELOGD(PROPERTY_RETRIEVAL_FAILED);
+        return RC_MODULE_INIT_FAILURE;
+    }
+
+    uint32_t pluginCount = UrmSettings::metaConfigs.mPluginCount;
+    if(pluginCount > MAX_EXTENSION_LIB_HANDLES) {
+        extensionLibHandles = (void**) realloc(extensionLibHandles, pluginCount * sizeof(void*));
+        if(extensionLibHandles == nullptr) {
+            return RC_MODULE_INIT_FAILURE;
+        }
+    }
+
     // Check if Extensions Plugin lib is available
     if(RC_IS_NOTOK(loadExtensionsLib())) {
         return RC_MODULE_INIT_FAILURE;
     }
 
-    if(RC_IS_NOTOK(fetchProperties())) {
+    // Fetch custom Properties
+    if(RC_IS_NOTOK(fetchCustomProperties())) {
         TYPELOGD(PROPERTY_RETRIEVAL_FAILED);
         return RC_MODULE_INIT_FAILURE;
     }
@@ -442,24 +489,30 @@ static ErrCode init(void* arg) {
     // Pre-Allocate Memory for Commonly used Types via Memory Pool
     preAllocateMemory();
 
+    // Setup the logger, according to configuration urm can log to either:
+    // syslog, ftrace or regular text file.
+    initLogger();
+
+    // Pre Allocate some Worker Threads in the Thread Pool for handling requests
     if(RC_IS_NOTOK(preAllocateWorkers())) {
         return RC_MODULE_INIT_FAILURE;
     }
 
-    // Target Configs
+    // Fetch and Parse: Custom Target Configs
     if(RC_IS_NOTOK(fetchTargetInfo())) {
         return RC_MODULE_INIT_FAILURE;
     }
-    TargetRegistry::getInstance()->displayTargetInfo();
 
-    // Fetch and Parse:
-    // - Init Configs
+    // Fetch and Parse: Init Configs
+    // Init Configs which will be considered:
+    // - Common Init Configs
+    // - Custom Init Configs (if present)
     if(RC_IS_NOTOK(fetchInitInfo())) {
         return RC_MODULE_INIT_FAILURE;
     }
 
     // Fetch and Parse Resource Configs
-    // Resource Parsing which will be considered:
+    // Resource Configs which will be considered:
     // - Common Resource Configs
     // - Custom Resource Configs (if present)
     // Note by this point, we will know the Target Info, i.e. number of Core, Clusters etc.
@@ -475,10 +528,12 @@ static ErrCode init(void* arg) {
         return RC_MODULE_INIT_FAILURE;
     }
 
+    // Fetch and Parse: Custom Per-App Configs
     if(RC_IS_NOTOK(fetchPerAppConfigs())) {
         return RC_MODULE_INIT_FAILURE;
     }
 
+    // Fetch and Parse: Custom ExtFeature Configs
     if(RC_IS_NOTOK(fetchExtFeatureConfigs())) {
         return RC_MODULE_INIT_FAILURE;
     }
@@ -564,8 +619,15 @@ static ErrCode tear(void* arg) {
     // Delete the Sysfs Persistent File
     AuxRoutines::deleteFile(UrmSettings::mPersistenceFile);
 
-    if(extensionsLibHandle != nullptr) {
-        dlclose(extensionsLibHandle);
+    if(extensionLibHandles != nullptr) {
+        for(uint32_t i = 0; i < UrmSettings::metaConfigs.mPluginCount; i++) {
+            if(extensionLibHandles[i] != nullptr) {
+                dlclose(extensionLibHandles[i]);
+                extensionLibHandles[i] = nullptr;
+            }
+        }
+
+        free(extensionLibHandles);
     }
 
     return RC_SUCCESS;
