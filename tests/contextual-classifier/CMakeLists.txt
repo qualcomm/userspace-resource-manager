@@ -23,6 +23,7 @@ if(BUILD_TESTS)
     target_include_directories(ContextualClassifierIntegrationTests PRIVATE
         ${FRAMEWORK_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/Integration
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
 
     target_link_libraries(ContextualClassifierIntegrationTests PRIVATE
