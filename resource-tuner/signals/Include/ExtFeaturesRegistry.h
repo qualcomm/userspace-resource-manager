@@ -39,7 +39,7 @@ private:
     int32_t mTotalExtFeatures;
     std::vector<ExtFeatureInfo*> mExtFeaturesConfigs;
 
-    std::unordered_map<uint32_t, int32_t> mSystemIndependentLayerMappings;
+    std::unordered_map<uint32_t, int32_t> mSILMap;
 
     ExtFeaturesRegistry();
 

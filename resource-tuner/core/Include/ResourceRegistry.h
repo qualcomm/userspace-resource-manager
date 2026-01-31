@@ -103,7 +103,7 @@ private:
     int32_t mTotalResources;
 
     std::vector<ResConfInfo*> mResourceConfigs;
-    std::unordered_map<uint32_t, int32_t> mSystemIndependentLayerMappings;
+    std::unordered_map<uint32_t, int32_t> mSILMap;
     std::unordered_map<std::string, std::string> mDefaultValueStore;
 
     ResourceRegistry();
@@ -121,7 +121,7 @@ public:
      *          Malformed, then it will be freed as part of this routine, else it will
      *          be added to the "mResourceConfigs" vector.
      */
-    void registerResource(ResConfInfo* resourceConfigInfo, int8_t isBuSpecified=false);
+    void registerResource(ResConfInfo* resourceConfigInfo);
 
     std::vector<ResConfInfo*> getRegisteredResources();
 

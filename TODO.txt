@@ -15,3 +15,4 @@
     - Focused cgroup creation
     - Memory Leaks analysis and reduction. Major issues are resolved, still observing some lost blocks.
     - Tests Cleanup
+    - Removing MSB based common vs custom resource / signal separation

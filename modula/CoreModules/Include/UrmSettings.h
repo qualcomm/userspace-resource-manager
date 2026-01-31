@@ -46,6 +46,8 @@ public:
     static const int32_t desiredThreadCount = 5;
     static const int32_t maxScalingCapacity = 10;
 
+    static const std::string mTargetConfDir;
+
     // Support both versions: Common and Custom
     static const std::string mCommonResourceFilePath;
     static const std::string mCustomResourceFilePath;

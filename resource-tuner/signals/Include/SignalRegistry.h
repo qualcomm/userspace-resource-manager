@@ -74,7 +74,7 @@ private:
 
     int32_t mTotalSignals;
     std::vector<SignalInfo*> mSignalsConfigs;
-    std::unordered_map<uint64_t, int32_t> mSILMappings;
+    std::unordered_map<uint64_t, int32_t> mSILMap;
 
     SignalRegistry();
 
