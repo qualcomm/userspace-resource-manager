@@ -8,6 +8,10 @@ if(BUILD_TESTS)
 
     # Optional: help the tests find a writable location through an env var
     set(TEST_REPORT_ENV "TEST_REPORT_DIR=${TEST_REPORT_DIR}")
+    
+    
+    # Put this near the top of the file (inside the if(BUILD_TESTS) block is fine)
+    set(FRAMEWORK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../framework")
 
     # Install Test Configs
     file(GLOB testConfigs "${CMAKE_CURRENT_SOURCE_DIR}/Configs/*.yaml")
@@ -42,7 +46,7 @@ if(BUILD_TESTS)
    
 # --- Mini.hpp header-only unit/module/usecase tests ---
 set(COMPONENT_TEST_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/framework/testrunner.cpp
+    ${FRAMEWORK_DIR}/testrunner.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Component/ThreadPoolTests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Component/TimerTests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Component/SafeOpsTests.cpp
@@ -63,7 +67,7 @@ add_executable(RestuneComponentTests ${COMPONENT_TEST_SOURCES})
 
 # Make the header visible to the test sources
 target_include_directories(RestuneComponentTests PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/framework
+    ${FRAMEWORK_DIR}
 )
 
 # Link any production libraries your tests depend on (adjust as needed)
@@ -106,7 +110,7 @@ add_executable(RestuneIntegrationTests
 )
 
 target_include_directories(RestuneIntegrationTests PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/framework         # mini.hpp location
+    ${FRAMEWORK_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/Integration       # local includes used by Integration tests
     # add other include dirs if your tests need them
 )
@@ -140,44 +144,41 @@ set_tests_properties(RestuneIntegrationTests_All PROPERTIES
 # all unit tests
 # ----------------------------------------
 
-# 1) One main TU that provides main()
+# One main TU that provides main()
 set(RESTUNE_UNIT_MAIN
-    ${CMAKE_CURRENT_SOURCE_DIR}/framework/testrunner.cpp
+    ${FRAMEWORK_DIR}/testrunner.cpp
 )
 
-# 2) Test sources + shim + stubs + the real file under test for getResConf
+# Test sources ++ the real file under test for getResConf
 set(RESTUNE_UNIT_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/unit/test_submitResProvisionRequest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/unit/test_getResConf.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/unit/shims/SubmitShim.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Unit/test_submitResProvisionRequest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Unit/test_getResConf.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Unit/shims/SubmitShim.cpp
     ${CMAKE_SOURCE_DIR}/resource-tuner/core/ResourceRegistry.cpp
 )
 
-# Helpful debug output
-message(STATUS "RESTUNE_UNIT_MAIN    = ${RESTUNE_UNIT_MAIN}")
-message(STATUS "RESTUNE_UNIT_SOURCES = ${RESTUNE_UNIT_SOURCES}")
 
-# 3) Create the binary
+# Create the binary
 add_executable(RestuneUnitTests
     ${RESTUNE_UNIT_MAIN}
     ${RESTUNE_UNIT_SOURCES}
 )
 
-# 4) Only the main TU should generate main(); the test TUs must not
+# Only the main TU should generate main(); the test TUs must not
 set_source_files_properties(
-    ${CMAKE_CURRENT_SOURCE_DIR}/unit/test_submitResProvisionRequest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/unit/test_getResConf.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Unit/test_submitResProvisionRequest.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Unit/test_getResConf.cpp
     PROPERTIES COMPILE_DEFINITIONS "MTEST_NO_MAIN=1"
 )
 
-# 5) Include paths for tests and core headers
+# Include paths for tests and core headers
 target_include_directories(RestuneUnitTests PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/framework
+    ${FRAMEWORK_DIR}
     ${CMAKE_SOURCE_DIR}/resource-tuner/core/Include
     ${CMAKE_SOURCE_DIR}/modula/Common/Include
 )
 
-# 6) Link minimal libs only (do NOT link RestuneCore; shim+stubs avoid heavy initializers)
+# Link minimal libs only (do NOT link RestuneCore; shim+stubs avoid heavy initializers)
 target_link_libraries(RestuneUnitTests PRIVATE
     UrmAuxUtils
     UrmExtAPIs
@@ -185,12 +186,12 @@ target_link_libraries(RestuneUnitTests PRIVATE
     RestuneCore
 )
 
-# 7) mini.hpp default behavior
+# mini.hpp default behavior
 target_compile_definitions(RestuneUnitTests PRIVATE
     MTEST_DEFAULT_OUTPUT_TAP=0
 )
 
-# 8) Install & register with CTest
+# Install & register with CTest
 install(TARGETS RestuneUnitTests RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 

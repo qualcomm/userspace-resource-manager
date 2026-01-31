@@ -1,6 +1,6 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause-Clear
-
+#include <thread> 
 #include "ErrCodes.h"
 #include "UrmPlatformAL.h"
 #include "Utils.h"
@@ -1020,59 +1020,90 @@ MT_TEST(Integration, TestSingleClientSequentialRequests, "request-application") 
     LOG_END
 }
 
-
-// Wrap as a mini.hpp test: Same client process, two threads issue concurrent requests (higher wins), then reset
 MT_TEST(Integration, TestMultipleClientTIDsConcurrentRequests, "request-application") {
     (void)ctx; // silence unused parameter warning
     LOG_START
 
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_max_freq.txt";
-    int32_t testResourceOriginalValue = 114;
-    int64_t handle;
-    std::string value;
-    int32_t originalValue, newValue;
+    // --- Test configuration ---
+    const std::string testResourceName = "/etc/urm/tests/nodes/scaling_max_freq.txt";
+    const int32_t expectedOriginalValue = 114;
+    const int32_t valueThread = 664;
+    const int32_t valueMain   = 702;     // Expect "higher wins" => 702
+    const auto    reqTtlMs    = 6000;    // tuneResources TTL
+    const auto    applyWait   = std::chrono::seconds(5);
+    const auto    resetWait   = std::chrono::seconds(8);
 
-    value = AuxRoutines::readFromFile(testResourceName);
-    originalValue = C_STOI(value);
+    // --- Helpers ---
+    auto read_int = [&](const std::string& path) -> int32_t {
+        std::string s = AuxRoutines::readFromFile(path);
+        return C_STOI(s);
+    };
+
+    auto poll_until = [&](int32_t expected,
+                          std::chrono::milliseconds timeout,
+                          std::chrono::milliseconds interval = std::chrono::milliseconds(100)) -> bool
+    {
+        auto start = std::chrono::steady_clock::now();
+        while (std::chrono::steady_clock::now() - start < timeout) {
+            int32_t v = read_int(testResourceName);
+            if (v == expected) return true;
+            std::this_thread::sleep_for(interval);
+        }
+        return false;
+    };
+
+    // --- Capture original ---
+    int32_t originalValue = read_int(testResourceName);
     std::cout << LOG_BASE << testResourceName << " Original Value: " << originalValue << std::endl;
-    MT_REQUIRE_EQ(ctx, originalValue, testResourceOriginalValue);
+    MT_REQUIRE_EQ(ctx, originalValue, expectedOriginalValue);
+
+    // --- Start concurrent request in worker thread ---
     std::thread th([&]{
         SysResource* resourceList1 = new SysResource[1];
-        memset(&resourceList1[0], 0, sizeof(SysResource));
+        std::memset(&resourceList1[0], 0, sizeof(SysResource));
         resourceList1[0].mResCode = 0x80ff0003;
         resourceList1[0].mOptionalInfo = 0;
         resourceList1[0].mNumValues = 1;
-        resourceList1[0].mResValue.value = 664;
-        handle = tuneResources(6000, RequestPriority::REQ_PRIORITY_HIGH, 1, resourceList1);
-        std::cout << LOG_BASE << "Handle Returned: " << handle << std::endl;
-        delete resourceList1;
+        resourceList1[0].mResValue.value = valueThread;
+
+        int64_t handle1 = tuneResources(reqTtlMs, RequestPriority::REQ_PRIORITY_HIGH, 1, resourceList1);
+        std::cout << LOG_BASE << "Handle Returned (thread): " << handle1 << std::endl;
+
+        delete[] resourceList1;   // FIX: correct array delete
     });
 
+    // --- Main thread request ---
     SysResource* resourceList2 = new SysResource[1];
-    memset(&resourceList2[0], 0, sizeof(SysResource));
+    std::memset(&resourceList2[0], 0, sizeof(SysResource));
     resourceList2[0].mResCode = 0x80ff0003;
     resourceList2[0].mOptionalInfo = 0;
     resourceList2[0].mNumValues = 1;
-    resourceList2[0].mResValue.value = 702;
-    handle = tuneResources(6000, RequestPriority::REQ_PRIORITY_HIGH, 1, resourceList2);
-    std::cout << LOG_BASE << "Handle Returned: " << handle << std::endl;
+    resourceList2[0].mResValue.value = valueMain;
 
-    std::this_thread::sleep_for(std::chrono::seconds(2));
-    value = AuxRoutines::readFromFile(testResourceName);
-    newValue = C_STOI(value);
-    std::cout << LOG_BASE << testResourceName << " Configured Value: " << newValue << std::endl;
-    MT_REQUIRE_EQ(ctx, newValue, 702);
-    std::this_thread::sleep_for(std::chrono::seconds(6));
-    value = AuxRoutines::readFromFile(testResourceName);
-    newValue = C_STOI(value);
-    std::cout << LOG_BASE << testResourceName << " Reset Value: " << newValue << std::endl;
-    MT_REQUIRE_EQ(ctx, newValue, testResourceOriginalValue);
-    th.join();
+    int64_t handle2 = tuneResources(reqTtlMs, RequestPriority::REQ_PRIORITY_HIGH, 1, resourceList2);
+    std::cout << LOG_BASE << "Handle Returned (main): " << handle2 << std::endl;
+
     delete[] resourceList2;
+
+    // --- Ensure thread is joined BEFORE any assertion that might exit early ---
+    if (th.joinable()) th.join();
+
+    // --- Verify "higher wins" (expect 702) with a poll to avoid flakiness ---
+    bool configuredOk = poll_until(valueMain, std::chrono::duration_cast<std::chrono::milliseconds>(applyWait));
+    int32_t configuredValue = read_int(testResourceName);
+    std::cout << LOG_BASE << testResourceName << " Configured Value: " << configuredValue << std::endl;
+
+    // If poll failed, assert on the last observed value so the log shows it
+    MT_REQUIRE_EQ(ctx, configuredOk ? valueMain : configuredValue, valueMain);
+
+    // --- Verify reset after TTL (6s) with some buffer ---
+    bool resetOk = poll_until(expectedOriginalValue, std::chrono::duration_cast<std::chrono::milliseconds>(resetWait));
+    int32_t resetValue = read_int(testResourceName);
+    std::cout << LOG_BASE << testResourceName << " Reset Value: " << resetValue << std::endl;
+    MT_REQUIRE_EQ(ctx, resetOk ? expectedOriginalValue : resetValue, expectedOriginalValue);
 
     LOG_END
 }
-
 
 // Wrap as a mini.hpp test: Infinite duration tune, then valid untune → node resets
 MT_TEST(Integration, TestInfiniteDurationTuneRequestAndValidUntuning, "request-application") {

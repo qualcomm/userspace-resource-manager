@@ -11,7 +11,7 @@
 
 ---
 
-##  Quick Start
+## Example 
 ```cpp
 #include "mini.hpp"
 
@@ -25,9 +25,9 @@ Build & run:
 mkdir build && cd build
 cmake .. -DBUILD_TESTS=ON
 make
-./tests/RestuneComponentTests
-./tests/RestuneIntegrationTests
-./tests/RestuneUnitTests
+./tests/resource-tuner/RestuneComponentTests
+./tests/resource-tuner/RestuneIntegrationTests
+./tests/resource-tuner/RestuneUnitTests
 ```
 
 ---
