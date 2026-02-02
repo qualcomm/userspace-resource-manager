@@ -1,6 +1,7 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
+#include "AuxRoutines.h"
 #include "FeatureExtractor.h"
 #include "FeaturePruner.h"
 #include "Logger.h"
@@ -21,6 +22,8 @@
 #define UNFILTERED_DIR "/var/cache/unfiltered"
 #define SCANNER_TAG "FeatureExtractor"
 #define LOG_LINES 20
+
+std::unordered_map<std::string, std::unordered_set<std::string>> FeatureExtractor::mTokenIgnoreMap;
 
 static std::string format_string(const char *fmt, ...) {
     char buffer[1024];

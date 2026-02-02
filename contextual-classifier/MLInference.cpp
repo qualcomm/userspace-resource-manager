@@ -3,6 +3,7 @@
 
 #include "MLInference.h"
 #include "ContextualClassifier.h"
+#include "FeatureExtractor.h"
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -15,6 +16,15 @@
 #include <vector>
 
 #define CLASSIFIER_TAG "MLInference"
+
+static std::string format_string(const char *fmt, ...) {
+    char buffer[1024];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+    return std::string(buffer);
+}
 
 MLInference::MLInference(const std::string &ft_model_path)
     : Inference(ft_model_path) {
@@ -46,8 +56,8 @@ std::string MLInference::normalize_text(const std::string &text) {
 }
 
 CC_TYPE MLInference::Classify(int process_pid) {
-    LOGD(CLASSIFIER_TAG,
-         format_string("Starting classification for PID:%d", process_pid));
+    //LOGD(CLASSIFIER_TAG,
+    //     format_string("Starting classification for PID:%d", process_pid));
 
     const std::string proc_path = "/proc/" + std::to_string(process_pid);
     CC_TYPE contextType = CC_APP;
@@ -56,24 +66,24 @@ CC_TYPE MLInference::Classify(int process_pid) {
 
     auto start_collect = std::chrono::high_resolution_clock::now();
     int collect_rc = FeatureExtractor::CollectAndStoreData(
-        process_pid, raw_data, mDebugMode);
+        process_pid, raw_data, false);
     auto end_collect = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed_collect =
         end_collect - start_collect;
-    LOGD(CLASSIFIER_TAG,
-         format_string("Data collection for PID:%d took %f ms (rc=%d)",
-                       process_pid, elapsed_collect.count(), collect_rc));
+    //LOGD(CLASSIFIER_TAG,
+    //     format_string("Data collection for PID:%d took %f ms (rc=%d)",
+    //                   process_pid, elapsed_collect.count(), collect_rc));
 
     if (collect_rc != 0) {
         // Process exited or collection failed; skip further work.
-        return 0;
+        return contextType;
     }
 
-    LOGD(CLASSIFIER_TAG,
-         format_string("Text features collected for PID:%d", process_pid));
+    //LOGD(CLASSIFIER_TAG,
+    //     format_string("Text features collected for PID:%d", process_pid));
 
     if (!AuxRoutines::fileExists(proc_path)) {
-        return 0;
+        return contextType;
     }
 
     bool has_sufficient_features = false;
@@ -93,8 +103,8 @@ CC_TYPE MLInference::Classify(int process_pid) {
              format_string("Invoking ML inference for PID:%d", process_pid));
 
         auto start_inference = std::chrono::high_resolution_clock::now();
-        if (mInference) {
-            uint32_t rc = mInference->predict(process_pid, raw_data, predicted_label);
+        //if (Inference) {
+            uint32_t rc = predict(process_pid, raw_data, predicted_label);
             auto end_inference = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> elapsed_inference =
                 end_inference - start_inference;
@@ -105,11 +115,11 @@ CC_TYPE MLInference::Classify(int process_pid) {
                 // Inference failed, keep contextType as UNKNOWN.
                 predicted_label.clear();
             }
-        } else {
+        /*} else {
             LOGW(CLASSIFIER_TAG,
                  format_string("No Inference object available for PID:%d",
                                process_pid));
-        }
+        }*/
 
         // Map stripped label -> CC_APP enum.
         // MLInference::predict() returns after stripping "__label__".
