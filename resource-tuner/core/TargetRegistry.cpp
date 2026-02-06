@@ -483,6 +483,71 @@ void TargetRegistry::addCacheInfoMapping(CacheInfo* cacheInfo) {
     this->mCacheInfoMapping[cacheInfo->mCacheType] = cacheInfo;
 }
 
+ErrCode TargetRegistry::addIrqAffine(std::vector<std::string>& values,
+                                     int8_t areClusterValues) {
+    if(values.size() < 1) {
+        return RC_INVALID_VALUE;
+    }
+
+    uint64_t mask = 0;
+    std::string dirPath = "/proc/irq/";
+
+    int32_t irqLine = std::stoi(values[0]);
+    std::vector<int32_t> ids;
+    for(int32_t i = 1; i < (int32_t)values.size(); i++) {
+        ids.push_back(std::stoi(values[i]));
+    }
+
+    if(areClusterValues) {
+        for(int32_t i = 0; i < (int32_t)ids.size(); i++) {
+            ids[i] = this->getPhysicalClusterId(ids[i]);
+        }
+        std::vector<int32_t> tmpCoreIds;
+        for(int32_t id: ids) {
+            ClusterInfo* cInfo = this->getClusterInfo(id);
+            for(int32_t c = cInfo->mStartCpu; c < cInfo->mStartCpu + cInfo->mNumCpus; c++) {
+                tmpCoreIds.push_back(c);
+            }
+        }
+        ids.clear();
+        for(int32_t coreId: tmpCoreIds) {
+            ids.push_back(coreId);
+        }
+    }
+
+    for(int32_t id: ids) {
+        mask |= ((uint64_t)1 << id);
+    }
+
+    if(irqLine == -1) {
+        DIR* dir = opendir(dirPath.c_str());
+        if(dir == nullptr) {
+            return RC_SUCCESS;
+        }
+
+        struct dirent* entry;
+        while((entry = readdir(dir)) != nullptr) {
+            std::string filePath = dirPath + std::string(entry->d_name) + "/";
+            filePath.append("smp_affinity");
+
+            if(AuxRoutines::fileExists(filePath)) {
+                AuxRoutines::writeToFile(filePath, std::to_string(mask));
+            }
+        }
+        closedir(dir);
+
+    } else {
+        std::string filePath = dirPath + std::to_string(irqLine) + "/";
+        filePath.append("smp_affinity");
+
+        if(AuxRoutines::fileExists(filePath)) {
+            AuxRoutines::writeToFile(filePath, std::to_string(mask));
+        }
+    }
+
+    return RC_SUCCESS;
+}
+
 // Methods for Building CGroup Config from InitConfigs.yaml
 CGroupConfigInfoBuilder::CGroupConfigInfoBuilder() {
     this->mCGroupConfigInfo = new(std::nothrow) CGroupConfigInfo;

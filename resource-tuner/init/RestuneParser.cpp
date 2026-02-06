@@ -104,6 +104,9 @@ static int8_t isKey(const std::string& keyName) {
         INIT_CONFIGS_ELEM_CACHE_INFO_TYPE,
         INIT_CONFIGS_ELEM_CACHE_INFO_BLK_CNT,
         INIT_CONFIGS_ELEM_CACHE_INFO_PRIO_AWARE,
+        INIT_CONFIGS_IRQ_CONFIGS_LIST,
+        INIT_CONFIG_IRQ_AFFINE_TO_CLUSTER,
+        INIT_CONFIG_IRQ_AFFINE_ONE,
         SIGNAL_CONFIGS_ROOT,
         SIGNAL_CONFIGS_ELEM_SIGID,
         SIGNAL_CONFIGS_ELEM_CATEGORY,
@@ -146,6 +149,10 @@ static int8_t isKeyTypeList(const std::string& keyName) {
     if(keyName == INIT_CONFIGS_ELEM_CGROUPS_LIST) return true;
     if(keyName == INIT_CONFIGS_ELEM_MPAM_GROUPS_LIST) return true;
     if(keyName == INIT_CONFIGS_ELEM_CACHE_INFO_LIST) return true;
+
+    if(keyName == INIT_CONFIGS_IRQ_CONFIGS_LIST) return true;
+    if(keyName == INIT_CONFIG_IRQ_AFFINE_TO_CLUSTER) return true;
+    if(keyName == INIT_CONFIG_IRQ_AFFINE_ONE) return true;
 
     if(keyName == RESOURCE_CONFIGS_ELEM_MODES) return true;
     if(keyName == RESOURCE_CONFIGS_ELEM_TARGETS_ENABLED) return true;
@@ -456,10 +463,13 @@ ErrCode RestuneParser::parseInitConfigYamlNode(const std::string& filePath) {
 
     int8_t parsingDone = false;
     int8_t docMarker = false;
+    int8_t inAffineClusterList = false;
+    int8_t inAffineOneList = false;
 
     std::string value;
     std::string topKey;
     std::stack<std::string> keyTracker;
+    std::vector<std::string> itemArray;
 
     CGroupConfigInfoBuilder* cGroupConfigBuilder = nullptr;
     MpamGroupConfigInfoBuilder* mpamGroupConfigBuilder = nullptr;
@@ -475,9 +485,45 @@ ErrCode RestuneParser::parseInitConfigYamlNode(const std::string& filePath) {
                 parsingDone = true;
                 break;
 
+            case YAML_SEQUENCE_START_EVENT:
+                if(keyTracker.empty()) {
+                    return RC_YAML_INVALID_SYNTAX;
+                }
+
+                topKey = keyTracker.top();
+
+                if(topKey == INIT_CONFIG_IRQ_AFFINE_TO_CLUSTER) {
+                    inAffineClusterList = true;
+                } else if(topKey == INIT_CONFIG_IRQ_AFFINE_ONE) {
+                    inAffineOneList = true;
+                }
+
+                break;
+
             case YAML_SEQUENCE_END_EVENT:
                 if(keyTracker.empty()) {
                     return RC_YAML_INVALID_SYNTAX;
+                }
+
+                if(inAffineClusterList) {
+                    if(RC_IS_OK(rc)) {
+                        rc = TargetRegistry::getInstance()->addIrqAffine(itemArray, true);
+                        if(RC_IS_NOTOK(rc)) {
+                            return RC_YAML_INVALID_SYNTAX;
+                        }
+                    }
+                    itemArray.clear();
+                    inAffineClusterList = !inAffineClusterList;
+
+                } else if(inAffineOneList) {
+                    if(RC_IS_OK(rc)) {
+                        rc = TargetRegistry::getInstance()->addIrqAffine(itemArray);
+                        if(RC_IS_NOTOK(rc)) {
+                            return RC_YAML_INVALID_SYNTAX;
+                        }
+                    }
+                    itemArray.clear();
+                    inAffineOneList = !inAffineOneList;
                 }
 
                 keyTracker.pop();
@@ -552,6 +598,7 @@ ErrCode RestuneParser::parseInitConfigYamlNode(const std::string& filePath) {
 
                     delete cacheInfoBuilder;
                     cacheInfoBuilder = nullptr;
+
                 }
 
                 break;
@@ -587,6 +634,10 @@ ErrCode RestuneParser::parseInitConfigYamlNode(const std::string& filePath) {
                 ADD_TO_CACHE_INFO_BUILDER(INIT_CONFIGS_ELEM_CACHE_INFO_TYPE, setType);
                 ADD_TO_CACHE_INFO_BUILDER(INIT_CONFIGS_ELEM_CACHE_INFO_BLK_CNT, setNumBlocks);
                 ADD_TO_CACHE_INFO_BUILDER(INIT_CONFIGS_ELEM_CACHE_INFO_PRIO_AWARE, setPriorityAware);
+
+                if(topKey == INIT_CONFIG_IRQ_AFFINE_TO_CLUSTER || topKey == INIT_CONFIG_IRQ_AFFINE_ONE) {
+                    itemArray.push_back(value);
+                }
 
                 break;
 

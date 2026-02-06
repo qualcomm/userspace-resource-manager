@@ -75,6 +75,11 @@
 #define INIT_CONFIGS_ELEM_CACHE_INFO_BLK_CNT "NumCacheBlocks"
 #define INIT_CONFIGS_ELEM_CACHE_INFO_PRIO_AWARE "PriorityAware"
 
+// IRQ Configs
+#define INIT_CONFIGS_IRQ_CONFIGS_LIST "IRQConfigs"
+#define INIT_CONFIG_IRQ_AFFINE_ONE "AffineIRQ"
+#define INIT_CONFIG_IRQ_AFFINE_TO_CLUSTER "AffineIRQToCluster"
+
 // Properties
 #define PROPERTY_CONFIGS_ROOT "PropertyConfigs"
 #define PROPERTY_CONFIGS_ELEM_NAME "Name"

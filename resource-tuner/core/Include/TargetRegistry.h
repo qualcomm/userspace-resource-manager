@@ -164,6 +164,9 @@ public:
 
     void displayTargetInfo();
 
+    ErrCode addIrqAffine(std::vector<std::string>& values,
+                         int8_t areClusterValues = false);
+
     static std::shared_ptr<TargetRegistry> getInstance() {
         if(targetRegistryInstance == nullptr) {
             targetRegistryInstance = std::shared_ptr<TargetRegistry>(new TargetRegistry());
