@@ -14,12 +14,6 @@ jobs:
   qcom-preflight-checks:
     uses: qualcomm/qcom-reusable-workflows/.github/workflows/reusable-qcom-preflight-checks-orchestrator.yml@main
     with:
-        # ✅ Preflight Checkers
-        repolinter: true                   # default: true
-        semgrep: true                      # default: true
-        copyright-license-detector: true   # default: true
-        pr-check-emails: true              # default: true
-        dependency-review: true            # default: true
         enable-armor-checkers: true
         armor-checker-options: '{"build-script":"ci/build.sh","runs-on":{"group":"GHA-CSEPerf-prd-SelfHosted-RG","labels":[self-hosted, cseperf-prd-u2204-arm64-xlrg-od-ephem]}}'
 
