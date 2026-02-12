@@ -20,5 +20,8 @@ jobs:
         copyright-license-detector: true   # default: true
         pr-check-emails: true              # default: true
         dependency-review: true            # default: true
+        enable-armor-checkers: true
+        armor-checker-options: '{"build-script":"ci/build.sh","runs-on":{"group":"GHA-CSEPerf-prd-SelfHosted-RG","labels":[self-hosted, cseperf-prd-u2204-arm64-xlrg-od-ephem]}}'
+
     secrets:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}

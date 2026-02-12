@@ -8,3 +8,8 @@ branches:
           - client/APIs/Include/UrmAPIs.h
           - modula/Common/Include/UrmPlatformAL.h
           - extensions/Include/Extensions.h
+
+abi_checks:
+  - path: "build/resource-tuner/libUrmClient.so"
+    public_headers:
+      - client/APIs/Include/UrmAPIs.h
