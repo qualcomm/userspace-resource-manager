@@ -1,9 +1,9 @@
 name: Qualcomm Preflight Checks
 on:
-  pull_request_target:
-    branches: [ main ]
+  pull_request:
+    branches: [ "main", "dev/add-abi-armor-checkers" ]
   push:
-    branches: [ main ]
+    branches: [ "main", "dev/add-abi-armor-checkers" ]
   workflow_dispatch:
 
 permissions:
