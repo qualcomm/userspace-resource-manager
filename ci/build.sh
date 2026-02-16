@@ -17,5 +17,6 @@ sudo apt-get install -y fasttext libfasttext-dev || {
 echo "Running CMake configure"
 mkdir -p build
 cd build
-cmake .. -DBUILD_TESTS=ON -DBUILD_CLASSIFIER=ON -DCMAKE_INSTALL_PREFIX=/
+cmake .. -DBUILD_TESTS=ON -DBUILD_CLASSIFIER=OFF -DCMAKE_INSTALL_PREFIX="./urm-bins/"
 cmake --build .
+sudo make install
