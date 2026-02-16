@@ -2021,7 +2021,7 @@ URM_TEST(TestRequestValidRetuning, {
     // The Request will expire in 4 seconds, hence the value should reset to original value
     // However we issue an Untune Request for this handle, and change the duration to 15 seconds
     // Hence when we check the value after 10 seconds, it should still be 778
-    int8_t status = retuneResources(handle, 15000, 0);
+    int8_t status = retuneResources(handle, 15000);
     std::cout<<LOG_BASE<<"Retune Status: "<<(int32_t)status<<std::endl;
     E_ASSERT((status == 0));
 
@@ -2082,7 +2082,7 @@ URM_TEST(TestRequestInvalidRetuning1, {
     E_ASSERT((newValue == 778));
 
     // This Request should be rejected by the Server, since Request duration cannot be decreased
-    int8_t status = retuneResources(handle, 6000, 0);
+    int8_t status = retuneResources(handle, 6000);
     std::cout<<LOG_BASE<<"Retune Status: "<<(int32_t)status<<std::endl;
     E_ASSERT((status == 0));
 
@@ -2148,7 +2148,7 @@ URM_TEST(RequestInvalidRetuning2, {
     int32_t rc = fork();
     if(rc == 0) {
         // Child Process
-        retuneResources(handle, 20000, 0);
+        retuneResources(handle, 20000);
 
         exit(EXIT_SUCCESS);
 
@@ -2658,7 +2658,7 @@ URM_TEST(TestWriteTo_sched_util_clamp_min_NodeAndRetuning, {
     std::cout<<LOG_BASE<<testResourceName<<" Configured Value: "<<newValue<<std::endl;
     E_ASSERT((newValue == 994));
 
-    int8_t status = retuneResources(handle, 20000, 0);
+    int8_t status = retuneResources(handle, 20000);
     std::cout<<LOG_BASE<<"Retune Status: "<<(int32_t)status<<std::endl;
     E_ASSERT((status == 0));
 
