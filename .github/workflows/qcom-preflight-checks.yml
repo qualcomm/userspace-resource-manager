@@ -15,4 +15,4 @@ jobs:
     uses: qualcomm/qcom-reusable-workflows/.github/workflows/reusable-qcom-preflight-checks-orchestrator.yml@v2
     with:
         enable-armor-checkers: true
-        armor-checker-options: '{"build-script":"ci/build.sh","runs-on":{"group":"GHA-CSEPerf-prd-SelfHosted-RG","labels":[self-hosted, cseperf-prd-u2204-arm64-xlrg-od-ephem]}}'
+        armor-checker-options: '{"build-script":"ci/build.sh","runs-on":{"group":"GHA-CSEPerf-prd-SelfHosted-RG","labels":["self-hosted", "cseperf-prd-u2204-arm64-xlrg-od-ephem"]}}'
