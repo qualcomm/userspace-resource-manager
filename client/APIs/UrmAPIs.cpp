@@ -132,12 +132,12 @@ int64_t tuneResources(int64_t duration,
 
 // - Construct a Request object and populate it with the API specified Params
 // - Initiate a connection to the Resource Tuner Server, and send the request to the server
-int8_t retuneResources(int64_t handle, int64_t duration, int64_t nature) {
+int8_t retuneResources(int64_t handle, int64_t duration) {
     try {
         const std::lock_guard<std::mutex> lock(apiLock);
         const ConnectionManager connMgr(conn);
 
-        if(handle <= 0  || duration == 0 || duration < -1 || nature == 0) {
+        if(handle <= 0  || duration == 0 || duration < -1) {
             LOGE("RESTUNE_CLIENT", "Invalid Request Params");
             return -1;
         }
