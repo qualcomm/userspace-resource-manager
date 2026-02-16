@@ -47,7 +47,6 @@ const std::string UrmSettings::mBaseCGroupPath =
                                     "/sys/fs/cgroup/";
 const std::string UrmSettings::focusedCgroup =
                                     "focused.slice";
-const std::string dummy = "dummy";
 
 const std::string UrmSettings::mPersistenceFile =
                                     "/etc/urm/data/resource_original_values.txt";
