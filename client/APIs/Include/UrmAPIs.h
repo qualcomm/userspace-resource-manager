@@ -53,7 +53,7 @@ int64_t tuneResources(int64_t duration, int32_t prop, int32_t numRes, SysResourc
  *            - 0: If the Request was successfully submitted to the server.\n
  *            - -1: Otherwise.
  */
-int8_t retuneResources(int64_t handle, int64_t duration);
+int8_t retuneResources(int64_t handle, int64_t duration, int64_t nature);
 
 /**
  * @brief Release (or free) the Request with the given handle.

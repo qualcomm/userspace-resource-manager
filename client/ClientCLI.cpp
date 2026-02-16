@@ -119,7 +119,7 @@ void sendTuneRequest(int64_t duration, int32_t priority, int32_t count, const st
 }
 
 void sendRetuneRequest(int64_t handle, int64_t duration) {
-    int8_t status = retuneResources(handle, duration);
+    int8_t status = retuneResources(handle, duration, 0);
     if(status == 0) {
         std::cout<<"Retune Request Successfully Submitted"<<std::endl;
     } else if(status == -1) {

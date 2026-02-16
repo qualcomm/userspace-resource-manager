@@ -10,6 +10,6 @@ branches:
           - extensions/Include/Extensions.h
 
 abi_checks:
-  - path: "build/resource-tuner/libUrmClient.so"
+  - path: "build/client/libUrmClient.so"
     public_headers:
       - client/APIs/Include/UrmAPIs.h
