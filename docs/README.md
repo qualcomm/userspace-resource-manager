@@ -4,7 +4,7 @@
 
 
 - [1. Overview](#1-overview)
-  - [1.1. Why uRM is Needed](#11-why-urm-is-needed)
+  - [1.1. Why URM is Needed](#11-why-urm-is-needed)
   - [1.2. Powerful System-Level Control](#12-powerful-system-level-control)
   - [1.3. Dynamic Resource Provisioning via Signals](#13-dynamic-resource-provisioning-via-signals)
   - [1.4. Extension Framework](#14-extension-framework)
@@ -15,9 +15,9 @@
   - [3.1. Resources](#31-resources)
   - [3.2. Signals](#32-signals)
 
-- [4. uRM Interface](#4-urm-interface)
+- [4. URM Interface](#4-urm-interface)
   - [4.1. Platform Abstraction Layer](#41-platform-abstraction-layer)
-  - [4.2. uRM APIs](#42-urm-apis)
+  - [4.2. URM APIs](#42-urm-apis)
     - [4.2.1. tuneResources](#421-tuneresources)
       - [4.2.1.1. SysResource](#4211-sysresource)
       - [4.2.1.2. Resource ResCode Construction](#4212-resource-rescode-construction)
@@ -83,9 +83,9 @@
 - [9. License](#9-license)
 
 # 1. Overview
-The Userspace Resource Manager (uRM) is a lightweight, extensible framework designed to intelligently manage and provision system resources from userspace. It brings together two key components that enable dynamic, context‑aware optimization of performance and power across diverse embedded and resource‑constrained environments:
+The Userspace Resource Manager (URM) is a lightweight, extensible framework designed to intelligently manage and provision system resources from userspace. It brings together two key components that enable dynamic, context‑aware optimization of performance and power across diverse embedded and resource‑constrained environments:
 - Contextual Classifier
-A FastText‑based classifier that identifies static workload contexts—such as camera pipelines, multimedia sessions, installations, or background services. By understanding what the system is running, uRM can apply the right resource strategy without manual intervention.
+A FastText‑based classifier that identifies static workload contexts—such as camera pipelines, multimedia sessions, installations, or background services. By understanding what the system is running, URM can apply the right resource strategy without manual intervention.
 - Resource Tuner
 A userspace engine that dynamically provisions system resources—CPU, memory, GPU, I/O, caches, and more—using standard kernel interfaces such as procfs, sysfs, and cgroups. This enables fine‑grained control of system operating points to balance performance and power for each application or use case.
 ```
@@ -112,12 +112,12 @@ A userspace engine that dynamically provisions system resources—CPU, memory, G
       |    Action    |
       +--------------+
 ```
-### 1.1. Why uRM is Needed
+### 1.1. Why URM is Needed
 Modern workloads vary drastically across segments like servers, compute, XR, mobile, and IoT. Each use case exhibits unique characteristics. Some may demand high CPU frequency, others may require sustained GPU throughput, and many hinge on efficient caching or more memory bandwidth.
 
 At the same time, these workloads run on a broad spectrum of hardware platforms with different capabilities, power envelopes, and user expectations. A "one‑size‑fits‑all" tuning approach fails in such environments.
 
-uRM addresses this challenge by offering:
+URM addresses this challenge by offering:
 - Per‑use‑case adaptability
 - Hardware‑aware tuning
 - User‑experience‑driven power/perf balancing
@@ -125,11 +125,11 @@ uRM addresses this challenge by offering:
 This allows systems to achieve consistent performance while minimizing energy consumption.
 
 ### 1.2. Powerful System‑Level Control
-Fine‑tuning system resources is a powerful tool for any developer or OEM building high‑performance embedded systems. With uRM, developers can directly influence operating points to match workload demands.
+Fine‑tuning system resources is a powerful tool for any developer or OEM building high‑performance embedded systems. With URM, developers can directly influence operating points to match workload demands.
 For example: to boost performance, increase the CPU DCVS minimum frequency to 1 GHz to improve responsiveness during compute‑intensive scenarios. To save power, cap the maximum CPU frequency at 1.5 GHz when the workload is light, preventing unnecessary turbo boosts and improving battery life. Such targeted interventions can significantly enhance user experience while optimizing for energy efficiency.
 
 ### 1.3. Dynamic Resource Provisioning via Signals
-uRM introduces Signals, a mechanism that adjusts system resources in real time based on events such as:
+URM introduces Signals, a mechanism that adjusts system resources in real time based on events such as:
 
 - App launches
 - App installations
@@ -138,7 +138,7 @@ uRM introduces Signals, a mechanism that adjusts system resources in real time b
 These behaviors are governed by flexible, human‑readable YAML configurations, making policies easy to author, review, and evolve.
 
 ### 1.4. Extension Framework
-uRM also provides extension APIs that allow other modules or applications to:
+URM also provides extension APIs that allow other modules or applications to:
 
 - Register custom resources
 - Define custom provisioning logic
@@ -216,10 +216,10 @@ The following signal codes are supported signals. Target or segment specific cus
 
 The above mentioned list of enums are available in the interface file "UrmPlatformAL.h".
 
-# 4. uRM Interface
+# 4. URM Interface
 
    - Platform Abstraction Layer
-   - uRM APIs
+   - URM APIs
    - Configs
 
 ## 4.1. Platform Abstraction Layer
@@ -279,7 +279,7 @@ Logical IDs for MPAM groups. Configs of MPAM group map in InitConfigs->MpamGroup
 
 Custom resource types and signal categories must be >=128 to avoid conflicts with default types.
 
-## 4.2. uRM APIs
+## 4.2. URM APIs
 This API suite allows you to manage system resource provisioning through tuning requests. You can issue, modify, or withdraw resource tuning requests with specified durations and priorities.
 
 APIs examples: 
@@ -680,7 +680,7 @@ int8_t relaySignal(uint32_t sigId,
 ### 4.2.7. getProp
 
 **Description:**
-Gets a property from the config file, this is used as property config file used for enabling or disabling internal features in uRM, can also be used by modules or clients to enable/disable features in their software based on property configs in uRM.
+Gets a property from the config file, this is used as property config file used for enabling or disabling internal features in URM, can also be used by modules or clients to enable/disable features in their software based on property configs in URM.
 
 **API Signature:**
 ```cpp
@@ -1051,7 +1051,7 @@ URM_REGISTER_CONFIG(SIGNALS_CONFIG, "/etc/bin/targetSignalConfigCustom.yaml");
 
 
 ## 6.2. Custom Configs
-uRM allows to add custom configs and override configs items. It also provides additional configs.
+URM allows to add custom configs and override configs items. It also provides additional configs.
 
 ### 6.2.1. Initialization Configs
 Custom init configs can be added to init config yaml. New init sections can be defined. For example "ClusterMap" can be redefined if your target has 4 clusters. Also you can define new section like MPAMgroupsInfo, see the example below.
@@ -1192,7 +1192,7 @@ Signal config yaml file can be given in one of the below ways
 
 ### 6.2.5. Target Configs
 The file TargetConfig.yaml defines the target configs, note this is an optional config, i.e. this
-file need not necessarily be provided. uRM can dynamically fetch system info, like target name,
+file need not necessarily be provided. URM can dynamically fetch system info, like target name,
 logical to physical core / cluster mapping, number of cores etc. Use this file, if you want to
 provide this information explicitly. If the TargetConfig.yaml is provided, URM will always
 overide default dynamically generated target information with given config and use it. Also note, there are no field-level default values available if the TargetConfig.yaml is provided. Hence if you wish to provide this file, then you'll need to provide all the complete required information.
@@ -1285,11 +1285,11 @@ FeatureConfigs:
 
 ## 7.2. Userspace Resource Manager Key Points
 
-Userspace resource manager (uRM) contains
-- Userspace resource manager (uRM) exposes a variery of APIs for resource tuning and use-case/scenario tuning
+Userspace resource manager (URM) contains
+- Userspace resource manager (URM) exposes a variery of APIs for resource tuning and use-case/scenario tuning
 - These APIs can be used by apps, features and other modules
 - Using these APIs, client can tune any system resource parameters like cpu, dcvs, min / max frequencies etc.
-- Userspace resource manager (uRM) provides
+- Userspace resource manager (URM) provides
 
 ### 7.2.1. Contextual Classifier
 
