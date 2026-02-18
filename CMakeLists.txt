@@ -20,6 +20,11 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/modula)
 add_subdirectory(${CMAKE_SOURCE_DIR}/client)
 add_subdirectory(${CMAKE_SOURCE_DIR}/extensions)
 
+if(BUILD_TESTS OR BUILD_CLASSIFIER)
+  add_compile_definitions(ENABLE_TEST_VISIBILITY)
+  message(STATUS "Internal Visibility Enabled (Required for Tests or Classifier)")
+endif()
+
 # resource-tuner is a mandatory build
 add_subdirectory(${CMAKE_SOURCE_DIR}/resource-tuner)
 

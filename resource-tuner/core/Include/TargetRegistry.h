@@ -78,7 +78,7 @@ typedef struct {
  * @details Stores all the target related info, fetched dynamically or provided
  *          statically via Target and Init Config files.
  */
-class TargetRegistry {
+class __attribute__((visibility("default"))) TargetRegistry {
 private:
     static std::shared_ptr<TargetRegistry> targetRegistryInstance;
 

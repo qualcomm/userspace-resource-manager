@@ -87,7 +87,7 @@
  *          The actual resource applier, teardown callbacks are invoked through
  *          the CocoTable.
  */
-class CocoTable {
+class __attribute__((visibility("default"))) CocoTable {
 private:
     static std::shared_ptr<CocoTable> mCocoTableInstance;
     static std::mutex instanceProtectionLock;

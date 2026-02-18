@@ -15,7 +15,7 @@
  * @details It stores the pointer to the Requests and compares their priorities. The server thread picks up
  *          these requests in the order of their priorities and processes them.
  */
-class RequestQueue : public OrderedQueue {
+class __attribute__((visibility("default"))) RequestQueue : public OrderedQueue {
 private:
     static std::shared_ptr<RequestQueue> mRequestQueueInstance;
     static std::mutex instanceProtectionLock;

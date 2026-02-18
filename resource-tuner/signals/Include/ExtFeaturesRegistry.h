@@ -33,7 +33,7 @@ typedef void (*RelayFeature)(uint32_t, const std::string&, const std::string&, i
  * @details Stores information Relating to all the Ext Features registered with resource-tuner.
  *          Note: This information is extracted from Config YAML files.
  */
-class ExtFeaturesRegistry {
+class __attribute__((visibility("default"))) ExtFeaturesRegistry {
 private:
     static std::shared_ptr<ExtFeaturesRegistry> extFeaturesRegistryInstance;
     int32_t mTotalExtFeatures;
