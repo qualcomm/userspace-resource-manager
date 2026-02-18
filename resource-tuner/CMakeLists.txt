@@ -25,6 +25,10 @@ if(BUILD_STATE_DETECTOR)
 endif()
 
 add_library(RestuneCore ${SOURCES})
+target_link_options(RestuneCore PRIVATE 
+    "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libRestuneCore.map"
+)
+
 set_target_properties(RestuneCore PROPERTIES VERSION 1.0.0 SOVERSION 1)
 target_include_directories(RestuneCore PRIVATE ${LIBYAML_INCLUDE_DIRS})
 target_link_libraries(RestuneCore PUBLIC ${LINK_LIBS})

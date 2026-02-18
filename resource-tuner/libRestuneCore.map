@@ -1,0 +1,31 @@
+URM_CORE_1.0 {
+    global:
+        # --- Public C API ---
+        Restune_Init;
+        Restune_Deinit;
+
+        # --- C++ Classes & Functions ---
+        extern "C++" {
+            # 1. Previously Identified
+            RestuneParser::parse*;
+            *TargetRegistry*;
+            *ResourceRegistry*;
+            *submitPropGetRequest*;
+            *PulseMonitor*;
+
+            # 2. Missing Singletons & Registries
+            *CocoTable*;
+            *RequestQueue*;
+            *ExtFeaturesRegistry*;
+            *RequestReceiver*;
+
+            # 3. Thread & Daemon Functions
+            startClientGarbageCollectorDaemon*;
+            stopClientGarbageCollectorDaemon*;
+            listenerThreadStartRoutine*;
+        };
+
+    local:
+        # Hide everything else
+        *;
+};
