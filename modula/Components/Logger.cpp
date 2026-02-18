@@ -68,7 +68,7 @@ void Logger::log(int32_t level,
         }
 
         case RedirectOptions::LOG_TOFILE: {
-            std::ofstream logFile("log.txt", std::ios::app);
+            std::ofstream logFile("/tmp/log.txt", std::ios::app);
             if(logFile.is_open()) {
                 logFile<<"["<<timestamp<<"] ["<<tag<<"] ["<<levelStr<<"] "<<funcName<<": "<<message<<std::endl;
                 logFile.close();
@@ -111,7 +111,7 @@ void Logger::log(int32_t level,
         }
 
         case RedirectOptions::LOG_TOFILE: {
-            std::ofstream logFile("log.txt", std::ios::app);
+            std::ofstream logFile("/tmp/log.txt", std::ios::app);
             if(logFile.is_open()) {
                 logFile<<"["<<timestamp<<"] ["<<tag<<"] ["<<levelStr<<"] "<<funcName<<": "<<message<<std::endl;
                 logFile.close();
@@ -155,12 +155,12 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
             break;
 
         case CommonMessageTypes::LISTENER_THREAD_CREATION_SUCCESS:
-            Logger::log(LOG_INFO, "RESTUNE_SERVER_INIT", funcName,
+            Logger::log(LOG_INFO, "URM_SERVER_INIT", funcName,
                         "Listener Thread Successfully Created, Server ready for Requests");
             break;
 
         case CommonMessageTypes::LISTENER_THREAD_CREATION_FAILURE:
-            Logger::log(LOG_ERR, "RESTUNE_SERVER_INIT", funcName,
+            Logger::log(LOG_ERR, "URM_SERVER_INIT", funcName,
                         "Listener Thread Creation Failed, Aborting Initialization");
             break;
 
@@ -174,23 +174,28 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
             break;
 
         case CommonMessageTypes::PROPERTY_RETRIEVAL_FAILED:
-            Logger::log(LOG_ERR, "RESTUNE_SERVER_INIT", funcName,
+            Logger::log(LOG_ERR, "URM_SERVER_INIT", funcName,
                         "Failed to Fetch Properties, " \
-                        "Boot Configs. Resource Tuner Server Initialization Failed.");
+                        "Boot Configs. URM Initialization Failed.");
+            break;
+
+        case CommonMessageTypes::META_CONF_FETCH_FAILED:
+            Logger::log(LOG_ERR, "URM_SERVER_INIT", funcName,
+                        "Failed to Fetch Meta Configs, URM Initialization Failed.");
             break;
 
         case CommonMessageTypes::META_CONFIG_PARSE_FAILURE:
             vsnprintf(buffer, sizeof(buffer),
                      "Fetch Meta Configs failed, with Error %s", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_SERVER_INIT", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_SERVER_INIT", funcName, buffer);
             break;
 
         case CommonMessageTypes::THREAD_POOL_CREATION_FAILURE:
             vsnprintf(buffer, sizeof(buffer),
                       "Failed to create Thread Pool. Error: %s", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_SERVER_INIT", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_SERVER_INIT", funcName, buffer);
             break;
 
         case CommonMessageTypes::THREAD_POOL_INIT_FAILURE:
@@ -240,33 +245,33 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
             vsnprintf(buffer, sizeof(buffer),
                       "Failed to start Timer for Request [%ld], Dropping Request.", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_COCO_TABLE", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_COCO_TABLE", funcName, buffer);
 
             break;
 
         case CommonMessageTypes::NOTIFY_RESOURCE_TUNER_INIT_START:
             vsnprintf(buffer, sizeof(buffer),
-                      "Starting Resource Tuner Server, PID = [%d]", args);
+                      "Starting URM, PID = [%d]", args);
 
-            Logger::log(LOG_INFO, "RESTUNE_SERVER_INIT", funcName, buffer);
+            Logger::log(LOG_INFO, "URM_SERVER_INIT", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_CURRENT_TARGET_NAME:
             vsnprintf(buffer, sizeof(buffer),
                       "Detected Target: [%s]", args);
 
-            Logger::log(LOG_INFO, "RESTUNE_SERVER_INIT", funcName, buffer);
+            Logger::log(LOG_INFO, "URM_SERVER_INIT", funcName, buffer);
 
             break;
 
         case CommonMessageTypes::PULSE_MONITOR_INIT_FAILED:
-            Logger::log(LOG_ERR, "RESTUNE_SERVER_INIT", funcName,
+            Logger::log(LOG_ERR, "URM_SERVER_INIT", funcName,
                         "Pulse Monitor Could not be started, " \
                         "Aborting Initialization.");
             break;
 
         case CommonMessageTypes::GARBAGE_COLLECTOR_INIT_FAILED:
-            Logger::log(LOG_ERR, "RESTUNE_SERVER_INIT", funcName,
+            Logger::log(LOG_ERR, "URM_SERVER_INIT", funcName,
                         "Client Garbage Collector Could not be started, " \
                         "Aborting Initialization.");
             break;
@@ -301,11 +306,11 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "Failed to Initialize Module: %s, " \
                       "Aborting Server Startup.", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_SERVER_INIT", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_SERVER_INIT", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_EXTENSIONS_LIB_NOT_PRESENT:
-            Logger::log(LOG_INFO, "RESTUNE_SERVER_INIT", funcName,
+            Logger::log(LOG_INFO, "URM_SERVER_INIT", funcName,
                         "Extension library not present at expected path — ignoring");
             break;
 
@@ -313,54 +318,55 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
             vsnprintf(buffer, sizeof(buffer),
                       "Error loading extension lib: [%s], Error: [%s]", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_SERVER_INIT", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_SERVER_INIT", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_EXTENSIONS_LIB_LOADED_SUCCESS:
-            Logger::log(LOG_INFO, "RESTUNE_SERVER_INIT", funcName,
-                        "Successfully Loaded: [%d] extension plugins");
+            vsnprintf(buffer, sizeof(buffer),
+                      "Successfully Loaded: [%d] extension plugins", args);
+            Logger::log(LOG_INFO, "URM_SERVER_INIT", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_COCO_TABLE_INSERT_START:
             vsnprintf(buffer, sizeof(buffer),
                       "Inserting in CocoTable: Request Handle: [%ld]", args);
 
-            Logger::log(LOG_DEBUG, "RESTUNE_COCO_TABLE", funcName, buffer);
+            Logger::log(LOG_DEBUG, "URM_COCO_TABLE", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_COCO_TABLE_INSERT_SUCCESS:
             vsnprintf(buffer, sizeof(buffer),
                       "Request Handle: [%ld] Successfully inserted in CocoTable", args);
 
-            Logger::log(LOG_DEBUG, "RESTUNE_COCO_TABLE", funcName, buffer);
+            Logger::log(LOG_DEBUG, "URM_COCO_TABLE", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_COCO_TABLE_UPDATE_START:
             vsnprintf(buffer, sizeof(buffer),
                       "Updating Request Handle: [%ld], to New Duration: [%ld]", args);
 
-            Logger::log(LOG_DEBUG, "RESTUNE_COCO_TABLE", funcName, buffer);
+            Logger::log(LOG_DEBUG, "URM_COCO_TABLE", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_COCO_TABLE_REMOVAL_START:
             vsnprintf(buffer, sizeof(buffer),
                       "Request cleanup for Request Handle: [%ld] initiated", args);
 
-            Logger::log(LOG_DEBUG, "RESTUNE_COCO_TABLE", funcName, buffer);
+            Logger::log(LOG_DEBUG, "URM_COCO_TABLE", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_COCO_TABLE_REQUEST_EXPIRY:
             vsnprintf(buffer, sizeof(buffer),
                       "Timer over for Request Handle: [%ld]", args);
 
-            Logger::log(LOG_DEBUG, "RESTUNE_COCO_TABLE", funcName, buffer);
+            Logger::log(LOG_DEBUG, "URM_COCO_TABLE", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_COCO_TABLE_WRITE:
             vsnprintf(buffer, sizeof(buffer),
                       "Writing value: [%d], to node [%s]", args);
 
-            Logger::log(LOG_DEBUG, "RESTUNE_COCO_TABLE", funcName, buffer);
+            Logger::log(LOG_DEBUG, "URM_COCO_TABLE", funcName, buffer);
             break;
 
         case CommonMessageTypes::REQUEST_MEMORY_ALLOCATION_FAILURE:
@@ -368,7 +374,7 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "Memory allocation for Incoming Request. " \
                       "Failed with Error: %s", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_REQUEST_ALLOCATION_FAILURE",
+            Logger::log(LOG_ERR, "URM_REQUEST_ALLOCATION_FAILURE",
                         funcName, buffer);
             break;
 
@@ -377,7 +383,7 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "Memory allocation for Request: [%ld]. " \
                       "Failed with Error: %s", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_SERVER",
+            Logger::log(LOG_ERR, "URM_SERVER",
                         funcName, buffer);
             break;
 
@@ -394,7 +400,7 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
             vsnprintf(buffer, sizeof(buffer),
                       "Call to %s, Failed with Error: %s", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_SYSCALL_FAILURE", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_SYSCALL_FAILURE", funcName, buffer);
             break;
 
         case CommonMessageTypes::CORE_COUNT_EXTRACTION_FAILED:
@@ -422,7 +428,7 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
             vsnprintf(buffer, sizeof(buffer),
                       "Invalid Opcode [%u], Dropping Request.", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_REQUEST_VERIFIER", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;
 
         case CommonMessageTypes::VERIFIER_INVALID_DEVICE_MODE:
@@ -430,7 +436,7 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "Request [%ld], cannot be processed in current Device Mode. " \
                       "Dropping Request.", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_REQUEST_VERIFIER", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;
 
         case CommonMessageTypes::VERIFIER_INVALID_PERMISSION:
@@ -438,21 +444,21 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "Permissions for Client [PID: %d, TID: %d] Could not be Fetched, " \
                       "Dropping Request.", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_REQUEST_VERIFIER", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;
 
         case CommonMessageTypes::VERIFIER_INVALID_PRIORITY:
             vsnprintf(buffer, sizeof(buffer),
                       "Invalid Priority [%d], Dropping Request.", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_REQUEST_VERIFIER", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;
 
         case CommonMessageTypes::VERIFIER_UNSUPPORTED_SIGNAL_TUNING:
             vsnprintf(buffer, sizeof(buffer),
                       "Specified Signal [0x%08x] is not enabled for provisioning", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_REQUEST_VERIFIER", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;
 
         case CommonMessageTypes::VERIFIER_VALUE_OUT_OF_BOUNDS:
@@ -460,7 +466,7 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "Config Value [%d] does not fall in the Allowed Range " \
                       "for the Resource [0x%08x], Dropping Request.", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_REQUEST_VERIFIER", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;
 
         case CommonMessageTypes::VERIFIER_NOT_SUFFICIENT_PERMISSION:
@@ -468,7 +474,7 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "Permission Check Failed for Resource [0x%08x], "  \
                       "Dropping Request", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_REQUEST_VERIFIER", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;
 
         case CommonMessageTypes::VERIFIER_NOT_SUFFICIENT_SIGNAL_ACQ_PERMISSION:
@@ -476,21 +482,21 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "Permission Check Failed for Signal [0x%08x], "  \
                       "Client does not have sufficient Permissions to provision Signal", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_REQUEST_VERIFIER", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;
 
         case CommonMessageTypes::VERIFIER_TARGET_CHECK_FAILED:
              vsnprintf(buffer, sizeof(buffer),
                        "Specified Signal [0x%08x] is not enabled for provisioning on this Target", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_REQUEST_VERIFIER", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;
 
         case CommonMessageTypes::VERIFIER_CGROUP_NOT_FOUND:
              vsnprintf(buffer, sizeof(buffer),
                        "CGroup with Identifier [%d] does not exist", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_REQUEST_VERIFIER", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;
 
         case CommonMessageTypes::VERIFIER_LOGICAL_TO_PHYSICAL_MAPPING_FAILED:
@@ -498,56 +504,56 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "Logical to Physical Core / Cluster Mapping for the "  \
                       "Resource [0x%08x], Failed. Dropping Request", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_REQUEST_VERIFIER", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;
 
         case CommonMessageTypes::VERIFIER_INVALID_LOGICAL_CORE:
              vsnprintf(buffer, sizeof(buffer),
                        "Invalid Logical Core value: [%d], dropping Request", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_REQUEST_VERIFIER", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;
 
         case CommonMessageTypes::VERIFIER_INVALID_LOGICAL_CLUSTER:
              vsnprintf(buffer, sizeof(buffer),
                        "Invalid Logical Cluster value: [%d], dropping Request", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_REQUEST_VERIFIER", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;
 
         case CommonMessageTypes::VERIFIER_REQUEST_VALIDATED:
             vsnprintf(buffer, sizeof(buffer),
                       "Request with handle: %lld, Successfully Validated.", args);
 
-            Logger::log(LOG_INFO, "RESTUNE_REQUEST_VERIFIER", funcName, buffer);
+            Logger::log(LOG_INFO, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;
 
         case CommonMessageTypes::VERIFIER_STATUS_FAILURE:
             vsnprintf(buffer, sizeof(buffer),
                       "Verification Failed for Request [%lld], Dropping Request.", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_REQUEST_VERIFIER", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_NODE_WRITE:
             vsnprintf(buffer, sizeof(buffer),
                       "Writing to Node: [%s], Value: [%d]", args);
 
-            Logger::log(LOG_INFO, "RESTUNE_COCO_TABLE", funcName, buffer);
+            Logger::log(LOG_INFO, "URM_COCO_TABLE", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_NODE_WRITE_S:
             vsnprintf(buffer, sizeof(buffer),
                       "Writing to Node: [%s], Value: [%s]", args);
 
-            Logger::log(LOG_INFO, "RESTUNE_COCO_TABLE", funcName, buffer);
+            Logger::log(LOG_INFO, "URM_COCO_TABLE", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_NODE_RESET:
             vsnprintf(buffer, sizeof(buffer),
                       "Resetting Node: [%s], to Value: [%s]", args);
 
-            Logger::log(LOG_INFO, "RESTUNE_COCO_TABLE", funcName, buffer);
+            Logger::log(LOG_INFO, "URM_COCO_TABLE", funcName, buffer);
             break;
 
         case CommonMessageTypes::RATE_LIMITER_RATE_LIMITED:
@@ -566,46 +572,39 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
 
         case CommonMessageTypes::NOTIFY_PARSING_START:
             vsnprintf(buffer, sizeof(buffer),
-                      "Proceeding with [%s] Config Parsing", args);
+                      "Proceeding with [%s] Config Parsing, Path: [%s]", args);
 
-            Logger::log(LOG_INFO, "RESTUNE_SERVER_INIT", funcName, buffer);
+            Logger::log(LOG_INFO, "URM_SERVER_INIT", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_PARSING_SUCCESS:
             vsnprintf(buffer, sizeof(buffer),
                       "[%s] Configs successfully parsed", args);
 
-            Logger::log(LOG_INFO, "RESTUNE_SERVER_INIT", funcName, buffer);
+            Logger::log(LOG_INFO, "URM_SERVER_INIT", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_PARSING_FAILURE:
             vsnprintf(buffer, sizeof(buffer),
                       "[%s] Configs Could not be parsed", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_SERVER_INIT", funcName, buffer);
-            break;
-
-        case CommonMessageTypes::NOTIFY_CUSTOM_CONFIG_FILE:
-            vsnprintf(buffer, sizeof(buffer),
-                      "Custom [%s] Config file provided [path: %s]", args);
-
-            Logger::log(LOG_INFO, "RESTUNE_SERVER_INIT", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_SERVER_INIT", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_PARSER_FILE_NOT_FOUND:
             vsnprintf(buffer, sizeof(buffer),
                       "[%s] Config Parsing Failed, Expected File: [%s] not found.", args);
 
-            Logger::log(LOG_INFO, "RESTUNE_SERVER_INIT", funcName, buffer);
+            Logger::log(LOG_INFO, "URM_SERVER_INIT", funcName, buffer);
             break;
 
         case CommonMessageTypes::LOGICAL_TO_PHYSICAL_MAPPING_GEN_FAILURE:
-            Logger::log(LOG_ERR, "RESTUNE_SERVER_INIT", funcName,
+            Logger::log(LOG_ERR, "URM_SERVER_INIT", funcName,
                         "Reading Physical Core, Cluster LOG_INFO Failed, Server Init Failed");
             break;
 
         case CommonMessageTypes::LOGICAL_TO_PHYSICAL_MAPPING_GEN_SUCCESS:
-            Logger::log(LOG_INFO, "RESTUNE_SERVER_INIT", funcName,
+            Logger::log(LOG_INFO, "URM_SERVER_INIT", funcName,
                         "Logical to Physical Core / Cluster mapping successfully created");
             break;
 
@@ -613,7 +612,7 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
             vsnprintf(buffer, sizeof(buffer),
                       "[%s] Thread is not joinable", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_SERVER_TERMINATION", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_SERVER_TERMINATION", funcName, buffer);
             break;
 
         case CommonMessageTypes::RATE_LIMITER_GLOBAL_RATE_LIMIT_HIT:
@@ -625,7 +624,8 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
 
         case CommonMessageTypes::SIGNAL_REGISTRY_SIGNAL_NOT_FOUND:
             vsnprintf(buffer, sizeof(buffer),
-                      "Signal ID [0x%08x] not found in the registry", args);
+                      "Signal with: ID [0x%08x] and Type [0x%08x] not found in the registry. "\
+                      "Dropping Request.", args);
 
             Logger::log(LOG_ERR, "RESTUNE_SIGNAL_REGISTRY", funcName, buffer);
             break;
@@ -653,10 +653,10 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
 
         case CommonMessageTypes::CLIENT_ENTRY_CREATION_FAILURE:
             vsnprintf(buffer, sizeof(buffer),
-                      "Client Tracking Entry could not be created for handle [%ld] \
-                      Dropping Request", args);
+                      "Client Tracking Entry could not be created for handle [%ld], "\
+                      "Dropping Request.", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_SERVER", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_SERVER", funcName, buffer);
             break;
 
         case CommonMessageTypes::REQUEST_MANAGER_DUPLICATE_FOUND:
@@ -706,7 +706,7 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "Encountered Invalid Coco Indexes for Resource: [0x%08x], "\
                       "Primary Index: [%d], Secondary Index: [%d]", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_COCO_TABLE", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_COCO_TABLE", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_RESMODE_REJECT:
@@ -714,7 +714,7 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "Configured Value for Resource: [0x%08x] cannot be applied in "\
                       "current Display Mode: [%d], Skipping.", args);
 
-            Logger::log(LOG_ERR, "RESTUNE_COCO_TABLE", funcName, buffer);
+            Logger::log(LOG_ERR, "URM_COCO_TABLE", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_CLASSIFIER_PROC_EVENT:
@@ -737,6 +737,13 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "Probability: %.4f", args);
 
             Logger::log(LOG_INFO, "CONTEXTUAL_CLASSIFIER", funcName, buffer);
+            break;
+
+        case CommonMessageTypes::SYSTEM_BUS_CONN_FAILED:
+            vsnprintf(buffer, sizeof(buffer),
+                      "Failed to establish connection with system bus, Error: %s", args);
+
+            Logger::log(LOG_ERR, "RESTUNE_COCO_TABLE", funcName, std::string(buffer));
             break;
 
         default:

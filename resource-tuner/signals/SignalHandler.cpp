@@ -55,7 +55,7 @@ static int8_t VerifyIncomingRequest(Signal* signal) {
     }
 
     // Client Permission Checks
-    int8_t clientPermissions = ClientDataManager::getInstance()->getClientLevelByClientID(signal->getClientPID());
+    int8_t clientPermissions = ClientDataManager::getInstance()->getClientLevelByID(signal->getClientPID());
     if(clientPermissions == -1) {
         TYPELOGV(VERIFIER_INVALID_PERMISSION, signal->getClientPID(), signal->getClientTID());
         return false;

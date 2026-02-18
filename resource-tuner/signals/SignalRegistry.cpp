@@ -42,7 +42,7 @@ int8_t SignalRegistry::isSignalConfigMalformed(SignalInfo* sConf) {
     return false;
 }
 
-void SignalRegistry::registerSignal(SignalInfo* signalInfo, int8_t isBuSpecified) {
+void SignalRegistry::registerSignal(SignalInfo* signalInfo) {
     if(this->isSignalConfigMalformed(signalInfo)) {
         freeSignalConfig(signalInfo);
         signalInfo = nullptr;
@@ -58,26 +58,18 @@ void SignalRegistry::registerSignal(SignalInfo* signalInfo, int8_t isBuSpecified
     signalBitmap |= ((uint32_t)signalInfo->mSigType);
 
     // Check for any conflict
-    if(this->mSILMappings.find(signalBitmap) !=
-       this->mSILMappings.end()) {
+    if(this->mSILMap.find(signalBitmap) != this->mSILMap.end()) {
+
         // Signal with the specified Category and SigID already exists
         // Overwrite it.
-
         int32_t signalTableIndex = this->getSignalTableIndex(signalBitmap);
         this->mSignalsConfigs[signalTableIndex] = signalInfo;
 
-        if(isBuSpecified) {
-            this->mSILMappings.erase(signalBitmap);
-            signalBitmap |= (1UL << 63);
+        this->mSILMap.erase(signalBitmap);
+        this->mSILMap[signalBitmap] = signalTableIndex;
 
-            this->mSILMappings[signalBitmap] = signalTableIndex;
-        }
     } else {
-        if(isBuSpecified) {
-            signalBitmap |= (1UL << 63);
-        }
-
-        this->mSILMappings[signalBitmap] = this->mTotalSignals;
+        this->mSILMap[signalBitmap] = this->mTotalSignals;
         this->mSignalsConfigs.push_back(signalInfo);
 
         this->mTotalSignals++;
@@ -88,30 +80,30 @@ std::vector<SignalInfo*> SignalRegistry::getSignalConfigs() {
     return this->mSignalsConfigs;
 }
 
-SignalInfo* SignalRegistry::getSignalConfigById(uint64_t sigID) {
-    if(this->mSILMappings.find(sigID) == this->mSILMappings.end()) {
-        TYPELOGV(SIGNAL_REGISTRY_SIGNAL_NOT_FOUND, sigID);
+SignalInfo* SignalRegistry::getSignalConfigById(uint64_t sigCode) {
+    if(this->mSILMap.find(sigCode) == this->mSILMap.end()) {
+        TYPELOGV(SIGNAL_REGISTRY_SIGNAL_NOT_FOUND, GET_SIGNAL_ID(sigCode), GET_SIGNAL_TYPE(sigCode));
         return nullptr;
     }
 
-    int32_t mResourceTableIndex = this->mSILMappings[sigID];
+    int32_t mResourceTableIndex = this->mSILMap[sigCode];
     return this->mSignalsConfigs[mResourceTableIndex];
 }
 
-SignalInfo* SignalRegistry::getSignalConfigById(uint32_t sigCode, uint32_t sigType) {
+SignalInfo* SignalRegistry::getSignalConfigById(uint32_t sigId, uint32_t sigType) {
     // Create the 64-bit index
-    uint64_t signalBitmap = (uint64_t)sigCode;
+    uint64_t signalBitmap = (uint64_t)sigId;
 
     // Add the sub-type
     signalBitmap <<= 32; // Make Room
     signalBitmap |= sigType;
 
-    if(this->mSILMappings.find(signalBitmap) == this->mSILMappings.end()) {
-        TYPELOGV(SIGNAL_REGISTRY_SIGNAL_NOT_FOUND, signalBitmap);
+    if(this->mSILMap.find(signalBitmap) == this->mSILMap.end()) {
+        TYPELOGV(SIGNAL_REGISTRY_SIGNAL_NOT_FOUND, sigId, sigType);
         return nullptr;
     }
 
-    int32_t mResourceTableIndex = this->mSILMappings[signalBitmap];
+    int32_t mResourceTableIndex = this->mSILMap[signalBitmap];
     return this->mSignalsConfigs[mResourceTableIndex];
 }
 
@@ -120,11 +112,11 @@ int32_t SignalRegistry::getSignalsConfigCount() {
 }
 
 int32_t SignalRegistry::getSignalTableIndex(uint64_t signalCode) {
-    if(this->mSILMappings.find(signalCode) == this->mSILMappings.end()) {
+    if(this->mSILMap.find(signalCode) == this->mSILMap.end()) {
         return -1;
     }
 
-    return this->mSILMappings[signalCode];
+    return this->mSILMap[signalCode];
 }
 
 SignalRegistry::~SignalRegistry() {

@@ -75,6 +75,14 @@
 #define INIT_CONFIGS_ELEM_CACHE_INFO_BLK_CNT "NumCacheBlocks"
 #define INIT_CONFIGS_ELEM_CACHE_INFO_PRIO_AWARE "PriorityAware"
 
+// IRQ Configs
+#define INIT_CONFIGS_IRQ_CONFIGS_LIST "IRQConfigs"
+#define INIT_CONFIG_IRQ_AFFINE_ONE "AffineIRQ"
+#define INIT_CONFIG_IRQ_AFFINE_TO_CLUSTER "AffineIRQToCluster"
+
+// Journal Configs
+#define INIT_CONFIG_LOGGING_CONF "LogLevel"
+
 // Properties
 #define PROPERTY_CONFIGS_ROOT "PropertyConfigs"
 #define PROPERTY_CONFIGS_ELEM_NAME "Name"
@@ -300,23 +308,23 @@
  */
 class RestuneParser {
 private:
-    ErrCode parseResourceConfigYamlNode(const std::string& filePath, int8_t isBuSpecified);
+    ErrCode parseResourceConfigYamlNode(const std::string& filePath);
     ErrCode parsePropertiesConfigYamlNode(const std::string& filePath);
     ErrCode parseInitConfigYamlNode(const std::string& filePath);
     ErrCode parseTargetConfigYamlNode(const std::string& filePath);
-    ErrCode parseSignalConfigYamlNode(const std::string& filePath, int8_t isBuSpecified);
+    ErrCode parseSignalConfigYamlNode(const std::string& filePath);
     ErrCode parseExtFeatureConfigYamlNode(const std::string& filePath);
     ErrCode parsePerAppConfigYamlNode(const std::string& filePath);
 
 public:
-    ErrCode parseResourceConfigs(const std::string& filePath, int8_t isBuSpecified=false);
+    ErrCode parseResourceConfigs(const std::string& filePath);
     ErrCode parsePropertiesConfigs(const std::string& filePath);
     ErrCode parseInitConfigs(const std::string& filePath);
     ErrCode parseTargetConfigs(const std::string& filePath);
-    ErrCode parseSignalConfigs(const std::string& filePath, int8_t isBuSpecified=false);
+    ErrCode parseSignalConfigs(const std::string& filePath);
     ErrCode parseExtFeaturesConfigs(const std::string& filePath);
     ErrCode parsePerAppConfigs(const std::string& filePath);
-    ErrCode parse(ConfigType configType, const std::string& filePath, int8_t isBuSpecified=false);
+    ErrCode parse(ConfigType configType, const std::string& filePath);
 };
 
 #endif

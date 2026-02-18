@@ -1,97 +1,82 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
-#include "AuxRoutines.h"
-#include "UrmSettings.h"
-#include "TestUtils.h"
 #include "UrmPlatformAL.h"
+#include "TestUtils.h"
 #include "MemoryPool.h"
 #include "Request.h"
 #include "Signal.h"
-#include "TestAggregator.h"
-#include "TestUtils.h" // where MakeAlloc<T>() lives
+#include "URMTests.h"
 
-#define MTEST_NO_MAIN
-#include "../framework/mini.h"
+#define TEST_CLASS "COMPONENT"
 
-using namespace mtest;
-
-// Suite: MiscTests
-
-MT_TEST(Component, ResourceCoreClusterSettingAndExtraction, "misctest") {
+// Request Cleanup Tests
+URM_TEST(TestResourceStructCoreClusterSettingAndExtraction, {
     Resource resource;
 
     resource.setCoreValue(2);
     resource.setClusterValue(1);
 
-    MT_REQUIRE_EQ(ctx, resource.getCoreValue(), 2);
-    MT_REQUIRE_EQ(ctx, resource.getClusterValue(), 1);
-}
+    E_ASSERT((resource.getCoreValue() == 2));
+    E_ASSERT((resource.getClusterValue() == 1));
+})
 
-MT_TEST(Component, ResourceStructOps1, "misctest") {
+URM_TEST(TestResourceStructOps1, {
     int32_t properties = -1;
     properties = SET_REQUEST_PRIORITY(properties, REQ_PRIORITY_HIGH);
-    MT_REQUIRE_EQ(ctx, properties, -1);
-}
+    E_ASSERT((properties == -1));
+})
 
-MT_TEST(Component, ResourceStructOps2, "misctest") {
+URM_TEST(TestResourceStructOps2, {
     int32_t properties = 0;
     properties = SET_REQUEST_PRIORITY(properties, 44);
-    MT_REQUIRE_EQ(ctx, properties, -1);
+    E_ASSERT((properties == -1));
 
     properties = 0;
     properties = SET_REQUEST_PRIORITY(properties, -3);
-    MT_REQUIRE_EQ(ctx, properties, -1);
-}
+    E_ASSERT((properties == -1));
+})
 
-MT_TEST(Component, ResourceStructOps3, "misctest") {
+URM_TEST(TestResourceStructOps3, {
     int32_t properties = 0;
     properties = SET_REQUEST_PRIORITY(properties, REQ_PRIORITY_HIGH);
     int8_t priority = EXTRACT_REQUEST_PRIORITY(properties);
-    MT_REQUIRE_EQ(ctx, priority, REQ_PRIORITY_HIGH);
+    E_ASSERT((priority == REQ_PRIORITY_HIGH));
 
     properties = 0;
     properties = SET_REQUEST_PRIORITY(properties, REQ_PRIORITY_LOW);
     priority = EXTRACT_REQUEST_PRIORITY(properties);
-    MT_REQUIRE_EQ(ctx, priority, REQ_PRIORITY_LOW);
-}
+    E_ASSERT((priority == REQ_PRIORITY_LOW));
+})
 
-MT_TEST(Component, ResourceStructOps4, "misctest") {
+URM_TEST(TestResourceStructOps4, {
     int32_t properties = 0;
     properties = ADD_ALLOWED_MODE(properties, MODE_RESUME);
     int8_t allowedModes = EXTRACT_ALLOWED_MODES(properties);
-    MT_REQUIRE_EQ(ctx, allowedModes, MODE_RESUME);
+    E_ASSERT((allowedModes == MODE_RESUME));
 
     properties = 0;
     properties = ADD_ALLOWED_MODE(properties, MODE_RESUME);
     properties = ADD_ALLOWED_MODE(properties, MODE_DOZE);
     allowedModes = EXTRACT_ALLOWED_MODES(properties);
-    MT_REQUIRE_EQ(ctx, allowedModes, (MODE_RESUME | MODE_DOZE));
-}
+    E_ASSERT((allowedModes == (MODE_RESUME | MODE_DOZE)));
+})
 
-MT_TEST(Component, ResourceStructOps5, "misctest") {
+URM_TEST(TestResourceStructOps5, {
     int32_t properties = 0;
     properties = ADD_ALLOWED_MODE(properties, 87);
-    MT_REQUIRE_EQ(ctx, properties, -1);
-}
+    E_ASSERT((properties == -1));
+})
 
-MT_TEST(Component, ResourceStructOps6, "misctest") {
+URM_TEST(TestResourceStructOps6, {
     int32_t properties = 0;
     properties = ADD_ALLOWED_MODE(properties, MODE_RESUME);
     properties = ADD_ALLOWED_MODE(properties, MODE_SUSPEND);
     int8_t allowedModes = EXTRACT_ALLOWED_MODES(properties);
-    MT_REQUIRE_EQ(ctx, allowedModes, (MODE_RESUME | MODE_SUSPEND));
-}
+    E_ASSERT((allowedModes == (MODE_RESUME | MODE_SUSPEND)));
+})
 
-MT_TEST(Component, ResourceStructOps7, "misctest") {
-    int32_t properties = 0;
-    properties = ADD_ALLOWED_MODE(properties, MODE_RESUME);
-    properties = ADD_ALLOWED_MODE(properties, -1);
-    int8_t allowedModes = EXTRACT_ALLOWED_MODES(properties);
-    MT_REQUIRE_EQ(ctx, allowedModes, -1);
-}
-
-MT_TEST(Component, ResourceStructOps8, "misctest") {
+URM_TEST(TestResourceStructOps8, {
     int32_t properties = 0;
     properties = SET_REQUEST_PRIORITY(properties, REQ_PRIORITY_LOW);
     properties = ADD_ALLOWED_MODE(properties, MODE_RESUME);
@@ -100,65 +85,50 @@ MT_TEST(Component, ResourceStructOps8, "misctest") {
     int8_t priority = EXTRACT_REQUEST_PRIORITY(properties);
     int8_t allowedModes = EXTRACT_ALLOWED_MODES(properties);
 
-    MT_REQUIRE_EQ(ctx, priority, REQ_PRIORITY_LOW);
-    MT_REQUIRE_EQ(ctx, allowedModes, (MODE_RESUME | MODE_SUSPEND));
-}
+    E_ASSERT((priority == REQ_PRIORITY_LOW));
+    E_ASSERT((allowedModes == (MODE_RESUME | MODE_SUSPEND)));
+})
 
-MT_TEST(Component, ResourceMpamOps, "misctest") {
+URM_TEST(TestResourceStructOps9, {
     int32_t resInfo = 0;
     resInfo = SET_RESOURCE_MPAM_VALUE(resInfo, 30);
     int8_t mpamValue = EXTRACT_RESOURCE_MPAM_VALUE(resInfo);
-    MT_REQUIRE_EQ(ctx, mpamValue, 30);
-}
+    E_ASSERT((mpamValue == 30));
+})
 
-// NOTE: This test can be very slow (2e7 iterations). Consider running with --threads
-// or gate it under a tag filter or environment if needed.
-MT_TEST(Component, HandleGeneration, "misctest") {
-    for (int32_t i = 1; i <= static_cast<int32_t>(2e7); ++i) {
+URM_TEST(TestHandleGeneration, {
+    for(int32_t i = 1; i <= 2e7; i++) {
         int64_t handle = AuxRoutines::generateUniqueHandle();
-        MT_REQUIRE_EQ(ctx, handle, static_cast<int64_t>(i));
+        E_ASSERT((handle == i));
     }
-}
+})
 
-MT_TEST(Component, AuxRoutineFileExists, "misctest") {
+URM_TEST(TestAuxRoutineFileExists, {
     int8_t fileExists = AuxRoutines::fileExists("AuxParserTest.yaml");
-    MT_REQUIRE_EQ(ctx, fileExists, false);
+    E_ASSERT((fileExists == false));
 
     fileExists = AuxRoutines::fileExists("/etc/urm/tests/configs/NetworkConfig.yaml");
-    MT_REQUIRE_EQ(ctx, fileExists, false);
+    E_ASSERT((fileExists == false));
 
-    fileExists = AuxRoutines::fileExists(UrmSettings::mCommonResourceFilePath.c_str());
-    MT_REQUIRE_EQ(ctx, fileExists, true);
+    fileExists = AuxRoutines::fileExists(UrmSettings::mCommonResourcesPath);
+    E_ASSERT((fileExists == true));
 
-    fileExists = AuxRoutines::fileExists(UrmSettings::mCommonPropertiesFilePath.c_str());
-    MT_REQUIRE_EQ(ctx, fileExists, true);
+    fileExists = AuxRoutines::fileExists(UrmSettings::mCommonPropertiesPath);
+    E_ASSERT((fileExists == true));
 
     fileExists = AuxRoutines::fileExists("");
-    MT_REQUIRE_EQ(ctx, fileExists, false);
-}
+    E_ASSERT((fileExists == false));
+})
 
-MT_TEST(Component, RequestModeAddition, "misctest") {
-    // Initialize the pool used by Request::Request() before creating any Request
-    MakeAlloc<DLManager>(/*capacity*/ 32);   // pick a sensible capacity for your suite
+URM_TEST(TestRequestModeAddition, {
+    Request request;
+    request.setProperties(0);
+    request.addProcessingMode(MODE_RESUME);
+    E_ASSERT((request.getProcessingModes() == MODE_RESUME));
 
-    // Case 1
-    Request request1;
-    request1.setProperties(0);
-    request1.addProcessingMode(MODE_RESUME);
-    MT_REQUIRE_EQ(ctx,
-        static_cast<uint32_t>(request1.getProcessingModes()),
-        static_cast<uint32_t>(MODE_RESUME));
-
-    // Case 2 – use a fresh Request since there is no clearProcessingModes()
-    Request request2;
-    request2.setProperties(0);
-    request2.addProcessingMode(MODE_RESUME);
-    request2.addProcessingMode(MODE_SUSPEND);
-    request2.addProcessingMode(MODE_DOZE);
-    MT_REQUIRE_EQ(ctx,
-        static_cast<uint32_t>(request2.getProcessingModes()),
-        static_cast<uint32_t>(MODE_RESUME) |
-        static_cast<uint32_t>(MODE_SUSPEND) |
-        static_cast<uint32_t>(MODE_DOZE));
-}
-
+    request.setProperties(0);
+    request.addProcessingMode(MODE_RESUME);
+    request.addProcessingMode(MODE_SUSPEND);
+    request.addProcessingMode(MODE_DOZE);
+    E_ASSERT((request.getProcessingModes() == (MODE_RESUME | MODE_SUSPEND | MODE_DOZE)));
+})

@@ -11,8 +11,8 @@ SignalConfigs:
     Derivatives: ["derivative-device1"]
     Timeout: 6700
     Resources:
-    - {ResCode: "0x80f10000", ResInfo: "0x0a00f000", Values: [665]}
-    - {ResCode: "0x800100d0", ResInfo: "0x00100112", Values: [679, 812]}
+    - {ResCode: "0x00f10000", ResInfo: "0x0a00f000", Values: [665]}
+    - {ResCode: "0x000100d0", ResInfo: "0x00100112", Values: [679, 812]}
 
   - SigId: "0xffcf"
     Category: "0xce"
@@ -21,8 +21,8 @@ SignalConfigs:
     Enable: true
     Permissions: ["system"]
     Resources:
-      - {ResCode: "0x80d9aa00", Values: [1, 556]}
-      - {ResCode: "0x80c6500f", Values: [1, 900, 965]}
+      - {ResCode: "0x00d9aa00", Values: [1, 556]}
+      - {ResCode: "0x00c6500f", Values: [1, 900, 965]}
 
   - SigId: "0xaadd"
     Category: "0xde"
@@ -33,7 +33,7 @@ SignalConfigs:
     Permissions: ["system"]
     Timeout: 14500
     Resources:
-      - {ResCode: "0x80dbaaa0", ResInfo: "0x000776aa", Values: [887]}
+      - {ResCode: "0x00dbaaa0", ResInfo: "0x000776aa", Values: [887]}
 
   - SigId: "0xaaaa"
     Category: "0x99"

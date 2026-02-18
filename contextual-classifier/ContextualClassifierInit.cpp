@@ -94,4 +94,4 @@ static ErrCode terminate(void *arg = nullptr) {
     return RC_SUCCESS;
 }
 
-RESTUNE_REGISTER_MODULE(MOD_CLASSIFIER, init, terminate);
+URM_REGISTER_MODULE(MOD_CLASSIFIER, init, terminate);

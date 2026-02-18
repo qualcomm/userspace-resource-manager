@@ -24,18 +24,7 @@ ResourceConfigs:
     LowThreshold: 0
     Permissions: "third_party"
     Modes: ["display_on", "doze"]
-    Policy: "lower_is_better"
-    ApplyType: "cluster"
-
-  - ResType: "0x01"
-    ResID: "0x0002"
-    Name: "RES_PM_QOS_LATENCY"
-    Path: "/sys/devices/system/cpu/cpu%d/power/pm_qos_resume_latency_us"
-    Supported: true
-    LowThreshold: 0
-    Permissions: "third_party"
-    Modes: ["display_on", "doze"]
-    Policy: "lower_is_better"
+    Policy: "pass_through"
     ApplyType: "core"
 
   - ResType: "0x03"
@@ -66,6 +55,16 @@ ResourceConfigs:
     ResID: "0x0002"
     Name: "RES_SCHED_ENERGY_AWARE"
     Path: "/proc/sys/kernel/sched_energy_aware"
+    Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on"]
+    Policy: "pass_through"
+    ApplyType: "global"
+
+  - ResType: "0x03"
+    ResID: "0x0003"
+    Name: "RES_SCHED_RT_RUNTIME"
+    Path: "/proc/sys/kernel/sched_rt_runtime_us"
     Supported: true
     Permissions: "third_party"
     Modes: ["display_on"]
@@ -103,6 +102,36 @@ ResourceConfigs:
     Modes: ["display_on", "doze"]
     Policy: "lower_is_better"
     ApplyType: "cluster"
+
+  - ResType: "0x04"
+    ResID: "0x0003"
+    Name: "RES_CPU_IDLE_DISABLE_ST0"
+    Path: "/sys/devices/system/cpu/cpu%d/cpuidle/state0/disable"
+    Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "pass_through"
+    ApplyType: "core"
+
+  - ResType: "0x04"
+    ResID: "0x0004"
+    Name: "RES_CPU_IDLE_DISABLE_ST1"
+    Path: "/sys/devices/system/cpu/cpu%d/cpuidle/state1/disable"
+    Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "pass_through"
+    ApplyType: "core"
+
+  - ResType: "0x04"
+    ResID: "0x0005"
+    Name: "RES_CPU_IDLE_DISABLE_ST2"
+    Path: "/sys/devices/system/cpu/cpu%d/cpuidle/state2/disable"
+    Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "pass_through"
+    ApplyType: "core"
 
   - ResType: "0x05"
     ResID: "0x0000"
@@ -326,7 +355,7 @@ ResourceConfigs:
     Supported: true
     Permissions: "third_party"
     Modes: ["display_on", "doze"]
-    Policy: higher_is_better
+    Policy: "higher_is_better"
     ApplyType: "global"
 
   - ResType: "0x0a"
@@ -336,7 +365,7 @@ ResourceConfigs:
     Supported: true
     Permissions: "third_party"
     Modes: ["display_on", "doze"]
-    Policy: higher_is_better
+    Policy: "higher_is_better"
     ApplyType: "global"
 
   - ResType: "0x0a"
@@ -347,7 +376,8 @@ ResourceConfigs:
     LowThreshold: 0
     Permissions: "third_party"
     Modes: ["display_on", "doze"]
-    Policy: higher_is_better
+    Policy: "higher_is_better"
+    ApplyType: "global"
 
   - ResType: "0x0b"
     ResID: "0x0000"
@@ -357,12 +387,21 @@ ResourceConfigs:
     Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "pass_through"
-    ApplyType: "core"
+    ApplyType: "global"
 
   - ResType: "0x0b"
     ResID: "0x0001"
     Name: "RES_DEF_IRQ_AFFINE"
     Path: "/proc/irq/default_smp_affinity"
+    Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on"]
+    Policy: "pass_through"
+    ApplyType: "global"
+
+  - ResType: "0x0c"
+    ResID: "0x0000"
+    Name: "RES_PER_TASK_AFFINITY"
     Supported: true
     Permissions: "third_party"
     Modes: ["display_on"]

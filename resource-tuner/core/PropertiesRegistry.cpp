@@ -16,21 +16,21 @@ int8_t PropertiesRegistry::createProperty(const std::string& propertyName, const
     return true;
 }
 
-int8_t PropertiesRegistry::queryProperty(const std::string& propertyName, std::string& result) {
+size_t PropertiesRegistry::queryProperty(const std::string& propertyName, std::string& result) {
     if(propertyName.length() == 0) {
-        return false;
+        return 0;
     }
 
     this->mPropRegistryMutex.lock_shared();
     if(this->mProperties.find(propertyName) == this->mProperties.end()) {
         this->mPropRegistryMutex.unlock_shared();
-        return false;
+        return 0;
     }
 
     result = this->mProperties[propertyName];
     this->mPropRegistryMutex.unlock_shared();
 
-    return true;
+    return result.length();
 }
 
 int8_t PropertiesRegistry::modifyProperty(const std::string& propertyName, const std::string& propertyValue) {

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
 #include <unistd.h>
+#include <sched.h>
 
 #include "Utils.h"
 #include "Logger.h"
@@ -9,42 +10,23 @@
 #include "TargetRegistry.h"
 #include "ResourceRegistry.h"
 
-static std::string getClusterTypeResourceNodePath(Resource* resource, int32_t clusterID) {
-    ResConfInfo* resourceConfig =
-        ResourceRegistry::getInstance()->getResConf(resource->getResCode());
-
-    if(resourceConfig == nullptr) return "";
-    std::string filePath = resourceConfig->mResourcePath;
+static std::string getFullResourceNodePath(ResConfInfo* rConf, int32_t id) {
+    if(rConf == nullptr) return "";
+    std::string filePath = rConf->mResourcePath;
 
     // Replace %d in above file path with the actual cluster id
     char pathBuffer[128];
-    std::snprintf(pathBuffer, sizeof(pathBuffer), filePath.c_str(), clusterID);
-    filePath = std::string(pathBuffer);
-
-    return filePath;
-}
-
-static std::string getCoreTypeResourceNodePath(Resource* resource, int32_t coreID) {
-    ResConfInfo* resourceConfig =
-        ResourceRegistry::getInstance()->getResConf(resource->getResCode());
-
-    if(resourceConfig == nullptr) return "";
-    std::string filePath = resourceConfig->mResourcePath;
-
-    // Replace %d in above file path with the actual core id
-    char pathBuffer[128];
-    std::snprintf(pathBuffer, sizeof(pathBuffer), filePath.c_str(), coreID);
+    std::snprintf(pathBuffer, sizeof(pathBuffer), filePath.c_str(), id);
     filePath = std::string(pathBuffer);
 
     return filePath;
 }
 
 static std::string getCGroupTypeResourceNodePath(Resource* resource, const std::string& cGroupName) {
-    ResConfInfo* resourceConfig =
-        ResourceRegistry::getInstance()->getResConf(resource->getResCode());
+    ResConfInfo* rConf = ResourceRegistry::getInstance()->getResConf(resource->getResCode());
 
-    if(resourceConfig == nullptr) return "";
-    std::string filePath = resourceConfig->mResourcePath;
+    if(rConf == nullptr) return "";
+    std::string filePath = rConf->mResourcePath;
 
     // Replace %s in above file path with the actual cgroup name
     char pathBuffer[128];
@@ -58,11 +40,13 @@ static std::string getCGroupTypeResourceNodePath(Resource* resource, const std::
 void defaultClusterLevelApplierCb(void* context) {
     if(context == nullptr) return;
     Resource* resource = static_cast<Resource*>(context);
+
     ResConfInfo* rConf = ResourceRegistry::getInstance()->getResConf(resource->getResCode());
+    if(rConf == nullptr) return;
 
     // Get the Cluster ID
     int32_t clusterID = resource->getClusterValue();
-    std::string resourceNodePath = getClusterTypeResourceNodePath(resource, clusterID);
+    std::string resourceNodePath = getFullResourceNodePath(rConf, clusterID);
 
     // 32-bit, unit-dependent value to be written
     int32_t valueToBeWritten = resource->getValueAt(0);
@@ -97,20 +81,22 @@ void defaultClusterLevelTearCb(void* context) {
     if(context == nullptr) return;
     Resource* resource = static_cast<Resource*>(context);
 
+    ResConfInfo* rConf = ResourceRegistry::getInstance()->getResConf(resource->getResCode());
+    if(rConf == nullptr) return;
+
     // Get the Cluster ID
     int32_t clusterID = resource->getClusterValue();
-    std::string resourceNodePath = getClusterTypeResourceNodePath(resource, clusterID);
-    std::string defaultValue =
-        ResourceRegistry::getInstance()->getDefaultValue(resourceNodePath);
+    std::string resourceNodePath = getFullResourceNodePath(rConf, clusterID);
+    std::string defVal = ResourceRegistry::getInstance()->getDefaultValue(resourceNodePath);
 
-    TYPELOGV(NOTIFY_NODE_RESET, resourceNodePath.c_str(), defaultValue.c_str());
+    TYPELOGV(NOTIFY_NODE_RESET, resourceNodePath.c_str(), defVal.c_str());
     std::ofstream resourceFileStream(resourceNodePath);
     if(!resourceFileStream.is_open()) {
         TYPELOGV(ERRNO_LOG, "open", strerror(errno));
         return;
     }
 
-    resourceFileStream<<defaultValue<<std::endl;
+    resourceFileStream<<defVal<<std::endl;
 
     if(resourceFileStream.fail()) {
         TYPELOGV(ERRNO_LOG, "write", strerror(errno));
@@ -119,8 +105,11 @@ void defaultClusterLevelTearCb(void* context) {
 }
 
 static void defaultCoreLevelApplierHelper(Resource* resource, int32_t coreID) {
-    std::string resourceNodePath = getCoreTypeResourceNodePath(resource, coreID);
+    if(resource == nullptr) return;
     ResConfInfo* rConf = ResourceRegistry::getInstance()->getResConf(resource->getResCode());
+    if(rConf == nullptr) return;
+
+    std::string resourceNodePath = getFullResourceNodePath(rConf, coreID);
 
     // 32-bit, unit-dependent value to be written
     int32_t valueToBeWritten = resource->getValueAt(0);
@@ -155,6 +144,9 @@ void defaultCoreLevelApplierCb(void* context) {
     if(context == nullptr) return;
     Resource* resource = static_cast<Resource*>(context);
 
+    ResConfInfo* rConf = ResourceRegistry::getInstance()->getResConf(resource->getResCode());
+    if(rConf == nullptr) return;
+
     // Get the Core ID
     int32_t coreID = resource->getCoreValue();
     if(coreID == 0) {
@@ -174,18 +166,20 @@ void defaultCoreLevelApplierCb(void* context) {
 }
 
 static void defaultCoreLevelTearHelper(Resource* resource, int32_t coreID) {
-    std::string resourceNodePath = getClusterTypeResourceNodePath(resource, coreID);
-    std::string defaultValue =
-        ResourceRegistry::getInstance()->getDefaultValue(resourceNodePath);
+    ResConfInfo* rConf = ResourceRegistry::getInstance()->getResConf(resource->getResCode());
+    if(rConf == nullptr) return;
 
-    TYPELOGV(NOTIFY_NODE_RESET, resourceNodePath.c_str(), defaultValue.c_str());
+    std::string resourceNodePath = getFullResourceNodePath(rConf, coreID);
+    std::string defVal = ResourceRegistry::getInstance()->getDefaultValue(resourceNodePath);
+
+    TYPELOGV(NOTIFY_NODE_RESET, resourceNodePath.c_str(), defVal.c_str());
     std::ofstream controllerFile(resourceNodePath);
     if(!controllerFile.is_open()) {
         TYPELOGV(ERRNO_LOG, "open", strerror(errno));
         return;
     }
 
-    controllerFile<<defaultValue<<std::endl;
+    controllerFile<<defVal<<std::endl;
 
     if(controllerFile.fail()) {
         TYPELOGV(ERRNO_LOG, "write", strerror(errno));
@@ -272,9 +266,9 @@ void defaultCGroupLevelApplierCb(void* context) {
 void defaultCGroupLevelTearCb(void* context) {
     if(context == nullptr) return;
     Resource* resource = static_cast<Resource*>(context);
-    ResConfInfo* resourceConfigInfo =
-        ResourceRegistry::getInstance()->getResConf(resource->getResCode());
-    if(resourceConfigInfo == nullptr) return;
+
+    ResConfInfo* rConf = ResourceRegistry::getInstance()->getResConf(resource->getResCode());
+    if(rConf == nullptr) return;
 
     int32_t cGroupIdentifier = resource->getValueAt(0);
     CGroupConfigInfo* cGroupConfig =
@@ -289,17 +283,16 @@ void defaultCGroupLevelTearCb(void* context) {
 
     if(cGroupName.length() > 0) {
         std::string controllerFilePath = getCGroupTypeResourceNodePath(resource, cGroupName);
-        std::string defaultValue =
-            ResourceRegistry::getInstance()->getDefaultValue(controllerFilePath);
+        std::string defVal = ResourceRegistry::getInstance()->getDefaultValue(controllerFilePath);
 
-        TYPELOGV(NOTIFY_NODE_RESET, controllerFilePath.c_str(), defaultValue.c_str());
+        TYPELOGV(NOTIFY_NODE_RESET, controllerFilePath.c_str(), defVal.c_str());
         std::ofstream controllerFile(controllerFilePath);
         if(!controllerFile.is_open()) {
             TYPELOGV(ERRNO_LOG, "open", strerror(errno));
             return;
         }
 
-        controllerFile<<defaultValue<<std::endl;
+        controllerFile<<defVal<<std::endl;
 
         if(controllerFile.fail()) {
             TYPELOGV(ERRNO_LOG, "write", strerror(errno));
@@ -313,13 +306,20 @@ void defaultGlobalLevelApplierCb(void* context) {
     if(context == nullptr) return;
     Resource* resource = static_cast<Resource*>(context);
 
-    ResConfInfo* resourceConfig =
-        ResourceRegistry::getInstance()->getResConf(resource->getResCode());
+    ResConfInfo* rConf = ResourceRegistry::getInstance()->getResConf(resource->getResCode());
+    if(rConf == nullptr) return;
 
-    if(resourceConfig != nullptr) {
-        TYPELOGV(NOTIFY_NODE_WRITE, resourceConfig->mResourcePath.c_str(), resource->getValueAt(0));
-        AuxRoutines::writeToFile(resourceConfig->mResourcePath, std::to_string(resource->getValueAt(0)));
+    int32_t valueToWrite = resource->getValueAt(0);
+    std::string resourceNodePath = rConf->mResourcePath;
+
+    if(resource->getValuesCount() == 2) {
+        int32_t id = resource->getValueAt(0);
+        valueToWrite = resource->getValueAt(1);
+        resourceNodePath = getFullResourceNodePath(rConf, id);
     }
+
+    TYPELOGV(NOTIFY_NODE_WRITE, resourceNodePath.c_str(), valueToWrite);
+    AuxRoutines::writeToFile(resourceNodePath, std::to_string(valueToWrite));
 }
 
 // Default Tear Callback for Resources with ApplyType = "global"
@@ -327,16 +327,19 @@ void defaultGlobalLevelTearCb(void* context) {
     if(context == nullptr) return;
     Resource* resource = static_cast<Resource*>(context);
 
-    ResConfInfo* resourceConfig =
-        ResourceRegistry::getInstance()->getResConf(resource->getResCode());
+    ResConfInfo* rConf = ResourceRegistry::getInstance()->getResConf(resource->getResCode());
+    if(rConf == nullptr) return;
 
-    if(resourceConfig != nullptr) {
-        std::string defaultValue =
-            ResourceRegistry::getInstance()->getDefaultValue(resourceConfig->mResourcePath);
+    std::string resourceNodePath = rConf->mResourcePath;
 
-        TYPELOGV(NOTIFY_NODE_RESET, resourceConfig->mResourcePath.c_str(), defaultValue.c_str());
-        AuxRoutines::writeToFile(resourceConfig->mResourcePath, defaultValue);
+    if(resource->getValuesCount() == 2) {
+        int32_t id = resource->getValueAt(0);
+        resourceNodePath = getFullResourceNodePath(rConf, id);
     }
+
+    std::string defVal = ResourceRegistry::getInstance()->getDefaultValue(resourceNodePath);
+    TYPELOGV(NOTIFY_NODE_RESET, resourceNodePath.c_str(), defVal.c_str());
+    AuxRoutines::writeToFile(resourceNodePath, defVal);
 }
 
 // Specific callbacks for certain special Resources (which cannot be handled via the default versions)
@@ -352,8 +355,7 @@ static void moveProcessToCGroup(void* context) {
     CGroupConfigInfo* cGroupConfig =
         TargetRegistry::getInstance()->getCGroupConfig(cGroupIdentifier);
 
-    ResConfInfo* resourceConfig =
-        ResourceRegistry::getInstance()->getResConf(resource->getResCode());
+    ResConfInfo* rConf = ResourceRegistry::getInstance()->getResConf(resource->getResCode());
 
     if(cGroupConfig == nullptr) {
         TYPELOGV(VERIFIER_CGROUP_NOT_FOUND, cGroupIdentifier);
@@ -366,7 +368,7 @@ static void moveProcessToCGroup(void* context) {
         return;
     }
 
-    std::string filePath = resourceConfig->mResourcePath;
+    std::string filePath = rConf->mResourcePath;
 
     // Replace %s in above file path with the actual cgroup name
     char pathBuffer[128] = {0};
@@ -565,6 +567,45 @@ static void limitCpuTime(void* context) {
     }
 }
 
+static void setTaskAffinity(void* context) {
+    if(context == nullptr) return;
+    Resource* resource = static_cast<Resource*>(context);
+    if(resource->getValuesCount() < 2) return;
+
+    pid_t pid = resource->getValueAt(0);
+
+    // Get current mask
+    cpu_set_t mask;
+    if(sched_getaffinity(pid, sizeof(cpu_set_t), &mask) == -1) {
+        TYPELOGV(ERRNO_LOG, "sched_getaffinity", strerror(errno));
+    } else {
+        std::string procDesc = "task_affinity_" + std::to_string(pid);
+        std::string maskStr = "";
+
+        // Serialize the mask as a string
+        for(int32_t i = 0; i < CPU_SETSIZE; i++) {
+            if(CPU_ISSET(i, &mask)) {
+                if(maskStr.length() > 0) {
+                    maskStr.append(",");
+                }
+                maskStr.append(std::to_string(i));
+            }
+        }
+
+        ResourceRegistry::getInstance()->addDefaultValue(procDesc, maskStr);
+    }
+
+    CPU_ZERO(&mask);
+    for(int32_t i = 1; i < resource->getValuesCount(); i++) {
+        int32_t cpuId = resource->getValueAt(i);
+        CPU_SET(cpuId, &mask);
+    }
+
+    if(sched_setaffinity(pid, sizeof(mask), &mask) == -1) {
+        TYPELOGV(ERRNO_LOG, "sched_setaffinity", strerror(errno));
+    }
+}
+
 static void removeProcessFromCGroup(void* context) {
     if(context == nullptr) return;
     Resource* resource = static_cast<Resource*>(context);
@@ -642,17 +683,16 @@ static void resetRunOnCoresExclusively(void* context) {
             const std::string cGroupCpuSetFilePath =
                 UrmSettings::mBaseCGroupPath + cGroupName + "/cpuset.cpus";
 
-            std::string defaultValue =
-                ResourceRegistry::getInstance()->getDefaultValue(cGroupCpuSetFilePath);
+            std::string defVal = ResourceRegistry::getInstance()->getDefaultValue(cGroupCpuSetFilePath);
 
-            TYPELOGV(NOTIFY_NODE_RESET, cGroupCpuSetFilePath.c_str(), defaultValue.c_str());
+            TYPELOGV(NOTIFY_NODE_RESET, cGroupCpuSetFilePath.c_str(), defVal.c_str());
             std::ofstream controllerFile(cGroupCpuSetFilePath);
             if(!controllerFile.is_open()) {
                 TYPELOGV(ERRNO_LOG, "open", strerror(errno));
                 return;
             }
 
-            controllerFile<<defaultValue<<std::endl;
+            controllerFile<<defVal<<std::endl;
 
             if(controllerFile.fail()) {
                 TYPELOGV(ERRNO_LOG, "write", strerror(errno));
@@ -668,9 +708,9 @@ static void resetRunOnCoresExclusively(void* context) {
                 return;
             }
 
-            defaultValue = ResourceRegistry::getInstance()->getDefaultValue(cGroupCpusetPartitionFilePath);
+            defVal = ResourceRegistry::getInstance()->getDefaultValue(cGroupCpusetPartitionFilePath);
 
-            partitionFile<<defaultValue<<std::endl;
+            partitionFile<<defVal<<std::endl;
 
             if(partitionFile.fail()) {
                 TYPELOGV(ERRNO_LOG, "write", strerror(errno));
@@ -682,50 +722,49 @@ static void resetRunOnCoresExclusively(void* context) {
     }
 }
 
-static void setPmQos(void* context) {
+static void resetTaskAffinity(void* context) {
     if(context == nullptr) return;
     Resource* resource = static_cast<Resource*>(context);
+    if(resource->getValuesCount() < 2) return;
 
-    if(resource->getValuesCount() < 1) return;
+    pid_t pid = resource->getValueAt(0);
 
-    int32_t clusterID = resource->getClusterValue();
+    std::string procDesc = "task_affinity_" + std::to_string(pid);
+    std::string defVal = ResourceRegistry::getInstance()->getDefaultValue(procDesc);
 
-    ClusterInfo* cinfo = TargetRegistry::getInstance()->getClusterInfo(clusterID);
-    if(cinfo == nullptr) {
+    if(defVal.length() == 0) {
         return;
     }
 
-    for(int32_t i = cinfo->mStartCpu; i < cinfo->mStartCpu + cinfo->mNumCpus; i++) {
-        defaultCoreLevelApplierHelper(resource, i);
-    }
-}
+    // Reconstruct Original Mask
+    cpu_set_t originalMask;
+    CPU_ZERO(&originalMask);
 
-static void resetPmQos(void* context) {
-    if(context == nullptr) return;
-    Resource* resource = static_cast<Resource*>(context);
+    std::string value;
+    std::istringstream iss(defVal);
+    while(std::getline(iss, value, ',')) {
+        try {
+            int32_t cpuId = std::stoi(value);
+            CPU_SET(cpuId, &originalMask);
 
-    if(resource->getValuesCount() < 1) return;
-
-    int32_t clusterID = resource->getClusterValue();
-
-    ClusterInfo* cinfo = TargetRegistry::getInstance()->getClusterInfo(clusterID);
-    if(cinfo == nullptr) {
-        return;
+        } catch (const std::exception&) {
+            return;
+        }
     }
 
-    for(int32_t i = cinfo->mStartCpu; i < cinfo->mStartCpu + cinfo->mNumCpus; i++) {
-        defaultCoreLevelTearHelper(resource, i);
+    if(sched_setaffinity(pid, sizeof(originalMask), &originalMask) == -1) {
+        TYPELOGV(ERRNO_LOG, "sched_setaffinity", strerror(errno));
     }
 }
 
 // Register the specific Callbacks
-URM_REGISTER_RES_APPLIER_CB(0x00010001, setPmQos);
 URM_REGISTER_RES_APPLIER_CB(0x00090000, moveProcessToCGroup);
 URM_REGISTER_RES_APPLIER_CB(0x00090001, moveThreadToCGroup);
 URM_REGISTER_RES_APPLIER_CB(0x00090002, setRunOnCores);
 URM_REGISTER_RES_APPLIER_CB(0x00090003, setRunOnCoresExclusively);
 URM_REGISTER_RES_APPLIER_CB(0x00090005, limitCpuTime);
-URM_REGISTER_RES_TEAR_CB(0x00010001, resetPmQos);
+URM_REGISTER_RES_APPLIER_CB(0x000c0000, setTaskAffinity);
 URM_REGISTER_RES_TEAR_CB(0x00090000, removeProcessFromCGroup);
 URM_REGISTER_RES_TEAR_CB(0x00090001, removeThreadFromCGroup);
 URM_REGISTER_RES_TEAR_CB(0x00090003, resetRunOnCoresExclusively);
+URM_REGISTER_RES_TEAR_CB(0x000c0000, resetTaskAffinity)

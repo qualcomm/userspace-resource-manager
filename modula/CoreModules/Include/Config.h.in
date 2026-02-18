@@ -1,0 +1,9 @@
+// Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
+#ifndef URM_GLOB_CONF_H
+#define URM_GLOB_CONF_H
+
+#define LIBDIR_PATH "@CMAKE_INSTALL_FULL_LIBDIR@"
+
+#endif

@@ -21,10 +21,11 @@
 #include <regex>
 #include <memory>
 
+#include "Logger.h"
+#include "ErrCodes.h"
 #include "UrmSettings.h"
 #include "AuxRoutines.h"
-#include "ErrCodes.h"
-#include "Logger.h"
+#include "RestuneDBus.h"
 
 #define POLICY_DIR_PATH "/sys/devices/system/cpu/cpufreq/"
 #define ONLINE_CPU_FILE_PATH "/sys/devices/system/cpu/online"
@@ -163,6 +164,10 @@ public:
     int32_t getCreatedMpamGroupsCount();
 
     void displayTargetInfo();
+
+    ErrCode addIrqAffine(std::vector<std::string>& values,
+                         int8_t areClusterValues = false);
+    ErrCode addLogLimit(std::vector<std::string>& values);
 
     static std::shared_ptr<TargetRegistry> getInstance() {
         if(targetRegistryInstance == nullptr) {

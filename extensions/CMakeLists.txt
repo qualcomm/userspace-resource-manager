@@ -2,7 +2,7 @@
 file(GLOB SOURCES "*.cpp")
 add_library(UrmExtAPIs ${SOURCES})
 set_target_properties(UrmExtAPIs PROPERTIES VERSION 1.0.0 SOVERSION 1)
-target_link_libraries(UrmExtAPIs PRIVATE UrmAuxUtils)
+target_link_libraries(UrmExtAPIs PUBLIC UrmAuxUtils)
 target_include_directories(UrmExtAPIs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Include)
 install(TARGETS UrmExtAPIs LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Urm)

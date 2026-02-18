@@ -104,6 +104,10 @@ static int8_t isKey(const std::string& keyName) {
         INIT_CONFIGS_ELEM_CACHE_INFO_TYPE,
         INIT_CONFIGS_ELEM_CACHE_INFO_BLK_CNT,
         INIT_CONFIGS_ELEM_CACHE_INFO_PRIO_AWARE,
+        INIT_CONFIGS_IRQ_CONFIGS_LIST,
+        INIT_CONFIG_IRQ_AFFINE_TO_CLUSTER,
+        INIT_CONFIG_IRQ_AFFINE_ONE,
+        INIT_CONFIG_LOGGING_CONF,
         SIGNAL_CONFIGS_ROOT,
         SIGNAL_CONFIGS_ELEM_SIGID,
         SIGNAL_CONFIGS_ELEM_CATEGORY,
@@ -147,6 +151,12 @@ static int8_t isKeyTypeList(const std::string& keyName) {
     if(keyName == INIT_CONFIGS_ELEM_MPAM_GROUPS_LIST) return true;
     if(keyName == INIT_CONFIGS_ELEM_CACHE_INFO_LIST) return true;
 
+    if(keyName == INIT_CONFIGS_IRQ_CONFIGS_LIST) return true;
+    if(keyName == INIT_CONFIG_IRQ_AFFINE_TO_CLUSTER) return true;
+    if(keyName == INIT_CONFIG_IRQ_AFFINE_ONE) return true;
+
+    if(keyName == INIT_CONFIG_LOGGING_CONF) return true;
+
     if(keyName == RESOURCE_CONFIGS_ELEM_MODES) return true;
     if(keyName == RESOURCE_CONFIGS_ELEM_TARGETS_ENABLED) return true;
     if(keyName == RESOURCE_CONFIGS_ELEM_TARGETS_DISABLED) return true;
@@ -163,7 +173,7 @@ static int8_t isKeyTypeList(const std::string& keyName) {
     return false;
 }
 
-ErrCode RestuneParser::parseResourceConfigYamlNode(const std::string& filePath, int8_t isBuSpecified) {
+ErrCode RestuneParser::parseResourceConfigYamlNode(const std::string& filePath) {
     SETUP_LIBYAML_PARSING(filePath);
 
     ErrCode rc = RC_SUCCESS;
@@ -209,7 +219,7 @@ ErrCode RestuneParser::parseResourceConfigYamlNode(const std::string& filePath, 
                     }
 
                     ResourceRegistry::getInstance()->
-                        registerResource(resourceConfigInfoBuilder->build(), isBuSpecified);
+                        registerResource(resourceConfigInfoBuilder->build());
 
                     delete resourceConfigInfoBuilder;
                     resourceConfigInfoBuilder = nullptr;
@@ -456,10 +466,14 @@ ErrCode RestuneParser::parseInitConfigYamlNode(const std::string& filePath) {
 
     int8_t parsingDone = false;
     int8_t docMarker = false;
+    int8_t inAffineClusterList = false;
+    int8_t inAffineOneList = false;
+    int8_t inLoggingConfList = false;
 
     std::string value;
     std::string topKey;
     std::stack<std::string> keyTracker;
+    std::vector<std::string> itemArray;
 
     CGroupConfigInfoBuilder* cGroupConfigBuilder = nullptr;
     MpamGroupConfigInfoBuilder* mpamGroupConfigBuilder = nullptr;
@@ -475,9 +489,56 @@ ErrCode RestuneParser::parseInitConfigYamlNode(const std::string& filePath) {
                 parsingDone = true;
                 break;
 
+            case YAML_SEQUENCE_START_EVENT:
+                if(keyTracker.empty()) {
+                    return RC_YAML_INVALID_SYNTAX;
+                }
+
+                topKey = keyTracker.top();
+
+                if(topKey == INIT_CONFIG_IRQ_AFFINE_TO_CLUSTER) {
+                    inAffineClusterList = true;
+                } else if(topKey == INIT_CONFIG_IRQ_AFFINE_ONE) {
+                    inAffineOneList = true;
+                } else if(topKey == INIT_CONFIG_LOGGING_CONF) {
+                    inLoggingConfList = true;
+                }
+
+                break;
+
             case YAML_SEQUENCE_END_EVENT:
                 if(keyTracker.empty()) {
                     return RC_YAML_INVALID_SYNTAX;
+                }
+
+                if(inAffineClusterList) {
+                    if(RC_IS_OK(rc)) {
+                        rc = TargetRegistry::getInstance()->addIrqAffine(itemArray, true);
+                        if(RC_IS_NOTOK(rc)) {
+                            return RC_YAML_INVALID_SYNTAX;
+                        }
+                    }
+                    itemArray.clear();
+                    inAffineClusterList = !inAffineClusterList;
+
+                } else if(inAffineOneList) {
+                    if(RC_IS_OK(rc)) {
+                        rc = TargetRegistry::getInstance()->addIrqAffine(itemArray);
+                        if(RC_IS_NOTOK(rc)) {
+                            return RC_YAML_INVALID_SYNTAX;
+                        }
+                    }
+                    itemArray.clear();
+                    inAffineOneList = !inAffineOneList;
+
+                } else if(inLoggingConfList) {
+                    if(RC_IS_OK(rc)) {
+                        rc = TargetRegistry::getInstance()->addLogLimit(itemArray);
+                        if(RC_IS_NOTOK(rc)) {
+                            return RC_YAML_INVALID_SYNTAX;
+                        }
+                    }
+                    inLoggingConfList = !inLoggingConfList;
                 }
 
                 keyTracker.pop();
@@ -552,6 +613,7 @@ ErrCode RestuneParser::parseInitConfigYamlNode(const std::string& filePath) {
 
                     delete cacheInfoBuilder;
                     cacheInfoBuilder = nullptr;
+
                 }
 
                 break;
@@ -588,6 +650,12 @@ ErrCode RestuneParser::parseInitConfigYamlNode(const std::string& filePath) {
                 ADD_TO_CACHE_INFO_BUILDER(INIT_CONFIGS_ELEM_CACHE_INFO_BLK_CNT, setNumBlocks);
                 ADD_TO_CACHE_INFO_BUILDER(INIT_CONFIGS_ELEM_CACHE_INFO_PRIO_AWARE, setPriorityAware);
 
+                if(topKey == INIT_CONFIG_IRQ_AFFINE_TO_CLUSTER ||
+                   topKey == INIT_CONFIG_IRQ_AFFINE_ONE ||
+                   topKey == INIT_CONFIG_LOGGING_CONF) {
+                    itemArray.push_back(value);
+                }
+
                 break;
 
             default:
@@ -600,7 +668,7 @@ ErrCode RestuneParser::parseInitConfigYamlNode(const std::string& filePath) {
     return rc;
 }
 
-ErrCode RestuneParser::parseSignalConfigYamlNode(const std::string& filePath, int8_t isBuSpecified) {
+ErrCode RestuneParser::parseSignalConfigYamlNode(const std::string& filePath) {
     SETUP_LIBYAML_PARSING(filePath);
 
     ErrCode rc = RC_SUCCESS;
@@ -676,7 +744,7 @@ ErrCode RestuneParser::parseSignalConfigYamlNode(const std::string& filePath, in
                     }
 
                     SignalRegistry::getInstance()->
-                        registerSignal(signalInfoBuilder->build(), isBuSpecified);
+                        registerSignal(signalInfoBuilder->build());
                     delete(signalInfoBuilder);
                     signalInfoBuilder = nullptr;
                 }
@@ -1031,8 +1099,8 @@ ErrCode RestuneParser::parsePerAppConfigYamlNode(const std::string& filePath) {
     return rc;
 }
 
-ErrCode RestuneParser::parseResourceConfigs(const std::string& filePath, int8_t isBuSpecified) {
-    return parseResourceConfigYamlNode(filePath, isBuSpecified);
+ErrCode RestuneParser::parseResourceConfigs(const std::string& filePath) {
+    return parseResourceConfigYamlNode(filePath);
 }
 
 ErrCode RestuneParser::parsePropertiesConfigs(const std::string& filePath) {
@@ -1047,8 +1115,8 @@ ErrCode RestuneParser::parseInitConfigs(const std::string& filePath) {
     return parseInitConfigYamlNode(filePath);
 }
 
-ErrCode RestuneParser::parseSignalConfigs(const std::string& filePath, int8_t isBuSpecified) {
-    return parseSignalConfigYamlNode(filePath, isBuSpecified);
+ErrCode RestuneParser::parseSignalConfigs(const std::string& filePath) {
+    return parseSignalConfigYamlNode(filePath);
 }
 
 ErrCode RestuneParser::parseExtFeaturesConfigs(const std::string& filePath) {
@@ -1059,12 +1127,12 @@ ErrCode RestuneParser::parsePerAppConfigs(const std::string& filePath) {
     return parsePerAppConfigYamlNode(filePath);
 }
 
-ErrCode RestuneParser::parse(ConfigType configType, const std::string& filePath, int8_t isBuSpecified) {
+ErrCode RestuneParser::parse(ConfigType configType, const std::string& filePath) {
     ErrCode rc = RC_SUCCESS;
 
     switch(configType) {
         case ConfigType::RESOURCE_CONFIG: {
-            rc = this->parseResourceConfigs(filePath, isBuSpecified);
+            rc = this->parseResourceConfigs(filePath);
             break;
         }
         case ConfigType::PROPERTIES_CONFIG: {
@@ -1080,7 +1148,7 @@ ErrCode RestuneParser::parse(ConfigType configType, const std::string& filePath,
             break;
         }
         case ConfigType::SIGNALS_CONFIG: {
-            rc = this->parseSignalConfigs(filePath, isBuSpecified);
+            rc = this->parseSignalConfigs(filePath);
             break;
         }
         case ConfigType::EXT_FEATURES_CONFIG: {

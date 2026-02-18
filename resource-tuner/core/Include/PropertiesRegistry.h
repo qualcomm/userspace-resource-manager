@@ -39,11 +39,9 @@ public:
      * @brief Get the Property value corresponding to the given key
      * @param propertyName Property Name or Key
      * @param result If the property exists, the value will be stored in this argument
-     * @return int8_t:\n
-     *            - 1: if a property with the given name was found\n
-     *            - 0: otherwise
+     * @return size_t: Number of bytes written
      */
-    int8_t queryProperty(const std::string& propertyName, std::string& result);
+    size_t queryProperty(const std::string& propertyName, std::string& result);
 
     /**
      * @brief Modify the value of the property with the given name

@@ -7,37 +7,53 @@ int32_t UrmSettings::serverOnlineStatus = false;
 MetaConfigs UrmSettings::metaConfigs{};
 TargetConfigs UrmSettings::targetConfigs{};
 
-const std::string UrmSettings::mCommonResourceFilePath =
+const std::string UrmSettings::mTargetConfDir = "/etc/urm/target/";
+
+const std::string UrmSettings::mCommonResourcesPath =
                                     "/etc/urm/common/ResourcesConfig.yaml";
-const std::string UrmSettings::mCustomResourceFilePath =
+const std::string UrmSettings::mCustomResourcesPath =
                                     "/etc/urm/custom/ResourcesConfig.yaml";
+const std::string UrmSettings::mDevIndexedResourcesPath =
+                                    "/etc/urm/target/ResourcesConfig.yaml";
 
-const std::string UrmSettings::mCommonSignalFilePath =
+const std::string UrmSettings::mCommonSignalsPath =
                                     "/etc/urm/common/SignalsConfig.yaml";
-const std::string UrmSettings::mCustomSignalFilePath =
+const std::string UrmSettings::mCustomSignalsPath =
                                     "/etc/urm/custom/SignalsConfig.yaml";
+const std::string UrmSettings::mDevIndexedSignalsPath =
+                                    "/etc/urm/target/SignalsConfig.yaml";
 
-const std::string UrmSettings::mCommonInitConfigFilePath =
+const std::string UrmSettings::mCommonInitPath =
                                     "/etc/urm/common/InitConfig.yaml";
-const std::string UrmSettings::mCustomInitConfigFilePath =
+const std::string UrmSettings::mCustomInitPath =
                                     "/etc/urm/custom/InitConfig.yaml";
+const std::string UrmSettings::mDevIndexedInitPath =
+                                    "/etc/urm/target/InitConfig.yaml";
 
-const std::string UrmSettings::mCommonPropertiesFilePath =
+const std::string UrmSettings::mCommonPropertiesPath =
                                     "/etc/urm/common/PropertiesConfig.yaml";
-const std::string UrmSettings::mCustomPropertiesFilePath =
+const std::string UrmSettings::mCustomPropertiesPath =
                                     "/etc/urm/custom/PropertiesConfig.yaml";
+const std::string UrmSettings::mDevIndexedPropertiesPath =
+                                    "/etc/urm/target/PropertiesConfig.yaml";
 
-const std::string UrmSettings::mCustomTargetFilePath =
+const std::string UrmSettings::mCustomTargetPath =
                                     "/etc/urm/custom/TargetConfig.yaml";
+const std::string UrmSettings::mDevIndexedTargetPath =
+                                    "/etc/urm/target/TargetConfig.yaml";
 
-const std::string UrmSettings::mCustomExtFeaturesFilePath =
+const std::string UrmSettings::mCustomExtFeaturesPath =
                                     "/etc/urm/custom/ExtFeaturesConfig.yaml";
+const std::string UrmSettings::mDevIndexedExtFeatPath =
+                                    "/etc/urm/target/ExtFeaturesConfig.yaml";
 
-const std::string UrmSettings::mCustomAppConfigFilePath =
+const std::string UrmSettings::mCustomAppConfigPath =
                                     "/etc/urm/custom/PerApp.yaml";
+const std::string UrmSettings::mDevIndexedAppPath =
+                                    "/etc/urm/target/PerApp.yaml";
 
 const std::string UrmSettings::mExtensionPluginsLibPath =
-                                    "/etc/urm/extensions";
+                                    "/usr/lib/urm/";
 
 const std::string UrmSettings::mDeviceNamePath =
                                     "/sys/devices/soc0/machine";

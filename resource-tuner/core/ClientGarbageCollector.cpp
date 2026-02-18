@@ -11,7 +11,7 @@ ClientGarbageCollector::ClientGarbageCollector() {
         UrmSettings::metaConfigs.mClientGarbageCollectorDuration;
 }
 
-void ClientGarbageCollector::submitClientThreadsForCleanup(int32_t clientPid) {
+void ClientGarbageCollector::submitClientForCleanup(pid_t clientPid) {
     const std::lock_guard<std::mutex> lock(this->mGcQueueMutex);
 
     std::vector<int32_t> threadIDs;
@@ -26,7 +26,7 @@ void ClientGarbageCollector::performCleanup() {
 
     uint32_t batchSize = UrmSettings::metaConfigs.mCleanupBatchSize;
     for(uint32_t count = 0; count < std::min((uint32_t)this->mGcQueue.size(), batchSize); count++) {
-        int32_t clientTID = this->mGcQueue.front();
+        pid_t clientTID = this->mGcQueue.front();
         this->mGcQueue.pop();
 
         LOGD("RESTUNE_CLIENT_GARBAGE_COLLECTOR",
@@ -34,6 +34,9 @@ void ClientGarbageCollector::performCleanup() {
 
         std::unordered_set<int64_t>* clientHandles =
             ClientDataManager::getInstance()->getRequestsByClientID(clientTID);
+        if(clientHandles == nullptr) {
+            continue;
+        }
 
         // Issue Untune Requests, to remove the corresponding Tune Requests from the CocoTable
         // Delete this Request from RequestManager's activeList and tracker.
@@ -54,6 +57,7 @@ void ClientGarbageCollector::performCleanup() {
             try {
                 untuneRequest = MPLACED(Request);
                 request->populateUntuneRequest(untuneRequest);
+
             } catch(const std::bad_alloc& e) {
                 LOGI("RESTUNE_CLIENT_GARBAGE_COLLECTOR",
                      "Failed to Allocate Memory for Untune Request. Error: " + std::string(e.what()));

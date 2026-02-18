@@ -210,6 +210,7 @@ std::vector<Request*> RequestManager::getPendingList() {
 
 int8_t RequestManager::disableRequestProcessing(int64_t handle) {
     this->mRequestMapMutex.lock();
+
     if(this->mActiveRequests.find(handle) == this->mActiveRequests.end()) {
         // Request not in the activeList
         this->mUntuneCache.insert(handle);

@@ -162,6 +162,12 @@ void TargetRegistry::generatePolicyBasedMapping(std::vector<std::string>& policy
     }
 }
 
+static std::string trimStr(const std::string &s) {
+    size_t start = s.find_first_not_of(" \t");
+    size_t end = s.find_last_not_of(" \t\r");
+    return (start == std::string::npos) ? "" : s.substr(start, end - start + 1);
+}
+
 void TargetRegistry::getClusterIdBasedMapping() {
     const std::string cpuDir = "/sys/devices/system/cpu";
     const std::regex cpuRegex("^cpu([0-9]+)$");
@@ -481,6 +487,163 @@ void TargetRegistry::addCacheInfoMapping(CacheInfo* cacheInfo) {
     }
 
     this->mCacheInfoMapping[cacheInfo->mCacheType] = cacheInfo;
+}
+
+ErrCode TargetRegistry::addIrqAffine(std::vector<std::string>& values,
+                                     int8_t areClusterValues) {
+    if(values.size() < 1) {
+        return RC_INVALID_VALUE;
+    }
+
+    uint64_t mask = 0;
+    std::string dirPath = "/proc/irq/";
+
+    int32_t irqLine = std::stoi(values[0]);
+    std::vector<int32_t> ids;
+    for(int32_t i = 1; i < (int32_t)values.size(); i++) {
+        ids.push_back(std::stoi(values[i]));
+    }
+
+    if(areClusterValues) {
+        for(int32_t i = 0; i < (int32_t)ids.size(); i++) {
+            ids[i] = this->getPhysicalClusterId(ids[i]);
+        }
+        std::vector<int32_t> tmpCoreIds;
+        for(int32_t id: ids) {
+            ClusterInfo* cInfo = this->getClusterInfo(id);
+            if(cInfo == nullptr) {
+                continue;
+            }
+            for(int32_t c = cInfo->mStartCpu; c < cInfo->mStartCpu + cInfo->mNumCpus; c++) {
+                tmpCoreIds.push_back(c);
+            }
+        }
+        ids.clear();
+        for(int32_t coreId: tmpCoreIds) {
+            ids.push_back(coreId);
+        }
+    }
+
+    for(int32_t id: ids) {
+        mask |= ((uint64_t)1 << id);
+    }
+
+    if(irqLine == -1) {
+        DIR* dir = opendir(dirPath.c_str());
+        if(dir == nullptr) {
+            return RC_SUCCESS;
+        }
+
+        struct dirent* entry;
+        while((entry = readdir(dir)) != nullptr) {
+            std::string filePath = dirPath + std::string(entry->d_name) + "/";
+            filePath.append("smp_affinity");
+
+            if(AuxRoutines::fileExists(filePath)) {
+                AuxRoutines::writeToFile(filePath, std::to_string(mask));
+            }
+        }
+        closedir(dir);
+
+    } else {
+        std::string filePath = dirPath + std::to_string(irqLine) + "/";
+        filePath.append("smp_affinity");
+
+        if(AuxRoutines::fileExists(filePath)) {
+            AuxRoutines::writeToFile(filePath, std::to_string(mask));
+        }
+    }
+
+    return RC_SUCCESS;
+}
+
+ErrCode TargetRegistry::addLogLimit(std::vector<std::string>& values) {
+    if(values.size() < 1) {
+        return RC_INVALID_VALUE;
+    }
+
+    std::string logLevel = values[0];
+    if(logLevel != "minimal") {
+        return RC_SUCCESS;
+    }
+
+    const std::string journaldConfFile = "/etc/systemd/journald.conf";
+    const std::unordered_map<std::string, std::string> configOptions = {
+        {"RuntimeMaxUse", "20M"},
+        {"RuntimeMaxFileSize", "128K"},
+        {"MaxLevelStore", "notice"},
+        {"MaxLevelSyslog", "notice"},
+        {"MaxLevelKMsg", "notice"},
+        {"MaxLevelConsole", "notice"},
+        {"ForwardToSyslog", "no"}
+    };
+
+    std::ifstream confInStream(journaldConfFile);
+    if(!confInStream) {
+        return RC_SUCCESS;
+    }
+
+    std::ostringstream oldContent;
+    std::ostringstream newContent;
+    std::string line;
+    int8_t journalSectionFound = false;
+
+    std::unordered_map<std::string, int8_t> keyUpdated;
+    for(auto &entry : configOptions) {
+        keyUpdated[entry.first] = false;
+    }
+
+    while(std::getline(confInStream, line)) {
+        std::string trimmedLine = trimStr(line);
+        int8_t replaced = false;
+
+        if(trimmedLine == "[Journal]") {
+            journalSectionFound = true;
+        }
+
+        for(auto &entry : configOptions) {
+            if(trimmedLine.find(entry.first + "=") == 0 ||
+               trimmedLine.find("#" + entry.first + "=") == 0) {
+                newContent << entry.first << "=" << entry.second << "\n";
+                keyUpdated[entry.first] = true;
+                replaced = true;
+                break;
+            }
+        }
+        if(!replaced) {
+            newContent << line << "\n";
+        }
+        oldContent << line << "\n";
+    }
+    confInStream.close();
+
+    if(!journalSectionFound) {
+        newContent << "\n[Journal]\n";
+    }
+
+    for(auto &entry : configOptions) {
+        if(!keyUpdated[entry.first]) {
+            newContent << entry.first << "=" << entry.second << "\n";
+        }
+    }
+
+    std::ofstream confOutStream(journaldConfFile);
+    confOutStream << newContent.str();
+    confOutStream.close();
+
+    // Set printk kernel logging to minimal
+    const std::string printkPath = "/proc/sys/kernel/printk";
+    const std::string newLevels = "3 4 1 3";
+
+    std::ofstream printkFile(printkPath);
+    if(printkFile.is_open()) {
+        printkFile << newLevels;
+        printkFile.close();
+    }
+
+    // Restart journald
+    RestuneSDBus::getInstance()->restartService("systemd-journald.service");
+    return RC_SUCCESS;
 }
 
 // Methods for Building CGroup Config from InitConfigs.yaml

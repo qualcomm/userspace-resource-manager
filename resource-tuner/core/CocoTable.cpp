@@ -47,7 +47,7 @@ static int8_t comparLBetter(DLRootNode* newNode, DLRootNode* targetNode) {
     return newValue < targetValue;
 }
 
-int8_t CocoTable::needAllocation(Resource* res) {
+int8_t CocoTable::needsAllocation(Resource* res) {
     ResConfInfo* rConf = this->mResourceRegistry->getResConf(res->getResCode());
     return (rConf->mPolicy != Policy::PASS_THROUGH);
 }

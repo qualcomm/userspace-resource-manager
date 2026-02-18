@@ -57,51 +57,6 @@ void Signal::setList(std::vector<uint32_t>* listArgs) {
     this->mListArgs = listArgs;
 }
 
-ErrCode Signal::serialize(char* buf) {
-    try {
-        int8_t* ptr8 = (int8_t*)buf;
-        ASSIGN_AND_INCR(ptr8, this->getRequestType());
-
-        int32_t* ptr = (int32_t*)ptr8;
-        ASSIGN_AND_INCR(ptr, this->getSignalCode());
-
-        int64_t* ptr64 = (int64_t*)ptr;
-        ASSIGN_AND_INCR(ptr64, this->getHandle());
-        ASSIGN_AND_INCR(ptr64, this->getDuration());
-
-        char* charPointer = (char*) ptr64;
-
-        for(char ch: this->getAppName()) {
-            ASSIGN_AND_INCR(charPointer, ch);
-        }
-
-        ASSIGN_AND_INCR(charPointer, '\0');
-
-        for(char ch: this->getScenario()) {
-            ASSIGN_AND_INCR(charPointer, ch);
-        }
-
-        ASSIGN_AND_INCR(charPointer, '\0');
-
-        ptr = (int32_t*)charPointer;
-        ASSIGN_AND_INCR(ptr, this->getNumArgs());
-        ASSIGN_AND_INCR(ptr, this->getProperties());
-        ASSIGN_AND_INCR(ptr, this->getClientPID());
-        ASSIGN_AND_INCR(ptr, this->getClientTID());
-
-        for(int32_t i = 0; i < this->getNumArgs(); i++) {
-            uint32_t arg = this->getListArgAt(i);
-            ASSIGN_AND_INCR(ptr, arg)
-        }
-    } catch(const std::bad_alloc& e) {
-        return RC_REQUEST_PARSING_FAILED;
-    } catch(const std::exception& e) {
-        return RC_INVALID_VALUE;
-    }
-
-    return RC_SUCCESS;
-}
-
 ErrCode Signal::deserialize(char* buf) {
     try {
         int8_t* ptr8 = (int8_t*)buf;

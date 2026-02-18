@@ -38,33 +38,12 @@ void submitResProvisionRequest(Request* request, int8_t isVerified);
  * @param prop Name of the Property to be fetched.
  * @param buffer A buffer to hold the result, i.e. the property value corresponding to the specified name.
  * @param defValue Value to return in case a property with the specified Name is not found in the Config Store
- * @return int8_t:\n
- *            - 1: If the Property was found in the store
- *            - 0: Otherwise
+ * @return size_t: Number of bytes written to the result buffer.
  */
-int8_t submitPropGetRequest(const std::string& prop, std::string& buffer, const std::string& defValue);
 
-/**
- * @brief Modifies an already existing property in the Config Store.
- * @details Note: This API is meant to be used internally i.e. by other Resource Tuner modules like Signals
- *          and not the End-Client Directly. Client Facing APIs are provided in Core/Client/APIs/
- * @param prop Name of the Property to be modified.
- * @param value A buffer holding the new the property value.
- * @return int8_t:\n
- *            - 1: If the Property with the specified name was found in the store, and was updated successfully.
- *            - 0: Otherwise
- */
-int8_t submitPropSetRequest(const std::string& prop, const std::string& value);
+size_t submitPropGetRequest(void* request, std::string& result);
 
-/**
- * @brief Submit an incoming Prop Request from a Client, for processing.
- * @details This API accepts both Prop Get and Set Requests from the Client, and processes them accordingly.
- * @param request Encapsulation type for the the Prop Request
- * @return int8_t:\n
- *            - 1: If the Property with the specified name was found in the store, and was updated successfully.
- *            - 0: Otherwise
- */
-ErrCode submitPropRequest(void* request);
+size_t submitPropGetRequest(const std::string& propName, std::string& result, const std::string& defVal);
 
 ErrCode translateToPhysicalIDs(Resource* resource);
 

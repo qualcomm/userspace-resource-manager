@@ -12,7 +12,7 @@ RateLimiter::RateLimiter() {
     this->mRewardFactor = UrmSettings::metaConfigs.mRewardFactor;
 }
 
-int8_t RateLimiter::shouldBeProcessed(int32_t clientTID) {
+int8_t RateLimiter::shouldBeProcessed(pid_t clientTID) {
     this->mRateLimiterMutex.lock();
 
     double health = ClientDataManager::getInstance()->getHealthByClientID(clientTID);
@@ -50,7 +50,7 @@ int8_t RateLimiter::shouldBeProcessed(int32_t clientTID) {
     return true;
 }
 
-int8_t RateLimiter::isRateLimitHonored(int32_t clientTID) {
+int8_t RateLimiter::isRateLimitHonored(pid_t clientTID) {
     return shouldBeProcessed(clientTID);
 }
 

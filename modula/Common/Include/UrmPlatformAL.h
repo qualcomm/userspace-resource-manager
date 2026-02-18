@@ -128,6 +128,14 @@ enum Modes {
     (int32_t) ((resInfo ^ (EXTRACT_RESOURCE_MPAM_VALUE(resInfo) << 16)) | (newValue << 16));  \
 })                                                                                            \
 
+#define GET_SIGNAL_ID(sigCode)({                                                              \
+    (uint32_t) ((uint64_t)sigCode >> 32);                                                     \
+})                                                                                            \
+
+#define GET_SIGNAL_TYPE(sigCode)({                                                            \
+    (uint32_t) (((uint64_t)sigCode) & 0xffffffff);                                            \
+})                                                                                            \
+
 #define CONSTRUCT_RES_CODE(resType, resCode) ({                                               \
     uint32_t resourceBitmap = 0;                                                              \
     resourceBitmap |= ((uint32_t)resCode);                                                    \
@@ -158,9 +166,13 @@ enum Modes {
 X(RES_SCALE_MIN_FREQ,         0x00040000) \
 X(RES_SCALE_MAX_FREQ,         0x00040001) \
 X(RES_RATE_LIMIT_US,          0x00040002) \
+X(RES_CPU_IDLE_DISABLE_ST0,   0x00040003) \
+X(RES_CPU_IDLE_DISABLE_ST1,   0x00040004) \
+X(RES_CPU_IDLE_DISABLE_ST2,   0x00040005) \
 X(RES_SCHED_UTIL_CLAMP_MIN,   0x00030000) \
 X(RES_SCHED_UTIL_CLAMP_MAX,   0x00030001) \
 X(RES_SCHED_ENERGY_AWARE,     0x00030002) \
+X(RES_SCHED_RT_RUNTIME,       0x00030003) \
 X(RES_CPU_DMA_LATENCY,        0x00010000) \
 X(RES_PM_QOS_LATENCY,         0x00010001) \
 X(RES_DEVFREQ_GPU_MAX,        0x00050000) \

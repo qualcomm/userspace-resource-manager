@@ -1,236 +1,203 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
-
-// SafeOpsTests_mtest.cpp
 #include <iostream>
-#include <limits>
-
-#define MTEST_NO_MAIN
-#include "../framework/mini.h"
 
 #include "ErrCodes.h"
 #include "TestUtils.h"
 #include "SafeOps.h"
-#include "TestAggregator.h"
+#include "URMTests.h"
 
-// ---------- Tests for Add ----------
+#define TEST_CLASS "COMPONENT"
 
-static void Overflow1_impl(mtest::TestContext& ctx) {
+// Test cases for Add function
+URM_TEST(Overflow1, {
     OperationStatus status;
-    // implicit conversion yields proper value but is still considered overflow
+    // demonstrating implicit conversion by compiler resulting in proper value but still considered overflow
     int64_t result = Add(std::numeric_limits<int32_t>::max(), 2, status);
-    MT_REQUIRE(ctx, status == OVERFLOW);
-    MT_REQUIRE_EQ(ctx, result, (int64_t)std::numeric_limits<int32_t>::max());
-}
-MT_TEST(component, Overflow1, "safeops") { Overflow1_impl(ctx); }
+    E_ASSERT((status == OVERFLOW));
+    E_ASSERT((result == std::numeric_limits<int32_t>::max()));
+})
 
-static void Underflow1_impl(mtest::TestContext& ctx) {
+URM_TEST(Underflow1, {
     OperationStatus status;
     int32_t result = Add(std::numeric_limits<int32_t>::lowest(), -1, status);
-    MT_REQUIRE(ctx, status == UNDERFLOW);
-    MT_REQUIRE_EQ(ctx, result, std::numeric_limits<int32_t>::lowest());
-}
-MT_TEST(component, Underflow1, "safeops") { Underflow1_impl(ctx); }
+    E_ASSERT((status == UNDERFLOW));
+    E_ASSERT((result == std::numeric_limits<int32_t>::lowest()));
+})
 
-static void PositiveNoOverflow1_impl(mtest::TestContext& ctx) {
+URM_TEST(PositiveNoOverflow1, {
     OperationStatus status;
     int8_t result = Add(10, 20, status);
-    MT_REQUIRE(ctx, status == SUCCESS);
-    MT_REQUIRE_EQ(ctx, result, (int8_t)30);
-}
-MT_TEST(component, PositiveNoOverflow1, "safeops") { PositiveNoOverflow1_impl(ctx); }
+    E_ASSERT((status == SUCCESS));
+    E_ASSERT((result == 30));
+})
 
-static void NegativeNoUnderflow1_impl(mtest::TestContext& ctx) {
+URM_TEST(NegativeNoUnderflow1, {
     OperationStatus status;
     int8_t result = Add(-10, -20, status);
-    MT_REQUIRE(ctx, status == SUCCESS);
-    MT_REQUIRE_EQ(ctx, result, (int8_t)-30);
-}
-MT_TEST(component, NegativeNoUnderflow1, "safeops") { NegativeNoUnderflow1_impl(ctx); }
+    E_ASSERT((status == SUCCESS));
+    E_ASSERT((result == -30));
+})
 
-static void IncorrectType1_impl(mtest::TestContext& ctx) {
+URM_TEST(IncorrectType1, {
     OperationStatus status;
-    // based on the return type, -2 is assigned (uint8_t wraps to 255)
-    uint8_t result = Add(1, -2, status);
-    MT_REQUIRE(ctx, status == SUCCESS);
-    MT_REQUIRE_EQ(ctx, result, (uint8_t)255);
-}
-MT_TEST(component, IncorrectType1, "safeops") { IncorrectType1_impl(ctx); }
+    // based on the return type, -2 is assigned
+    uint8_t result = Add(1,-2,status);
+    E_ASSERT((status == SUCCESS));
+    E_ASSERT((result == 255));
+})
 
-static void DifferentTypes_impl(mtest::TestContext& ctx) {
+URM_TEST(DifferentTypes, {
     OperationStatus status;
     int8_t a = 127;
     int16_t b = 123;
-    int16_t result = Add(static_cast<int16_t>(a), b, status);
-    MT_REQUIRE(ctx, status == SUCCESS);
-    MT_REQUIRE_EQ(ctx, result, (int16_t)250);
-}
-MT_TEST(component, DifferentTypes, "safeops") { DifferentTypes_impl(ctx); }
+    int16_t result = Add(static_cast<int16_t>(a),b,status);
+    E_ASSERT((status == SUCCESS));
+    E_ASSERT((result == 250));
+})
 
-// ---------- Tests for Subtract ----------
-
-static void Overflow2_impl(mtest::TestContext& ctx) {
+// Test cases for Subtract function
+URM_TEST(Overflow2, {
     OperationStatus status;
-    int64_t result = Subtract(std::numeric_limits<int64_t>::max(),
-                              static_cast<int64_t>(-1), status);
-    MT_REQUIRE(ctx, status == OVERFLOW);
-    MT_REQUIRE_EQ(ctx, result, std::numeric_limits<int64_t>::max());
-}
-MT_TEST(component, Overflow2, "safeops") { Overflow2_impl(ctx); }
+    int64_t result = Subtract(std::numeric_limits<int64_t>::max(), static_cast<int64_t>(-1), status);
+    E_ASSERT((status == OVERFLOW));
+    E_ASSERT((result == std::numeric_limits<int64_t>::max()));
+})
 
-static void Underflow2_impl(mtest::TestContext& ctx) {
+URM_TEST(Underflow2, {
     OperationStatus status;
     int32_t result = Subtract(std::numeric_limits<int32_t>::lowest(), 1, status);
-    MT_REQUIRE(ctx, status == UNDERFLOW);
-    MT_REQUIRE_EQ(ctx, result, std::numeric_limits<int32_t>::lowest());
-}
-MT_TEST(component, Underflow2, "safeops") { Underflow2_impl(ctx); }
+    E_ASSERT((status == UNDERFLOW));
+    E_ASSERT((result == std::numeric_limits<int32_t>::lowest()));
+})
 
-static void PositiveNoOverflow2_impl(mtest::TestContext& ctx) {
+URM_TEST(PositiveNoOverflow2, {
     OperationStatus status;
     int8_t result = Subtract(20, 10, status);
-    MT_REQUIRE(ctx, status == SUCCESS);
-    MT_REQUIRE_EQ(ctx, result, (int8_t)10);
-}
-MT_TEST(component, PositiveNoOverflow2, "safeops") { PositiveNoOverflow2_impl(ctx); }
+    E_ASSERT((status == SUCCESS));
+    E_ASSERT((result == 10));
+})
 
-static void NegativeNoUnderflow2_impl(mtest::TestContext& ctx) {
+URM_TEST(NegativeNoUnderflow2, {
     OperationStatus status;
     int8_t result = Subtract(-20, -10, status);
-    MT_REQUIRE(ctx, status == SUCCESS);
-    MT_REQUIRE_EQ(ctx, result, (int8_t)-10);
-}
-MT_TEST(component, NegativeNoUnderflow2, "safeops") { NegativeNoUnderflow2_impl(ctx); }
+    E_ASSERT((status == SUCCESS));
+    E_ASSERT((result == -10));
+})
 
-// ---------- Tests for Multiply ----------
+URM_TEST(Underflow3, {
+     OperationStatus status;
+     int64_t result = Multiply(std::numeric_limits<int64_t>::lowest(), static_cast<int64_t>(2), status);
+     E_ASSERT((status == UNDERFLOW));
+     E_ASSERT((result == std::numeric_limits<int64_t>::lowest()));
+})
 
-static void Underflow3_impl(mtest::TestContext& ctx) {
-    OperationStatus status;
-    int64_t result = Multiply(std::numeric_limits<int64_t>::lowest(),
-                              static_cast<int64_t>(2), status);
-    MT_REQUIRE(ctx, status == UNDERFLOW);
-    MT_REQUIRE_EQ(ctx, result, std::numeric_limits<int64_t>::lowest());
-}
-MT_TEST(component, Underflow3, "safeops") { Underflow3_impl(ctx); }
+URM_TEST(PositiveNoOverflow3, {
+     OperationStatus status;
+     int64_t result = Multiply(10, 20, status);
+     E_ASSERT((status == SUCCESS));
+     E_ASSERT((result == 200));
+})
 
-static void PositiveNoOverflow3_impl(mtest::TestContext& ctx) {
-    OperationStatus status;
-    int64_t result = Multiply(10, 20, status);
-    MT_REQUIRE(ctx, status == SUCCESS);
-    MT_REQUIRE_EQ(ctx, result, (int64_t)200);
-}
-MT_TEST(component, PositiveNoOverflow3, "safeops") { PositiveNoOverflow3_impl(ctx); }
-
-static void DoublePositiveOverflow_impl(mtest::TestContext& ctx) {
+URM_TEST(DoublePositiveOverflow, {
     OperationStatus status;
     double result = Multiply(std::numeric_limits<double>::max(), 2.7, status);
-    MT_REQUIRE(ctx, status == OVERFLOW);
-    MT_REQUIRE_EQ(ctx, result, std::numeric_limits<double>::max());
-}
-MT_TEST(component, DoublePositiveOverflow, "safeops") { DoublePositiveOverflow_impl(ctx); }
+    E_ASSERT((status == OVERFLOW));
+    E_ASSERT((result == std::numeric_limits<double>::max()));
+})
 
-static void DoubleUnderflow_impl(mtest::TestContext& ctx) {
+URM_TEST(DoubleUnderflow, {
     OperationStatus status;
     double result = Multiply(2.0, std::numeric_limits<double>::lowest(), status);
-    MT_REQUIRE(ctx, status == UNDERFLOW);
-    MT_REQUIRE_EQ(ctx, result, std::numeric_limits<double>::lowest());
-}
-MT_TEST(component, DoubleUnderflow, "safeops") { DoubleUnderflow_impl(ctx); }
+    E_ASSERT((status == UNDERFLOW));
+    E_ASSERT((result == std::numeric_limits<double>::lowest()));
+})
 
-static void DoublePositiveNoOverflow_impl(mtest::TestContext& ctx) {
+URM_TEST(DoublePositiveNoOverflow, {
     OperationStatus status;
     double result = Multiply(10.0, 2.0, status);
-    MT_REQUIRE(ctx, status == SUCCESS);
-    MT_REQUIRE_EQ(ctx, result, 20.0);
-}
-MT_TEST(component, DoublePositiveNoOverflow, "safeops") { DoublePositiveNoOverflow_impl(ctx); }
+    E_ASSERT((status == SUCCESS));
+    E_ASSERT((result == 20.0));
+})
 
-// ---------- Tests for Divide ----------
-
-static void DivByZero_impl(mtest::TestContext& ctx) {
+URM_TEST(DivByZero, {
     OperationStatus status;
     double result = Divide(10.0, 0.0, status);
-    MT_REQUIRE(ctx, status == DIVISION_BY_ZERO);
-    MT_REQUIRE_EQ(ctx, result, 10.0);
-}
-MT_TEST(component, DivByZero, "safeops") { DivByZero_impl(ctx); }
+    E_ASSERT((status == DIVISION_BY_ZERO));
+    E_ASSERT((result == 10.0));
+})
 
-static void PositiveOverflow_impl(mtest::TestContext& ctx) {
+URM_TEST(PositiveOverflow, {
     OperationStatus status;
     double result = Divide(std::numeric_limits<double>::max(), 0.5, status);
-    MT_REQUIRE(ctx, status == OVERFLOW);
-    MT_REQUIRE_EQ(ctx, result, std::numeric_limits<double>::max());
-}
-MT_TEST(component, PositiveOverflow, "safeops") { PositiveOverflow_impl(ctx); }
+    E_ASSERT((status == OVERFLOW));
+    E_ASSERT((result == std::numeric_limits<double>::max()));
+})
 
-static void Underflow4_impl(mtest::TestContext& ctx) {
+URM_TEST(Underflow4, {
     OperationStatus status;
     double result = Divide(std::numeric_limits<double>::max(), -0.5, status);
-    MT_REQUIRE(ctx, status == UNDERFLOW);
-    MT_REQUIRE_EQ(ctx, result, std::numeric_limits<double>::lowest());
-}
-MT_TEST(component, Underflow4, "safeops") { Underflow4_impl(ctx); }
+    E_ASSERT((status == UNDERFLOW));
+    E_ASSERT((result == std::numeric_limits<double>::lowest()));
+})
 
-// ---------- Tests for Safe* macros & VALIDATE_* ----------
-
-static void TestSafeDerefMacro_impl(mtest::TestContext& ctx) {
+URM_TEST(TestSafeDerefMacro, {
     int32_t* int_ptr = nullptr;
     int8_t exceptionHit = false;
     try {
         SafeDeref(int_ptr);
-    } catch (const std::invalid_argument& /*e*/) {
+    } catch(const std::invalid_argument& e) {
         exceptionHit = true;
     }
-    MT_REQUIRE(ctx, exceptionHit == true);
-}
-MT_TEST(component, TestSafeDerefMacro, "safeops") { TestSafeDerefMacro_impl(ctx); }
 
-static void TestSafeAssignmentMacro_impl(mtest::TestContext& ctx) {
+    E_ASSERT((exceptionHit == true));
+})
+
+URM_TEST(TestSafeAssignmentMacro, {
     int32_t* int_ptr = nullptr;
     int8_t exceptionHit = false;
     try {
         SafeAssignment(int_ptr, 57);
-    } catch (const std::invalid_argument& /*e*/) {
+    } catch(const std::invalid_argument& e) {
         exceptionHit = true;
     }
-    MT_REQUIRE(ctx, exceptionHit == true);
-}
-MT_TEST(component, TestSafeAssignmentMacro, "safeops") { TestSafeAssignmentMacro_impl(ctx); }
 
-static void TestSafeStaticCastMacro_impl(mtest::TestContext& ctx) {
+    E_ASSERT((exceptionHit == true));
+})
+
+URM_TEST(TestSafeStaticCastMacro, {
     int32_t* int_ptr = nullptr;
     int8_t exceptionHit = false;
     try {
         SafeStaticCast(int_ptr, void*);
-    } catch (const std::invalid_argument& /*e*/) {
+    } catch(const std::invalid_argument& e) {
         exceptionHit = true;
     }
-    MT_REQUIRE(ctx, exceptionHit == true);
-}
-MT_TEST(component, TestSafeStaticCastMacro, "safeops") { TestSafeStaticCastMacro_impl(ctx); }
 
-static void TestValidationMacro1_impl(mtest::TestContext& ctx) {
+    E_ASSERT((exceptionHit == true));
+})
+
+URM_TEST(TestValidationMacro1, {
     int32_t val = -670;
     int8_t exceptionHit = false;
     try {
         VALIDATE_GT(val, 0);
-    } catch (const std::invalid_argument& /*e*/) {
+    } catch(const std::invalid_argument& e) {
         exceptionHit = true;
     }
-    MT_REQUIRE(ctx, exceptionHit == true);
-}
-MT_TEST(component, TestValidationMacro1, "safeops") { TestValidationMacro1_impl(ctx); }
 
-static void TestValidationMacro2_impl(mtest::TestContext& ctx) {
+    E_ASSERT((exceptionHit == true));
+})
+
+URM_TEST(TestValidationMacro2, {
     int32_t val = 100;
     int8_t exceptionHit = false;
     try {
         VALIDATE_GE(val, 100);
-    } catch (const std::invalid_argument& /*e*/) {
+    } catch(const std::invalid_argument& e) {
         exceptionHit = true;
     }
-    MT_REQUIRE(ctx, exceptionHit == false);
-}
-MT_TEST(component, TestValidationMacro2, "safeops") { TestValidationMacro2_impl(ctx); }
 
+    E_ASSERT((exceptionHit == false));
+})

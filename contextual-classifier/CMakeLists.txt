@@ -6,6 +6,7 @@ include_directories(${CMAKE_SOURCE_DIR}/modula/CoreModules/Include)
 include_directories(${CMAKE_SOURCE_DIR}/extensions/Include)
 include_directories(${CMAKE_SOURCE_DIR}/resource-tuner/core/Include)
 include_directories(${CMAKE_SOURCE_DIR}/resource-tuner/signals/Include/)
+include_directories(${CMAKE_SOURCE_DIR}/resource-tuner/dbus-modules/Include/)
 
 # Single shared library that contains parser + classifier + netlink glue
 add_library(ContextualClassifier SHARED
@@ -19,67 +20,70 @@ set_target_properties(ContextualClassifier PROPERTIES
 )
 
 target_include_directories(ContextualClassifier
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/Include
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Include
 )
 
-# fastText detection and USE_FASTTEXT macro
-option(ENABLE_FASTTEXT "Build ML inference with fastText support" ON)
+# floret detection and USE_FLORET macro using pkg-config
+option(ENABLE_FLORET "Build ML inference with floret support" ON)
 
-set(FASTTEXT_FOUND FALSE)
-set(FASTTEXT_TARGET "")
+set(FLORET_FOUND FALSE)
+set(FLORET_LIBRARIES "")
+set(FLORET_INCLUDE_DIRS "")
 
-if(ENABLE_FASTTEXT)
-    # First try a CMake package
-    find_package(fasttext QUIET)
-
-    if(TARGET fasttext::fasttext)
-        set(FASTTEXT_FOUND TRUE)
-        set(FASTTEXT_TARGET fasttext::fasttext)
-    elseif(TARGET fasttext)
-        set(FASTTEXT_FOUND TRUE)
-        set(FASTTEXT_TARGET fasttext)
-    else()
-        # Fallback: probe the linker directly for -lfasttext
-        include(CheckLibraryExists)
-        check_library_exists(fasttext fasttext_version "" FASTTEXT_LINKABLE)
-        if(FASTTEXT_LINKABLE)
-            set(FASTTEXT_FOUND TRUE)
-            set(FASTTEXT_TARGET fasttext)
-        endif()
+if(ENABLE_FLORET)
+    # Use pkg-config to find floret
+    pkg_check_modules(PC_FLORET QUIET floret)
+    if(PC_FLORET_FOUND)
+        message(STATUS "floret not found via pkg-config")
+        set(FLORET_FOUND TRUE)
+        set(FLORET_LIBRARIES ${PC_FLORET_LIBRARIES})
+        set(FLORET_INCLUDE_DIRS ${PC_FLORET_INCLUDE_DIRS})
     endif()
 endif()
 
-if(FASTTEXT_FOUND)
-    message(STATUS "fastText found, building MLInference with USE_FASTTEXT=1")
-    add_definitions(-DUSE_FASTTEXT=1)
+if(FLORET_FOUND)
+    message(STATUS "floret found via pkg-config, building MLInference with USE_FLORET=1")
+    add_definitions(-DUSE_FLORET=1)
 
-    # Define the ML inference library that actually uses fastText
-    add_library(ml_inference_lib STATIC
+    # Define the ML inference library that actually uses FLORET
+    add_library(ml_inference_lib SHARED
         FeatureExtractor.cpp
         FeaturePruner.cpp
         MLInference.cpp
     )
 
+    set_target_properties(ml_inference_lib PROPERTIES
+        VERSION 1.0.0
+        SOVERSION 1
+    )
+
+    target_link_libraries(ContextualClassifier PRIVATE ml_inference_lib)
+
     target_link_libraries(ml_inference_lib
         PRIVATE
-            ${FASTTEXT_TARGET}
+            ${FLORET_LIBRARIES}
     )
 
     target_include_directories(ml_inference_lib
         PUBLIC
             ${CMAKE_CURRENT_SOURCE_DIR}/Include
+            ${FLORET_INCLUDE_DIRS}
     )
 else()
-    message(STATUS "fastText not found or ENABLE_FASTTEXT=OFF — falling back to base Inference only")
+    message(STATUS "floret not found via pkg-config or ENABLE_FLORET=OFF — falling back to base Inference only")
 endif()
 
 # Installation rules
 install(TARGETS ContextualClassifier DESTINATION lib)
-if(FASTTEXT_FOUND)
+if(FLORET_FOUND)
     install(TARGETS ml_inference_lib DESTINATION lib)
-    install(FILES ${CMAKE_SOURCE_DIR}/contextual-classifier/Artifacts/fasttext_model_supervised.bin DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/classifier)
+    install(FILES ${CMAKE_SOURCE_DIR}/contextual-classifier/Artifacts/floret_model_supervised.bin DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/urm/classifier)
 endif()
 
-install(FILES Configs/ignore-tokens.txt DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/urm/classifier)
-install(FILES Configs/classifier-blocklist.txt DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/urm/classifier)
+install(
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Configs/
+  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/urm/classifier/
+  FILES_MATCHING
+  PATTERN "*.txt"
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+)

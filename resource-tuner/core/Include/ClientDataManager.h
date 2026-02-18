@@ -52,8 +52,8 @@ class ClientDataManager {
 private:
     static std::shared_ptr<ClientDataManager> mClientDataManagerInstance;
     static std::mutex instanceProtectionLock;
-    std::unordered_map<int32_t, ClientInfo*> mClientRepo; //!< Maintains Client Info indexed by PID
-    std::unordered_map<int32_t, ClientTidData*> mClientTidRepo; //!< Maintains Client Info indexed by TID
+    std::unordered_map<pid_t, ClientInfo*> mClientRepo; //!< Maintains Client Info indexed by PID
+    std::unordered_map<pid_t, ClientTidData*> mClientTidRepo; //!< Maintains Client Info indexed by TID
     std::shared_timed_mutex mGlobalTableMutex;
 
     ClientDataManager();
@@ -67,7 +67,7 @@ public:
      *            - 1: if the client already exists\n
      *            - 0: otherwise
      */
-    int8_t clientExists(int32_t clientPID, int32_t clientTID);
+    int8_t clientExists(pid_t clientPID, pid_t clientTID);
 
     /**
      * @brief Create a new entry for the client with the given PID in the ClientData Table.
@@ -78,7 +78,7 @@ public:
      *             - 1: Indicating that a new Client Tracking Entry was successfully Created.\n
      *             - 0: Otherwise
      */
-    int8_t createNewClient(int32_t clientPID, int32_t clientTID);
+    int8_t createNewClient(pid_t clientPID, pid_t clientTID);
 
     /**
      * @brief Returns a list of active requests for the client with the given PID.
@@ -86,7 +86,7 @@ public:
      * @return std::unordered_set<int64_t>*:\n
      *             - Pointer to an unordered_set containing the requests.
      */
-    std::unordered_set<int64_t>* getRequestsByClientID(int32_t clientTID);
+    std::unordered_set<int64_t>* getRequestsByClientID(pid_t clientTID);
 
     /**
      * @brief This method is called by the RequestMap to insert a new Request (represented by it's handle)
@@ -94,7 +94,7 @@ public:
      * @param clientTID Process TID of the client
      * @param requestHandle Handle of the Request
      */
-    void insertRequestByClientId(int32_t clientTID, int64_t requestHandle);
+    void insertRequestByClientId(pid_t clientTID, int64_t requestHandle);
 
     /**
      * @brief This method is called by the RequestMap to delete a Request (represented by it's handle)
@@ -102,7 +102,7 @@ public:
      * @param clientTID Process TID of the client
      * @param requestHandle Handle of the Request
      */
-    void deleteRequestByClientId(int32_t clientTID, int64_t requestHandle);
+    void deleteRequestByClientId(pid_t clientTID, int64_t requestHandle);
 
     /**
      * @brief This method is called by the RateLimiter to fetch the current health for a given
@@ -111,7 +111,7 @@ public:
      * @return double:\n
      *           - Health of the Client.
      */
-    double getHealthByClientID(int32_t clientTID);
+    double getHealthByClientID(pid_t clientTID);
 
     /**
      * @brief This method is called by the RateLimiter to fetch the Last Request Timestamp for a given
@@ -120,7 +120,7 @@ public:
      * @return int64_t:\n
      *             - Timestamp of Last Request (A value of 0, indicates no prior Requests).
      */
-    int64_t getLastRequestTimestampByClientID(int32_t clientTID);
+    int64_t getLastRequestTimestampByClientID(pid_t clientTID);
 
     /**
      * @brief This method is called by the RateLimiter to update the current health for a given
@@ -128,7 +128,7 @@ public:
      * @param clientTID TID of the client
      * @param health Update value of the Health for the client
      */
-    void updateHealthByClientID(int32_t clientTID, double health);
+    void updateHealthByClientID(pid_t clientTID, double health);
 
     /**
      * @brief This method is called by the RateLimiter to update the Last Request Timestamp for a given
@@ -136,7 +136,7 @@ public:
      * @param clientTID TID of the client
      * @param currentMillis New value for the Last Request Timestamp for the client
      */
-    void updateLastRequestTimestampByClientID(int32_t clientTID, int64_t currentMillis);
+    void updateLastRequestTimestampByClientID(pid_t clientTID, int64_t currentMillis);
 
     /**
      * @brief This method is called by the Verifier to fetch the Permission Level for a given
@@ -147,27 +147,27 @@ public:
      *            - PERMISSION_THIRD_PARTY: If the Client has Third Party level access\n
      *            - -1: If the Client could not be determined.
      */
-    int8_t getClientLevelByClientID(int32_t clientPID);
+    int8_t getClientLevelByID(pid_t clientPID);
 
-    void getThreadsByClientId(int32_t clientPID, std::vector<int32_t>& threadIDs);
+    void getThreadsByClientId(pid_t clientPID, std::vector<pid_t>& threadIDs);
 
     /**
      * @brief This method is called by the PulseMonitor to fetch the list of all active clients.
      * @param clientList An IN/OUT parameter to store the list of active clients.
      */
-    void getActiveClientList(std::vector<int32_t>& clientList);
+    void getActiveClientList(std::vector<pid_t>& clientList);
 
     /**
      * @brief Delete a client PID Entry from the Client Table.
      * @param clientPID Process ID of the client
      */
-    void deleteClientPID(int32_t clientPID);
+    void deleteClientPID(pid_t clientPID);
 
     /**
      * @brief Delete a client TID Entry from the Client TID Data Table.
      * @param clientTID TID of the client
      */
-    void deleteClientTID(int32_t clientTID);
+    void deleteClientTID(pid_t clientTID);
 
     static std::shared_ptr<ClientDataManager> getInstance() {
         if(mClientDataManagerInstance == nullptr) {

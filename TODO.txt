@@ -1,17 +1,14 @@
 1. Core Dev tasks
     - SeLinux Rules enablement
     - Enable Classifier on meta-qcom builds
-    - Analyze CodeQL reported issues
 
 2. Process tasks (GitHub actions and repo workflow)
     - Enable Axiom CI tests
     - Orbit Integration
-    - Submit FastText Recipe file to Yocto community
+    - Submit Floret Recipe file to Yocto community
     - Integrate and Enable ARMOR
 
 3. Implementation specific
     - Client API requests encoding / decoding support (Making Buffers smaller for efficiency)
-    - Client CLI improvements, to support all types of requests
     - Focused cgroup creation
     - Memory Leaks analysis and reduction. Major issues are resolved, still observing some lost blocks.
-    - Tests Cleanup

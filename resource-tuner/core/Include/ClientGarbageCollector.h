@@ -45,7 +45,7 @@ private:
 
     Timer* mTimer;
     std::mutex mGcQueueMutex;
-    std::queue<int32_t> mGcQueue;
+    std::queue<pid_t> mGcQueue;
     uint32_t mGarbageCollectionDuration;
 
     ClientGarbageCollector();
@@ -67,7 +67,7 @@ public:
     ErrCode startClientGarbageCollectorDaemon();
 
     void stopClientGarbageCollectorDaemon();
-    void submitClientThreadsForCleanup(int32_t clientTid);
+    void submitClientForCleanup(pid_t clientPid);
 
     static std::shared_ptr<ClientGarbageCollector> getInstance() {
         if(mClientGarbageCollectorInstance == nullptr) {

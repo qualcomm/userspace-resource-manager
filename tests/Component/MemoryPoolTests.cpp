@@ -3,253 +3,242 @@
 
 #include "TestUtils.h"
 #include "MemoryPool.h"
-#include "TestAggregator.h"
-#include <vector>
-#include <string>
-#include <cstdint>
-#include <cstdlib>  
-#include <new>      
+#include "URMTests.h"
 
-#define MTEST_NO_MAIN
-#include "../framework/mini.h"
+#define TEST_CLASS "COMPONENT"
 
-
-using namespace mtest;
-
-// -------------------------
-// Helper test types
-// -------------------------
+// Test structure, used for allocation testing
 struct TestBuffer {
     int32_t testId;
-    double  score;
-    int8_t  isDuplicate;
+    double score;
+    int8_t isDuplicate;
 };
 
+URM_TEST(TestMemoryPoolBasicAllocation1, {
+    MakeAlloc<TestBuffer>(1);
+
+    void* block = GetBlock<TestBuffer>();
+    E_ASSERT((block != nullptr));
+
+    FreeBlock<TestBuffer>(static_cast<void*>(block));
+})
+
+URM_TEST(TestMemoryPoolBasicAllocation2, {
+    MakeAlloc<char[250]>(2);
+
+    void* firstBlock = GetBlock<char[250]>();
+    E_ASSERT((firstBlock != nullptr));
+
+    void* secondBlock = GetBlock<char[250]>();
+    E_ASSERT((secondBlock != nullptr));
+
+    FreeBlock<char[250]>(firstBlock);
+    FreeBlock<char[250]>(secondBlock);
+})
+
 struct ListNode {
-    int32_t  val;
+    int32_t val;
     ListNode* next;
 };
+
+URM_TEST(TestMemoryPoolBasicAllocation3, {
+    MakeAlloc<ListNode>(10);
+    ListNode* head = nullptr;
+    ListNode* cur = nullptr;
+
+    for(int32_t i = 0; i < 10; i++) {
+        ListNode* node = (ListNode*)GetBlock<ListNode>();
+        E_ASSERT((node != nullptr));
+
+        node->val = i + 1;
+        node->next = nullptr;
+
+        if(head == nullptr) {
+            head = node;
+            cur = node;
+        } else {
+            cur->next = node;
+            cur = cur->next;
+        }
+    }
+
+    cur = head;
+    int32_t counter = 1;
+    while(cur != nullptr) {
+        E_ASSERT((cur->val == counter));
+        ListNode* next = cur->next;
+        FreeBlock<ListNode>(static_cast<void*>(cur));
+
+        cur = next;
+        counter++;
+    }
+})
 
 struct CustomRequest {
     int32_t requestID;
     int64_t requestTimestamp;
 };
 
-class DataHub {
-private:
-    int32_t     mFolderCount;
-    int32_t     mUserCount;
-    std::string mOrgName;
-public:
-    DataHub(int32_t folderCount, int32_t userCount, std::string orgName)
-        : mFolderCount(folderCount), mUserCount(userCount), mOrgName(std::move(orgName)) {}
-};
-
-class CustomDataType {
-private:
-    int8_t* mDestructorCalled;
-public:
-    explicit CustomDataType(int8_t* destructorCalled)
-        : mDestructorCalled(destructorCalled) {}
-
-    ~CustomDataType() {
-        *mDestructorCalled = true;
-    }
-};
-
-// -------------------------
-// Suite: MemoryPoolTests
-// -------------------------
-
-MT_TEST(Component, BasicAllocation1, "memorypool") {
-    MakeAlloc<TestBuffer>(1);
-
-    void* block = GetBlock<TestBuffer>();
-    MT_REQUIRE(ctx, block != nullptr);
-
-    FreeBlock<TestBuffer>(static_cast<void*>(block));
-}
-
-MT_TEST(Component, BasicAllocation2, "memorypool") {
-    MakeAlloc<char[250]>(2);
-
-    void* firstBlock = GetBlock<char[250]>();
-    MT_REQUIRE(ctx, firstBlock != nullptr);
-
-    void* secondBlock = GetBlock<char[250]>();
-    MT_REQUIRE(ctx, secondBlock != nullptr);
-
-    FreeBlock<char[250]>(firstBlock);
-    FreeBlock<char[250]>(secondBlock);
-}
-
-MT_TEST(Component, BasicAllocation3, "memorypool") {
-    MakeAlloc<ListNode>(10);
-    ListNode* head = nullptr;
-    ListNode* cur  = nullptr;
-
-    for (int32_t i = 0; i < 10; ++i) {
-        ListNode* node = static_cast<ListNode*>(GetBlock<ListNode>());
-        MT_REQUIRE(ctx, node != nullptr);
-
-        node->val  = i + 1;
-        node->next = nullptr;
-
-        if (head == nullptr) {
-            head = node;
-            cur  = node;
-        } else {
-            cur->next = node;
-            cur       = cur->next;
-        }
-    }
-
-    cur = head;
-    int32_t counter = 1;
-    while (cur != nullptr) {
-        MT_REQUIRE_EQ(ctx, cur->val, counter);
-        ListNode* next = cur->next;
-        FreeBlock<ListNode>(static_cast<void*>(cur));
-        cur = next;
-        ++counter;
-    }
-}
-
-MT_TEST(Component, BasicAllocation4, "memorypool") {
+URM_TEST(TestMemoryPoolBasicAllocation4, {
     MakeAlloc<std::vector<CustomRequest*>>(1);
     MakeAlloc<CustomRequest>(20);
 
-    auto* requests =
+    std::vector<CustomRequest*>* requests =
         new (GetBlock<std::vector<CustomRequest*>>()) std::vector<CustomRequest*>;
-    MT_REQUIRE(ctx, requests != nullptr);
 
-    for (int32_t i = 0; i < 15; ++i) {
-        auto* request = static_cast<CustomRequest*>(GetBlock<CustomRequest>());
-        MT_REQUIRE(ctx, request != nullptr);
+    E_ASSERT((requests != nullptr));
 
-        request->requestID        = i + 1;
+    for(int32_t i = 0; i < 15; i++) {
+        CustomRequest* request = (CustomRequest*) GetBlock<CustomRequest>();
+        E_ASSERT((request != nullptr));
+
+        request->requestID = i + 1;
         request->requestTimestamp = 100 * (i + 3);
         requests->push_back(request);
     }
 
-    for (int32_t i = 0; i < static_cast<int32_t>(requests->size()); ++i) {
-        MT_REQUIRE_EQ(ctx, (*requests)[i]->requestID,        i + 1);
-        MT_REQUIRE_EQ(ctx, (*requests)[i]->requestTimestamp, 100 * (i + 3));
+    for(int32_t i = 0; i < (int32_t)requests->size(); i++) {
+        E_ASSERT(((*requests)[i]->requestID == i + 1));
+        E_ASSERT(((*requests)[i]->requestTimestamp == 100 * (i + 3)));
+
         FreeBlock<CustomRequest>(static_cast<void*>((*requests)[i]));
     }
 
     FreeBlock<std::vector<CustomRequest*>>(static_cast<void*>(requests));
-}
+})
 
-MT_TEST(Component, BasicAllocation5, "memorypool") {
+class DataHub {
+private:
+    int32_t mFolderCount;
+    int32_t mUserCount;
+    std::string mOrgName;
+public:
+    DataHub(int32_t mFolderCount, int32_t mUserCount, std::string mOrgName) {
+        this->mFolderCount = mFolderCount;
+        this->mUserCount = mUserCount;
+        this->mOrgName = mOrgName;
+    }
+};
+
+URM_TEST(TestMemoryPoolBasicAllocation5, {
     MakeAlloc<DataHub>(1);
 
-    auto* dataHubObj = new (GetBlock<DataHub>()) DataHub(30, 17, "XYZ-co");
-    MT_REQUIRE(ctx, dataHubObj != nullptr);
+    DataHub* dataHubObj = new(GetBlock<DataHub>()) DataHub(30, 17, "XYZ-co");
+
+    E_ASSERT((dataHubObj != nullptr));
 
     FreeBlock<DataHub>(static_cast<void*>(dataHubObj));
-}
+})
 
-MT_TEST(Component, BasicAllocation6, "memorypool") {
+URM_TEST(TestMemoryPoolBasicAllocation6, {
     int8_t allocationFailed = false;
     void* block = nullptr;
 
     try {
         block = GetBlock<char[120]>();
-    } catch (const std::bad_alloc&) {
+    } catch(const std::bad_alloc& e) {
         allocationFailed = true;
     }
 
-    MT_REQUIRE(ctx, block == nullptr);
-    MT_REQUIRE_EQ(ctx, allocationFailed, true);
-}
+    E_ASSERT((block == nullptr));
+    E_ASSERT((allocationFailed == true));
+})
 
-MT_TEST(Component, BasicAllocation7, "memorypool") {
+URM_TEST(TestMemoryPoolBasicAllocation7, {
     MakeAlloc<int64_t>(1);
 
     void* block = nullptr;
     try {
         block = GetBlock<int64_t>();
-    } catch (const std::bad_alloc&) {
-        // no-op
+    } catch(const std::bad_alloc& e) {
     }
-    MT_REQUIRE(ctx, block != nullptr);
+
+    E_ASSERT((block != nullptr));
 
     block = nullptr;
     try {
         block = GetBlock<char[8]>();
-    } catch (const std::bad_alloc&) {
-        // expected
-    }
-    MT_REQUIRE(ctx, block == nullptr);
-}
+    } catch(const std::bad_alloc& e) {}
 
-MT_TEST(Component, FreeingMemory1, "memorypool") {
+    E_ASSERT((block == nullptr));
+})
+
+URM_TEST(TestMemoryPoolFreeingMemory1, {
     MakeAlloc<char[125]>(2);
 
-    void* firstBlock  = GetBlock<char[125]>();
-    MT_REQUIRE(ctx, firstBlock != nullptr);
+    void* firstBlock = GetBlock<char[125]>();
+    E_ASSERT((firstBlock != nullptr));
 
     void* secondBlock = GetBlock<char[125]>();
-    MT_REQUIRE(ctx, secondBlock != nullptr);
+    E_ASSERT((secondBlock != nullptr));
 
     FreeBlock<char[125]>(static_cast<void*>(firstBlock));
 
-    void* thirdBlock  = GetBlock<char[125]>();
-    MT_REQUIRE(ctx, thirdBlock != nullptr);
-}
+    void* thirdBlock = GetBlock<char[125]>();
+    E_ASSERT((thirdBlock != nullptr));
+})
 
-MT_TEST(Component, FreeingMemory2, "memorypool") {
+URM_TEST(TestMemoryPoolFreeingMemory2, {
     MakeAlloc<char[200]>(5);
 
     std::vector<void*> allocatedBlocks;
 
-    for (int32_t i = 0; i < 5; ++i) {
+    for(int32_t i = 0; i < 5; i++) {
         allocatedBlocks.push_back(GetBlock<char[200]>());
-        MT_REQUIRE(ctx, allocatedBlocks.back() != nullptr);
+        E_ASSERT((allocatedBlocks.back() != nullptr));
     }
 
-    for (int32_t i = 0; i < 5; ++i) {
+    for(int32_t i = 0; i < 5; i++) {
         void* block = nullptr;
         int8_t allocationFailed = false;
 
         try {
             block = GetBlock<char[200]>();
-        } catch (const std::bad_alloc&) {
+        } catch(const std::bad_alloc& e) {
             allocationFailed = true;
         }
 
-        MT_REQUIRE(ctx, block == nullptr);
-        MT_REQUIRE_EQ(ctx, allocationFailed, true);
+        E_ASSERT((block == nullptr));
+        E_ASSERT((allocationFailed == true));
     }
 
-    for (int32_t i = 0; i < 5; ++i) {
+    for(int32_t i = 0; i < 5; i++) {
         FreeBlock<char[200]>(static_cast<void*>(allocatedBlocks[i]));
     }
 
-    for (int32_t i = 0; i < 5; ++i) {
+    for(int32_t i = 0; i < 5; i++) {
         allocatedBlocks[i] = GetBlock<char[200]>();
-        MT_REQUIRE(ctx, allocatedBlocks[i] != nullptr);
+        E_ASSERT((allocatedBlocks[i] != nullptr));
     }
 
-    for (int32_t i = 0; i < 5; ++i) {
+    for(int32_t i = 0; i < 5; i++) {
         FreeBlock<char[200]>(static_cast<void*>(allocatedBlocks[i]));
     }
-}
+})
 
-MT_TEST(Component, FreeingMemory3_DestructorCalled, "memorypool") {
+class CustomDataType {
+private:
+    int8_t* mDestructorCalled;
+
+public:
+    CustomDataType(int8_t* mDestructorCalled) {
+        this->mDestructorCalled = mDestructorCalled;
+    }
+
+    ~CustomDataType() {
+        *this->mDestructorCalled = true;
+    }
+};
+
+URM_TEST(TestMemoryPoolFreeingMemory, {
     MakeAlloc<CustomDataType>(1);
 
-    int8_t* destructorCalled = static_cast<int8_t*>(std::malloc(sizeof(int8_t)));
+    int8_t* destructorCalled = (int8_t*) malloc(sizeof(int8_t));
     *destructorCalled = false;
 
-    auto* customDTObject =
-        new (GetBlock<CustomDataType>()) CustomDataType(destructorCalled);
+    CustomDataType* customDTObject =
+        new(GetBlock<CustomDataType>()) CustomDataType(destructorCalled);
 
     FreeBlock<CustomDataType>(static_cast<void*>(customDTObject));
-    MT_REQUIRE_EQ(ctx, *destructorCalled, true);
-
-    // Optional: free test heap flag to avoid leak in test harness
-    std::free(destructorCalled);
-}
-
+    E_ASSERT((*destructorCalled == true));
+})

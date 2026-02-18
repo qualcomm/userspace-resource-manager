@@ -34,22 +34,6 @@
  * |-------------------------------------|-------------|---------|-----------|---------------------|---------------|----------------|---------------|
  */
 
-static void SetUp() {
-    // Make sure all the tests have a sane starting point
-
-    AuxRoutines::writeToFile("/etc/urm/tests/nodes/sched_util_clamp_min.txt", "300");
-    AuxRoutines::writeToFile("/etc/urm/tests/nodes/sched_util_clamp_max.txt", "684");
-    AuxRoutines::writeToFile("/etc/urm/tests/nodes/scaling_min_freq.txt", "107");
-    AuxRoutines::writeToFile("/etc/urm/tests/nodes/scaling_max_freq.txt", "114");
-    AuxRoutines::writeToFile("/etc/urm/tests/nodes/target_test_resource1.txt", "240");
-    AuxRoutines::writeToFile("/etc/urm/tests/nodes/target_test_resource2.txt", "333");
-    AuxRoutines::writeToFile("/etc/urm/tests/nodes/target_test_resource3.txt", "4400");
-    AuxRoutines::writeToFile("/etc/urm/tests/nodes/target_test_resource4.txt", "516");
-    AuxRoutines::writeToFile("/etc/urm/tests/nodes/target_test_resource5.txt", "17");
-
-    std::this_thread::sleep_for(std::chrono::seconds(3));
-}
-
 static std::string getTimestamp() {
     auto now = std::chrono::system_clock::now();
     time_t nowC = std::chrono::system_clock::to_time_t(now);
@@ -71,12 +55,6 @@ do {                                                                            
     test();                                                                         \
     std::cout<<"["<<getTimestamp()<<"] "<<#test<<": Run Successful"<<std::endl;     \
     std::cout<<"--------------------------------------------------"<<std::endl;     \
-} while(false);                                                                     \
-
-#define RUN_INTEGRATION_TEST(test)                                                  \
-do {                                                                                \
-    SetUp();                                                                        \
-    test();                                                                         \
 } while(false);                                                                     \
 
 #define C_STOI(value) ({                                                            \
@@ -118,6 +96,13 @@ do {                                                                            
         std::cerr<<"["<<getTimestamp()<<"] Condition Check on line:["<<__LINE__<<"]  failed"<<std::endl;    \
         std::cerr<<"["<<getTimestamp()<<"] Test: ["<<__func__<<"] Failed, Terminating Suite\n"<<std::endl;  \
         exit(EXIT_FAILURE);                                                                                 \
+    }                                                                                                       \
+
+#define E_ASSERT_NEAR(val1, val2, tol)                                                                      \
+    if(std::fabs((val1) - (val2)) > (tol)) {                                                                \
+        std::cerr<<"["<<getTimestamp()<<"] Condition Check on line:["<<__LINE__<<"]  failed"<<std::endl;    \
+        std::cerr<<"["<<getTimestamp()<<"] Test: ["<<__func__<<"] Failed, Terminating Suite\n"<<std::endl;  \
+        throw std::runtime_error("Test Failed");                                                            \
     }                                                                                                       \
 
 #endif

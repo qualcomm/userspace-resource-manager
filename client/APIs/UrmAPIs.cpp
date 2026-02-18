@@ -215,8 +215,11 @@ int8_t getProp(const char* prop, char* buffer, size_t bufferSize, const char* de
         ASSIGN_AND_INCR(ptr8, MOD_RESTUNE);
         ASSIGN_AND_INCR(ptr8, REQ_PROP_GET);
 
+        uint64_t* ptr64 = (uint64_t*)ptr8;
+        ASSIGN_AND_INCR(ptr64, bufferSize);
+
         const char* charIterator = prop;
-        char* charPointer = (char*) ptr8;
+        char* charPointer = (char*) ptr64;
 
         while(*charIterator != '\0') {
             ASSIGN_AND_INCR(charPointer, *charIterator);
@@ -224,9 +227,6 @@ int8_t getProp(const char* prop, char* buffer, size_t bufferSize, const char* de
         }
 
         ASSIGN_AND_INCR(charPointer, '\0');
-
-        uint64_t* ptr64 = (uint64_t*)charPointer;
-        ASSIGN_AND_INCR(ptr64, bufferSize);
 
         if(conn == nullptr || RC_IS_NOTOK(conn->initiateConnection())) {
             LOGE("RESTUNE_CLIENT", CONN_INIT_FAIL);

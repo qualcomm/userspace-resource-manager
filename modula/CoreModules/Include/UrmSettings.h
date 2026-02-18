@@ -46,20 +46,34 @@ public:
     static const int32_t desiredThreadCount = 5;
     static const int32_t maxScalingCapacity = 10;
 
-    // Support both versions: Common and Custom
-    static const std::string mCommonResourceFilePath;
-    static const std::string mCustomResourceFilePath;
-    static const std::string mCommonSignalFilePath;
-    static const std::string mCustomSignalFilePath;
-    static const std::string mCommonPropertiesFilePath;
-    static const std::string mCustomPropertiesFilePath;
-    static const std::string mCommonInitConfigFilePath;
-    static const std::string mCustomInitConfigFilePath;
+    static const std::string mTargetConfDir;
 
-    // Only Custom Config is supported for Target and Ext Features Config
-    static const std::string mCustomTargetFilePath;
-    static const std::string mCustomExtFeaturesFilePath;
-    static const std::string mCustomAppConfigFilePath;
+    // Support both versions: Common and Custom
+    static const std::string mCommonResourcesPath;
+    static const std::string mCustomResourcesPath;
+    static const std::string mDevIndexedResourcesPath;
+
+    static const std::string mCommonSignalsPath;
+    static const std::string mCustomSignalsPath;
+    static const std::string mDevIndexedSignalsPath;
+
+    static const std::string mCommonPropertiesPath;
+    static const std::string mCustomPropertiesPath;
+    static const std::string mDevIndexedPropertiesPath;
+
+    static const std::string mCommonInitPath;
+    static const std::string mCustomInitPath;
+    static const std::string mDevIndexedInitPath;
+
+    // Only Custom Config is supported for Target, Ext Features and App Configs
+    static const std::string mCustomTargetPath;
+    static const std::string mDevIndexedTargetPath;
+
+    static const std::string mCustomExtFeaturesPath;
+    static const std::string mDevIndexedExtFeatPath;
+
+    static const std::string mCustomAppConfigPath;
+    static const std::string mDevIndexedAppPath;
 
     static const std::string focusedCgroup;
     static const std::string mDeviceNamePath;

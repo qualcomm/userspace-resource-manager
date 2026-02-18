@@ -7,6 +7,7 @@
 #include <thread>
 #include <memory>
 
+#include "Config.h"
 #include "ErrCodes.h"
 #include "Extensions.h"
 #include "AuxRoutines.h"
@@ -46,8 +47,8 @@ static ErrCode loadExtensionsLib() {
             return RC_MODULE_INIT_FAILURE;
         }
     }
-    std::string libDirPath = UrmSettings::mExtensionPluginsLibPath;
 
+    std::string libDirPath = std::string(LIBDIR_PATH) + "/urm/";
     DIR* dir = opendir(libDirPath.c_str());
     if(dir == nullptr) {
         return RC_SUCCESS; // Return success regardless, since this is an extension.
@@ -58,7 +59,11 @@ static ErrCode loadExtensionsLib() {
     struct dirent* entry;
     while(((entry = readdir(dir)) != nullptr) &&
           (extLibHandleIndex < UrmSettings::metaConfigs.mPluginCount)) {
-        std::string libPath = libDirPath + "/" + entry->d_name;
+        std::string fileName = std::string(entry->d_name);
+        if(fileName == "." || fileName == "..") {
+            continue;
+        }
+        std::string libPath = libDirPath + "/" + fileName;
 
         // Check if the library file exists
         extensionLibHandles[extLibHandleIndex] = dlopen(libPath.c_str(), RTLD_NOW);
@@ -79,10 +84,10 @@ static ErrCode loadExtensionsLib() {
 
 static void preAllocateMemory() {
     // Preallocate Memory for certain frequently used types.
-    int32_t concurrentRequestsUB = UrmSettings::metaConfigs.mMaxConcurrentRequests;
-    int32_t resourcesPerRequestUB = UrmSettings::metaConfigs.mMaxResourcesPerRequest;
+    uint32_t concurrentRequestsUB = UrmSettings::metaConfigs.mMaxConcurrentRequests;
+    uint32_t resourcesPerRequestUB = UrmSettings::metaConfigs.mMaxResourcesPerRequest;
 
-    int32_t maxBlockCount = concurrentRequestsUB * resourcesPerRequestUB;
+    uint32_t maxBlockCount = concurrentRequestsUB * resourcesPerRequestUB;
 
     MakeAlloc<Message> (concurrentRequestsUB);
     MakeAlloc<Request> (concurrentRequestsUB);
@@ -151,7 +156,7 @@ static ErrCode fetchMetaConfigs() {
         submitPropGetRequest(GARBAGE_COLLECTOR_DURATION, resultBuffer, "83000");
         UrmSettings::metaConfigs.mClientGarbageCollectorDuration = (uint32_t)std::stol(resultBuffer);
 
-        submitPropGetRequest(GARBAGE_COLLECTOR_BATCH_SIZE, resultBuffer, "5");
+        submitPropGetRequest(GARBAGE_COLLECTOR_BATCH_SIZE, resultBuffer, "20");
         UrmSettings::metaConfigs.mCleanupBatchSize = (uint32_t)std::stol(resultBuffer);
 
         submitPropGetRequest(RATE_LIMITER_DELTA, resultBuffer, "5");
@@ -180,15 +185,14 @@ static ErrCode fetchMetaConfigs() {
 
 static ErrCode parseUtil(const std::string& filePath,
                          const std::string& desc,
-                         ConfigType configType,
-                         int8_t isCustom=false) {
+                         ConfigType configType) {
 
     if(filePath.length() == 0) return RC_FILE_NOT_FOUND;
     ErrCode opStatus = RC_SUCCESS;
     RestuneParser configProcessor;
 
-    TYPELOGV(NOTIFY_PARSING_START, desc.c_str());
-    opStatus = configProcessor.parse(configType, filePath, isCustom);
+    TYPELOGV(NOTIFY_PARSING_START, desc.c_str(), filePath.c_str());
+    opStatus = configProcessor.parse(configType, filePath);
 
     if(RC_IS_NOTOK(opStatus)) {
         TYPELOGV(NOTIFY_PARSING_FAILURE, desc.c_str());
@@ -199,70 +203,73 @@ static ErrCode parseUtil(const std::string& filePath,
     return opStatus;
 }
 
-static ErrCode fetchCommonProperties() {
-    ErrCode opStatus = RC_SUCCESS;
-
-    // Parse Common Properties Configs
-    std::string filePath = UrmSettings::mCommonPropertiesFilePath;
-    opStatus = parseUtil(filePath, COMMON_PROPERTIES, ConfigType::PROPERTIES_CONFIG);
-    if(RC_IS_OK(opStatus)) {
-        return fetchMetaConfigs();
+static std::string getFullTargetBasedConfPath(const std::string& configFileName) {
+    if(UrmSettings::targetConfigs.targetName.length() == 0) {
+        return "";
     }
-    return opStatus;
+
+    std::string filePath = "";
+    filePath.append(UrmSettings::mTargetConfDir);
+    filePath.append(UrmSettings::targetConfigs.targetName);
+    filePath.append("/");
+    filePath.append(configFileName);
+
+    return filePath;
+}
+
+static ErrCode fetchCommonProperties() {
+    std::string filePath = UrmSettings::mCommonPropertiesPath;
+    return parseUtil(filePath, "prop-common", ConfigType::PROPERTIES_CONFIG);
 }
 
 static ErrCode fetchCustomProperties() {
     ErrCode opStatus = RC_SUCCESS;
 
-    std::string filePath = Extensions::getPropertiesConfigFilePath();
-    // Parse Custom Properties Configs provided via Extension Interface (if any)
-    if(filePath.length() > 0) {
-        TYPELOGV(NOTIFY_CUSTOM_CONFIG_FILE, "Property", filePath.c_str());
+    std::string customConfPaths[4] = {
+        UrmSettings::mDevIndexedPropertiesPath,
+        getFullTargetBasedConfPath("PropertiesConfig.yaml"),
+        UrmSettings::mCustomPropertiesPath,
+        Extensions::getPropertiesConfigFilePath(),
+    };
 
-        opStatus = parseUtil(filePath, CUSTOM_PROPERTIES, ConfigType::PROPERTIES_CONFIG);
-        if(RC_IS_OK(opStatus)) {
-            // Properties Parsing is completed
-            return fetchMetaConfigs();
+    for(int32_t i = 0; i < 4; i++) {
+        std::string filePath = customConfPaths[i];
+        if(AuxRoutines::fileExists(filePath)) {
+            opStatus = parseUtil(filePath, "prop-custom", ConfigType::PROPERTIES_CONFIG);
+            if(RC_IS_NOTOK(opStatus)) {
+                return opStatus;
+            }
         }
-
-        // Custom Properties Parsing Failed
-        return opStatus;
     }
 
-    // Parse Custom Properties Configs provided in /etc/urm/custom (if any)
-    filePath = UrmSettings::mCustomPropertiesFilePath;
-    if(AuxRoutines::fileExists(filePath)) {
-        opStatus = parseUtil(filePath, CUSTOM_PROPERTIES, ConfigType::PROPERTIES_CONFIG);
-    }
-
-    if(RC_IS_NOTOK(opStatus)) {
-        return opStatus;
-    }
-
-    return fetchMetaConfigs();
+    return opStatus;
 }
 
 static ErrCode fetchResources() {
     ErrCode opStatus = RC_SUCCESS;
 
     // Parse Common Resource Configs
-    std::string filePath = UrmSettings::mCommonResourceFilePath;
-    opStatus = parseUtil(filePath, COMMON_RESOURCE, ConfigType::RESOURCE_CONFIG);
+    std::string filePath = UrmSettings::mCommonResourcesPath;
+    opStatus = parseUtil(filePath, "resource-common", ConfigType::RESOURCE_CONFIG);
     if(RC_IS_NOTOK(opStatus)) {
         return opStatus;
     }
 
-    // Parse Custom Resource Configs provided via Extension Interface (if any)
-    filePath = Extensions::getResourceConfigFilePath();
-    if(filePath.length() > 0) {
-        TYPELOGV(NOTIFY_CUSTOM_CONFIG_FILE, CUSTOM_RESOURCE, filePath.c_str());
-        return parseUtil(filePath, CUSTOM_RESOURCE, ConfigType::RESOURCE_CONFIG, true);
-    }
+    std::string customConfPaths[4] = {
+        UrmSettings::mDevIndexedResourcesPath,
+        getFullTargetBasedConfPath("ResourcesConfig.yaml"),
+        UrmSettings::mCustomResourcesPath,
+        Extensions::getResourceConfigFilePath(),
+    };
 
-    // Parse Custom Resource Configs provided in /etc/urm/custom (if any)
-    filePath = UrmSettings::mCustomResourceFilePath;
-    if(AuxRoutines::fileExists(filePath)) {
-        return parseUtil(filePath, CUSTOM_RESOURCE, ConfigType::RESOURCE_CONFIG, true);
+    for(int32_t i = 0; i < 4; i++) {
+        filePath = customConfPaths[i];
+        if(AuxRoutines::fileExists(filePath)) {
+            opStatus = parseUtil(filePath, "resource-custom", ConfigType::RESOURCE_CONFIG);
+            if(RC_IS_NOTOK(opStatus)) {
+                return opStatus;
+            }
+        }
     }
 
     return opStatus;
@@ -276,18 +283,21 @@ static ErrCode fetchTargetInfo() {
     // needs to be generic enough to accomodate them.
     TargetRegistry::getInstance()->readTargetInfo();
 
-    // Check if a Custom Target Config is provided, if so process it.
-    std::string filePath = Extensions::getTargetConfigFilePath();
+    std::string customConfPaths[4] = {
+        UrmSettings::mDevIndexedTargetPath,
+        getFullTargetBasedConfPath("TargetConfig.yaml"),
+        UrmSettings::mCustomTargetPath,
+        Extensions::getTargetConfigFilePath(),
+    };
 
-    if(filePath.length() > 0) {
-        // Custom Target Config file has been provided by BU
-        TYPELOGV(NOTIFY_CUSTOM_CONFIG_FILE, CUSTOM_TARGET, filePath.c_str());
-        return parseUtil(filePath, CUSTOM_TARGET, ConfigType::TARGET_CONFIG, true);
-    }
-
-    filePath = UrmSettings::mCustomTargetFilePath;
-    if(AuxRoutines::fileExists(filePath)) {
-        return parseUtil(filePath, CUSTOM_TARGET, ConfigType::TARGET_CONFIG, true);
+    for(int32_t i = 0; i < 4; i++) {
+        std::string filePath = customConfPaths[i];
+        if(AuxRoutines::fileExists(filePath)) {
+            opStatus = parseUtil(filePath, "target-custom", ConfigType::RESOURCE_CONFIG);
+            if(RC_IS_NOTOK(opStatus)) {
+                return opStatus;
+            }
+        }
     }
 
     return opStatus;
@@ -295,24 +305,28 @@ static ErrCode fetchTargetInfo() {
 
 static ErrCode fetchInitInfo() {
     ErrCode opStatus = RC_SUCCESS;
-    std::string filePath = UrmSettings::mCommonInitConfigFilePath;
+    std::string filePath = UrmSettings::mCommonInitPath;
 
-    opStatus = parseUtil(filePath, COMMON_INIT, ConfigType::INIT_CONFIG);
+    opStatus = parseUtil(filePath, "init-common", ConfigType::INIT_CONFIG);
     if(RC_IS_NOTOK(opStatus)) {
         return opStatus;
     }
 
-    filePath = Extensions::getInitConfigFilePath();
-    if(filePath.length() > 0) {
-        // Custom Init Config file has been provided by BU
-        TYPELOGV(NOTIFY_CUSTOM_CONFIG_FILE, CUSTOM_INIT, filePath.c_str());
-        return parseUtil(filePath, CUSTOM_INIT, ConfigType::INIT_CONFIG);
-    }
+    std::string customConfPaths[4] = {
+        UrmSettings::mDevIndexedInitPath,
+        getFullTargetBasedConfPath("InitConfig.yaml"),
+        UrmSettings::mCustomInitPath,
+        Extensions::getInitConfigFilePath(),
+    };
 
-    // Parse Custom Init Configs provided in /etc/urm/custom (if any)
-    filePath = UrmSettings::mCustomInitConfigFilePath;
-    if(AuxRoutines::fileExists(filePath)) {
-        return parseUtil(filePath, CUSTOM_INIT, ConfigType::INIT_CONFIG);
+    for(int32_t i = 0; i < 4; i++) {
+        filePath = customConfPaths[i];
+        if(AuxRoutines::fileExists(filePath)) {
+            opStatus = parseUtil(filePath, "init-custom", ConfigType::INIT_CONFIG);
+            if(RC_IS_NOTOK(opStatus)) {
+                return opStatus;
+            }
+        }
     }
 
     return opStatus;
@@ -322,23 +336,27 @@ static ErrCode fetchSignals() {
     ErrCode opStatus = RC_SUCCESS;
 
     // Parse Common Signal Configs
-    std::string filePath = UrmSettings::mCommonSignalFilePath;
-    opStatus = parseUtil(filePath, COMMON_SIGNAL, ConfigType::SIGNALS_CONFIG);
+    std::string filePath = UrmSettings::mCommonSignalsPath;
+    opStatus = parseUtil(filePath, "signal-common", ConfigType::SIGNALS_CONFIG);
     if(RC_IS_NOTOK(opStatus)) {
         return opStatus;
     }
 
-    // Parse Custom Signal Configs provided via Extension Interface (if any)
-    filePath = Extensions::getSignalsConfigFilePath();
-    if(filePath.length() > 0) {
-        TYPELOGV(NOTIFY_CUSTOM_CONFIG_FILE, "Signal", filePath.c_str());
-        return parseUtil(filePath, CUSTOM_SIGNAL, ConfigType::SIGNALS_CONFIG, true);
-    }
+    std::string customConfPaths[4] = {
+        UrmSettings::mDevIndexedSignalsPath,
+        getFullTargetBasedConfPath("SignalsConfig.yaml"),
+        UrmSettings::mCustomSignalsPath,
+        Extensions::getSignalsConfigFilePath(),
+    };
 
-    // Parse Custom Signal Configs provided in /etc/urm/custom (if any)
-    filePath = UrmSettings::mCustomSignalFilePath;
-    if(AuxRoutines::fileExists(filePath)) {
-        return parseUtil(filePath, CUSTOM_SIGNAL, ConfigType::SIGNALS_CONFIG, true);
+    for(int32_t i = 0; i < 4; i++) {
+        filePath = customConfPaths[i];
+        if(AuxRoutines::fileExists(filePath)) {
+            opStatus = parseUtil(filePath, "signal-custom", ConfigType::SIGNALS_CONFIG);
+            if(RC_IS_NOTOK(opStatus)) {
+                return opStatus;
+            }
+        }
     }
 
     return opStatus;
@@ -349,18 +367,21 @@ static ErrCode fetchSignals() {
 static ErrCode fetchExtFeatureConfigs() {
     ErrCode opStatus = RC_SUCCESS;
 
-    // Check if a Ext-Features Config is provided, if so process it.
-    std::string filePath = Extensions::getExtFeaturesConfigFilePath();
+    std::string customConfPaths[4] = {
+        UrmSettings::mDevIndexedExtFeatPath,
+        getFullTargetBasedConfPath("ExtFeaturesConfig.yaml"),
+        UrmSettings::mCustomExtFeaturesPath,
+        Extensions::getExtFeaturesConfigFilePath(),
+    };
 
-    if(filePath.length() > 0) {
-        // Custom Ext-Features Config file has been provided by BU
-        TYPELOGV(NOTIFY_CUSTOM_CONFIG_FILE, CUSTOM_EXT_FEATURE, filePath.c_str());
-        return parseUtil(filePath, CUSTOM_EXT_FEATURE, ConfigType::EXT_FEATURES_CONFIG, true);
-    }
-
-    filePath = UrmSettings::mCustomExtFeaturesFilePath;
-    if(AuxRoutines::fileExists(filePath)) {
-        return parseUtil(filePath, CUSTOM_EXT_FEATURE, ConfigType::EXT_FEATURES_CONFIG, true);
+    for(int32_t i = 0; i < 4; i++) {
+        std::string filePath = customConfPaths[i];
+        if(AuxRoutines::fileExists(filePath)) {
+            opStatus = parseUtil(filePath, "ext-features-custom", ConfigType::EXT_FEATURES_CONFIG);
+            if(RC_IS_NOTOK(opStatus)) {
+                return opStatus;
+            }
+        }
     }
 
     return opStatus;
@@ -369,18 +390,21 @@ static ErrCode fetchExtFeatureConfigs() {
 static ErrCode fetchPerAppConfigs() {
     ErrCode opStatus = RC_SUCCESS;
 
-    // Check if a Custom App Config is provided, if so process it.
-    std::string filePath = Extensions::getAppConfigFilePath();
+    std::string customConfPaths[4] = {
+        UrmSettings::mDevIndexedAppPath,
+        getFullTargetBasedConfPath("PerApp.yaml"),
+        UrmSettings::mCustomAppConfigPath,
+        Extensions::getAppConfigFilePath(),
+    };
 
-    if(filePath.length() > 0) {
-        // Custom App Config file has been provided by BU
-        TYPELOGV(NOTIFY_CUSTOM_CONFIG_FILE, CUSTOM_APP_CONF, filePath.c_str());
-        return parseUtil(filePath, CUSTOM_APP_CONF, ConfigType::APP_CONFIG, true);
-    }
-
-    filePath = UrmSettings::mCustomAppConfigFilePath;
-    if(AuxRoutines::fileExists(filePath)) {
-        return parseUtil(filePath, CUSTOM_APP_CONF, ConfigType::APP_CONFIG, true);
+    for(int32_t i = 0; i < 4; i++) {
+        std::string filePath = customConfPaths[i];
+        if(filePath.length() > 0 && AuxRoutines::fileExists(filePath)) {
+            opStatus = parseUtil(filePath, "app-config-custom", ConfigType::APP_CONFIG);
+            if(RC_IS_NOTOK(opStatus)) {
+                return opStatus;
+            }
+        }
     }
 
     return opStatus;
@@ -419,32 +443,36 @@ static void* restuneThreadStart() {
     return nullptr;
 }
 
-static ErrCode setCgroupParam(const char *slice, const char *name, const char *value) {
+static ErrCode setCgroupParam(const std::string& slice,
+                              const std::string& name,
+                              const std::string& value) {
     // 1) Build the absolute cGroupPath: /sys/fs/cgroup/<slice>/<name>
     std::string cGroupPath = UrmSettings::mBaseCGroupPath;
     cGroupPath += slice;
     cGroupPath += "/";
     cGroupPath += name;
-    // 2) Quick existence/permission check for diagnostics
+
+    // 2) existence/permission check
     if (!AuxRoutines::fileExists(cGroupPath)) {
         // Compose a detailed log line with cGroupPath + strerror
         std::string detail = "cGroupPath=" + cGroupPath + ", err=" + std::string(strerror(errno));
         TYPELOGV(ERRNO_LOG, "access", detail.c_str());
         return RC_SOCKET_FD_READ_FAILURE;
     }
-    // 3) Write the value with newline (echo-style)
+
+    // 3) Write the value with newline
     AuxRoutines::writeToFile(cGroupPath, value);
     return RC_SUCCESS;
 }
 
 static void configureFocusedSlice() {
     // 2D array of const char* pairs: {key, value}
-    const char *cgroupParam[][2] = {
-        { "cgroup.max.depth",       "3"  },
-        { "cgroup.max.descendants", "10" },
+    const char* cgroupParam[][2] = {
+        {"cgroup.max.depth", "3"},
+        {"cgroup.max.descendants", "10"},
     };
 
-    for (size_t i = 0; i < sizeof(cgroupParam)/sizeof(cgroupParam[0]); i++) {
+    for(size_t i = 0; i < sizeof(cgroupParam) / sizeof(cgroupParam[0]); i++) {
         setCgroupParam(UrmSettings::focusedCgroup.c_str(), cgroupParam[i][0], cgroupParam[i][1]);
     }
 }
@@ -467,6 +495,11 @@ static ErrCode init(void* arg) {
         return RC_MODULE_INIT_FAILURE;
     }
 
+    if(RC_IS_NOTOK(fetchMetaConfigs())) {
+        TYPELOGD(META_CONF_FETCH_FAILED);
+        return RC_MODULE_INIT_FAILURE;
+    }
+
     uint32_t pluginCount = UrmSettings::metaConfigs.mPluginCount;
     if(pluginCount > MAX_EXTENSION_LIB_HANDLES) {
         extensionLibHandles = (void**) realloc(extensionLibHandles, pluginCount * sizeof(void*));
@@ -483,6 +516,11 @@ static ErrCode init(void* arg) {
     // Fetch custom Properties
     if(RC_IS_NOTOK(fetchCustomProperties())) {
         TYPELOGD(PROPERTY_RETRIEVAL_FAILED);
+        return RC_MODULE_INIT_FAILURE;
+    }
+
+    if(RC_IS_NOTOK(fetchMetaConfigs())) {
+        TYPELOGD(META_CONF_FETCH_FAILED);
         return RC_MODULE_INIT_FAILURE;
     }
 
@@ -514,6 +552,7 @@ static ErrCode init(void* arg) {
     // Fetch and Parse Resource Configs
     // Resource Configs which will be considered:
     // - Common Resource Configs
+    // - Target Specific Resource Configs (if present)
     // - Custom Resource Configs (if present)
     // Note by this point, we will know the Target Info, i.e. number of Core, Clusters etc.
     if(RC_IS_NOTOK(fetchResources())) {
@@ -523,6 +562,7 @@ static ErrCode init(void* arg) {
     // Fetch and Parse Signal Configs
     // Signal Configs which will be considered:
     // - Common Signal Configs
+    // - Target Specific Signal Configs (if present)
     // - Custom Signal Configs (if present)
     if(RC_IS_NOTOK(fetchSignals())) {
         return RC_MODULE_INIT_FAILURE;
@@ -633,4 +673,4 @@ static ErrCode tear(void* arg) {
     return RC_SUCCESS;
 }
 
-RESTUNE_REGISTER_MODULE(MOD_RESTUNE, init, tear);
+URM_REGISTER_MODULE(MOD_RESTUNE, init, tear);

@@ -21,9 +21,9 @@ int8_t PulseMonitor::checkForDeadClients() {
     // Delete the clients if they are dead.
     for(int32_t pid: clientList) {
         if(!AuxRoutines::fileExists(COMM(pid))) {
-        // Client is dead, Schedule it for deletion.
+            // Client is dead, Schedule it for deletion.
             LOGD("RESTUNE_PULSE_MONITOR", "Client with PID: " + std::to_string(pid) + " is dead.");
-            ClientGarbageCollector::getInstance()->submitClientThreadsForCleanup(pid);
+            ClientGarbageCollector::getInstance()->submitClientForCleanup(pid);
             ClientDataManager::getInstance()->deleteClientPID(pid);
         }
     }

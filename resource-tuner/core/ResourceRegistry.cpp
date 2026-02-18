@@ -89,8 +89,7 @@ void ResourceRegistry::fetchAndStoreDefaults(ResConfInfo* resourceConfigInfo) {
     }
 }
 
-void ResourceRegistry::registerResource(ResConfInfo* resourceConfigInfo,
-                                        int8_t isBuSpecified) {
+void ResourceRegistry::registerResource(ResConfInfo* resourceConfigInfo) {
     // Invalid Resource, skip.
     if(this->isResourceConfigMalformed(resourceConfigInfo)) {
         if(resourceConfigInfo != nullptr) {
@@ -100,33 +99,23 @@ void ResourceRegistry::registerResource(ResConfInfo* resourceConfigInfo,
         return;
     }
 
-    // Create the OpID Bitmap, this will serve as the key for the entry in mSystemIndependentLayerMappings.
+    // Create the OpID Bitmap, this will serve as the key for the entry in mSILMap.
     uint32_t resourceBitmap = 0;
     resourceBitmap |= ((uint32_t)resourceConfigInfo->mResourceResID);
     resourceBitmap |= ((uint32_t)resourceConfigInfo->mResourceResType << 16);
 
     // Check for any conflict
-    if(this->mSystemIndependentLayerMappings.find(resourceBitmap) !=
-        this->mSystemIndependentLayerMappings.end()) {
+    if(this->mSILMap.find(resourceBitmap) != this->mSILMap.end()) {
         // Resource with the specified ResType and ResCode already exists
         // Overwrite it.
-
         int32_t resourceTableIndex = getResourceTableIndex(resourceBitmap);
         this->mResourceConfigs[resourceTableIndex] = resourceConfigInfo;
 
-        if(isBuSpecified) {
-            this->mSystemIndependentLayerMappings.erase(resourceBitmap);
-            // Set the MSB
-            resourceBitmap |= (1 << 31);
+        this->mSILMap.erase(resourceBitmap);
+        this->mSILMap[resourceBitmap] = resourceTableIndex;
 
-            this->mSystemIndependentLayerMappings[resourceBitmap] = resourceTableIndex;
-        }
     } else {
-        if(isBuSpecified) {
-            resourceBitmap |= (1 << 31);
-        }
-
-        this->mSystemIndependentLayerMappings[resourceBitmap] = this->mTotalResources;
+        this->mSILMap[resourceBitmap] = this->mTotalResources;
         this->mResourceConfigs.push_back(resourceConfigInfo);
 
         this->mTotalResources++;
@@ -156,12 +145,12 @@ std::vector<ResConfInfo*> ResourceRegistry::getRegisteredResources() {
 }
 
 ResConfInfo* ResourceRegistry::getResConf(uint32_t resourceId) {
-    if(this->mSystemIndependentLayerMappings.find(resourceId) == this->mSystemIndependentLayerMappings.end()) {
+    if(this->mSILMap.find(resourceId) == this->mSILMap.end()) {
         TYPELOGV(RESOURCE_REGISTRY_RESOURCE_NOT_FOUND, resourceId);
         return nullptr;
     }
 
-    int32_t resourceTableIndex = this->mSystemIndependentLayerMappings[resourceId];
+    int32_t resourceTableIndex = this->mSILMap[resourceId];
     if(resourceTableIndex == -1) {
         TYPELOGV(RESOURCE_REGISTRY_RESOURCE_NOT_FOUND, resourceId);
         return nullptr;
@@ -170,11 +159,11 @@ ResConfInfo* ResourceRegistry::getResConf(uint32_t resourceId) {
 }
 
 int32_t ResourceRegistry::getResourceTableIndex(uint32_t resourceId) {
-    if(this->mSystemIndependentLayerMappings.find(resourceId) == this->mSystemIndependentLayerMappings.end()) {
+    if(this->mSILMap.find(resourceId) == this->mSILMap.end()) {
         return -1;
     }
 
-    return this->mSystemIndependentLayerMappings[resourceId];
+    return this->mSILMap[resourceId];
 }
 
 int32_t ResourceRegistry::getTotalResourcesCount() {

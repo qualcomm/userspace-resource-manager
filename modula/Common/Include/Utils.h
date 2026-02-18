@@ -108,19 +108,6 @@ typedef void (*MessageReceivedCallback)(int32_t, MsgForwardInfo*);
 #define HIGH_TRANSFER_PRIORITY -1
 #define SERVER_CLEANUP_TRIGGER_PRIORITY -2
 
-// Config Names
-#define COMMON_RESOURCE "Common-Resource"
-#define CUSTOM_RESOURCE "Custom-Resource"
-#define COMMON_PROPERTIES "Common-Properties"
-#define CUSTOM_PROPERTIES "Custom-Properties"
-#define CUSTOM_TARGET "Custom-Target"
-#define COMMON_INIT "Common-Init"
-#define CUSTOM_INIT "Custom-Init"
-#define COMMON_SIGNAL "Common-Signal"
-#define CUSTOM_SIGNAL "Custom-Signal"
-#define CUSTOM_EXT_FEATURE "Ext-Features"
-#define CUSTOM_APP_CONF "App-Config"
-
 // System Properties
 #define MAX_CONCURRENT_REQUESTS "resource_tuner.maximum.concurrent.requests"
 #define MAX_RESOURCES_PER_REQUEST "resource_tuner.maximum.resources.per.request"
@@ -139,5 +126,8 @@ typedef void (*MessageReceivedCallback)(int32_t, MsgForwardInfo*);
 #define COMM_S(pidstr) ("/proc/" + pidstr + "/comm")
 #define STATUS(pid) ("/proc/" + std::to_string(pid) + "/status")
 #define CMDLINE(pid) ("/proc/" + std::to_string(pid) + "/cmdline")
+
+#define CONCAT_IMPL(a, b) a##b
+#define CONCAT(a, b) CONCAT_IMPL(a, b)
 
 #endif

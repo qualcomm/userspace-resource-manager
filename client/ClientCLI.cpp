@@ -157,6 +157,16 @@ static void sendTuneSignal(const char* scode) {
     }
 }
 
+static void sendUntuneSignal(int64_t handle){
+    int8_t status = untuneSignal(handle);
+    if(status == 0){
+        std::cout<<"Untune Request Successfully Submitted"<<std::endl;
+    }
+    else if(status == -1){
+        std::cout<<"Untune Request Could not be sent"<<std::endl;
+    }
+}
+
 static int8_t processCommands() {
     std::string input;
 
@@ -289,6 +299,7 @@ int32_t main(int32_t argc, char* argv[]) {
         {"key", required_argument, nullptr, 'k'},
         {"persistent", no_argument, nullptr, 's'},
         {"signal", no_argument, nullptr, 'q'},
+        {"untuneSignal", no_argument, nullptr, 'x'},
         {"scode", required_argument, nullptr, 'm'},
         {nullptr, no_argument, nullptr, 0}
     };
@@ -342,6 +353,9 @@ int32_t main(int32_t argc, char* argv[]) {
                 break;
             case 'q':
                 requestType = REQ_SIGNAL_TUNING;
+                break;
+            case 'x' :
+                requestType = REQ_SIGNAL_UNTUNING;
                 break;
             case 'm':
                 sigCode = optarg;
@@ -407,6 +421,15 @@ int32_t main(int32_t argc, char* argv[]) {
 
             sendTuneSignal(sigCode);
             std::this_thread::sleep_for(std::chrono::seconds(3));
+            break;
+
+        case REQ_SIGNAL_UNTUNING:
+            if(handle <=0 ){
+                std::cout<<"Invalid Params for Untune request"<<std::endl;
+                std::cout<<"Usage: --untune --handle <handle>"<<std::endl;
+                break;
+            }
+            sendUntuneSignal(handle);
             break;
 
         default:

@@ -35,7 +35,7 @@ std::mutex ClientDataManager::instanceProtectionLock {};
 std::shared_ptr<ClientDataManager> ClientDataManager::mClientDataManagerInstance = nullptr;
 ClientDataManager::ClientDataManager() {}
 
-int8_t ClientDataManager::clientExists(int32_t clientPID, int32_t clientTID) {
+int8_t ClientDataManager::clientExists(pid_t clientPID, pid_t clientTID) {
     this->mGlobalTableMutex.lock_shared();
 
     // Check that an entry corresponding to the client PID exists in the mClientRepo table, and
@@ -47,7 +47,7 @@ int8_t ClientDataManager::clientExists(int32_t clientPID, int32_t clientTID) {
     return clientCheck;
 }
 
-int8_t ClientDataManager::createNewClient(int32_t clientPID, int32_t clientTID) {
+int8_t ClientDataManager::createNewClient(pid_t clientPID, pid_t clientTID) {
     this->mGlobalTableMutex.lock();
     // First create an entry in the mClientTidRepo table
 
@@ -127,7 +127,7 @@ int8_t ClientDataManager::createNewClient(int32_t clientPID, int32_t clientTID) 
     return true;
 }
 
-std::unordered_set<int64_t>* ClientDataManager::getRequestsByClientID(int32_t clientTID) {
+std::unordered_set<int64_t>* ClientDataManager::getRequestsByClientID(pid_t clientTID) {
     this->mGlobalTableMutex.lock_shared();
 
     if(this->mClientTidRepo[clientTID] == nullptr || this->mClientTidRepo.size() == 0) {
@@ -141,7 +141,7 @@ std::unordered_set<int64_t>* ClientDataManager::getRequestsByClientID(int32_t cl
     return clientHandlesPtr;
 }
 
-void ClientDataManager::insertRequestByClientId(int32_t clientTID, int64_t requestHandle) {
+void ClientDataManager::insertRequestByClientId(pid_t clientTID, int64_t requestHandle) {
     this->mGlobalTableMutex.lock_shared();
 
     if(this->mClientTidRepo[clientTID] == nullptr || this->mClientTidRepo.size() == 0) {
@@ -153,7 +153,7 @@ void ClientDataManager::insertRequestByClientId(int32_t clientTID, int64_t reque
     this->mGlobalTableMutex.unlock_shared();
 }
 
-void ClientDataManager::deleteRequestByClientId(int32_t clientTID, int64_t requestHandle) {
+void ClientDataManager::deleteRequestByClientId(pid_t clientTID, int64_t requestHandle) {
     this->mGlobalTableMutex.lock_shared();
 
     if(this->mClientTidRepo.find(clientTID) == this->mClientTidRepo.end()) {
@@ -165,7 +165,7 @@ void ClientDataManager::deleteRequestByClientId(int32_t clientTID, int64_t reque
     this->mGlobalTableMutex.unlock_shared();
 }
 
-int8_t ClientDataManager::getClientLevelByClientID(int32_t clientPID) {
+int8_t ClientDataManager::getClientLevelByID(pid_t clientPID) {
     this->mGlobalTableMutex.lock_shared();
 
     if(this->mClientRepo.find(clientPID) == this->mClientRepo.end()) {
@@ -179,7 +179,7 @@ int8_t ClientDataManager::getClientLevelByClientID(int32_t clientPID) {
     return clientLevel;
 }
 
-void ClientDataManager::getThreadsByClientId(int32_t clientPID, std::vector<int32_t>& threadIDs) {
+void ClientDataManager::getThreadsByClientId(pid_t clientPID, std::vector<pid_t>& threadIDs) {
     this->mGlobalTableMutex.lock_shared();
 
     if(this->mClientRepo.find(clientPID) == this->mClientRepo.end()) {
@@ -194,7 +194,7 @@ void ClientDataManager::getThreadsByClientId(int32_t clientPID, std::vector<int3
     this->mGlobalTableMutex.unlock_shared();
 }
 
-double ClientDataManager::getHealthByClientID(int32_t clientTID) {
+double ClientDataManager::getHealthByClientID(pid_t clientTID) {
     this->mGlobalTableMutex.lock_shared();
 
     if(this->mClientTidRepo.find(clientTID) == this->mClientTidRepo.end()) {
@@ -208,7 +208,7 @@ double ClientDataManager::getHealthByClientID(int32_t clientTID) {
     return health;
 }
 
-int64_t ClientDataManager::getLastRequestTimestampByClientID(int32_t clientTID) {
+int64_t ClientDataManager::getLastRequestTimestampByClientID(pid_t clientTID) {
     this->mGlobalTableMutex.lock_shared();
 
     if(this->mClientTidRepo.find(clientTID) == this->mClientTidRepo.end()) {
@@ -249,14 +249,14 @@ void ClientDataManager::updateLastRequestTimestampByClientID(int32_t clientTID, 
 void ClientDataManager::getActiveClientList(std::vector<int32_t>& clientList) {
     this->mGlobalTableMutex.lock_shared();
 
-    for(std::pair<int32_t, ClientInfo*> clientInfo : this->mClientRepo) {
+    for(std::pair<pid_t, ClientInfo*> clientInfo : this->mClientRepo) {
         clientList.push_back(clientInfo.first);
     }
 
     this->mGlobalTableMutex.unlock_shared();
 }
 
-void ClientDataManager::deleteClientPID(int32_t clientPID) {
+void ClientDataManager::deleteClientPID(pid_t clientPID) {
     this->mGlobalTableMutex.lock();
 
     if(this->mClientRepo.find(clientPID) == this->mClientRepo.end()) {
@@ -271,7 +271,7 @@ void ClientDataManager::deleteClientPID(int32_t clientPID) {
     this->mGlobalTableMutex.unlock();
 }
 
-void ClientDataManager::deleteClientTID(int32_t clientTID) {
+void ClientDataManager::deleteClientTID(pid_t clientTID) {
     this->mGlobalTableMutex.lock();
 
     if(this->mClientTidRepo.find(clientTID) == this->mClientTidRepo.end()) {

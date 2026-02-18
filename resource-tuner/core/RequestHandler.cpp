@@ -137,7 +137,7 @@ static int8_t VerifyIncomingRequest(Request* req) {
         return false;
     }
     int8_t clientPermissions =
-        ClientDataManager::getInstance()->getClientLevelByClientID(req->getClientPID());
+        ClientDataManager::getInstance()->getClientLevelByID(req->getClientPID());
     // If the client permissions could not be determined, reject this request.
     // This could happen if the /proc/<pid>/status file for the Process could not be opened.
     if(clientPermissions == -1) {
@@ -236,6 +236,9 @@ static void processIncomingRequest(Request* request, int8_t isValidated=false) {
     std::shared_ptr<RequestManager> requestManager = RequestManager::getInstance();
     std::shared_ptr<RequestQueue> requestQueue = RequestQueue::getInstance();
 
+    pid_t clientPid = request->getClientPID();
+    pid_t clientTid = request->getClientTID();
+
     if(request->getRequestType() == REQ_RESOURCE_TUNING) {
         // Perform a Global Rate Limit Check before Processing the Request
         // This is to check if the current Active Request count has hit the
@@ -250,8 +253,8 @@ static void processIncomingRequest(Request* request, int8_t isValidated=false) {
         }
 
         // Client Checks
-        if(!clientDataManager->clientExists(request->getClientPID(), request->getClientTID())) {
-            if(!clientDataManager->createNewClient(request->getClientPID(), request->getClientTID())) {
+        if(!clientDataManager->clientExists(clientPid, clientTid)) {
+            if(!clientDataManager->createNewClient(clientPid, clientTid)) {
                 // Client Entry Could not be Created, don't Proceed further with the Request
                 TYPELOGV(CLIENT_ENTRY_CREATION_FAILURE, request->getHandle());
 
@@ -266,7 +269,7 @@ static void processIncomingRequest(Request* request, int8_t isValidated=false) {
        request->getRequestType() == REQ_RESOURCE_RETUNING) {
         // Note: Client Data Manager initialisation is not necessary for Untune / Retune Requests,
         // since the client is expected to be allocated already (as part of the Tune Request)
-        if(!clientDataManager->clientExists(request->getClientPID(), request->getClientTID())) {
+        if(!isValidated && !clientDataManager->clientExists(clientPid, clientTid)) {
             // Client does not exist, drop the request
             Request::cleanUpRequest(request);
             return;
@@ -371,27 +374,54 @@ void submitResProvisionReqMsg(void* msg) {
     }
 }
 
-int8_t submitPropGetRequest(const std::string& prop,
-                            std::string& buffer,
-                            const std::string& defaultValue) {
-    std::string propertyName(prop);
-    std::string result = "";
+size_t submitPropGetRequest(void* msg, std::string& result) {
+    if(msg == nullptr) {
+        return 0;
+    }
+    std::shared_ptr<PropertiesRegistry> propReg = PropertiesRegistry::getInstance();
 
-    int8_t propFound = false;
-    if((propFound = PropertiesRegistry::getInstance()->queryProperty(propertyName, result)) == false) {
-        result = defaultValue;
+    MsgForwardInfo* info = (MsgForwardInfo*) msg;
+    if(info == nullptr) {
+        return 0;
     }
 
-    buffer = result;
-    return propFound;
+    int8_t* ptr8 = (int8_t*)info->mBuffer;
+    DEREF_AND_INCR(ptr8, int8_t);
+    DEREF_AND_INCR(ptr8, int8_t);
+
+    uint64_t* ptr64 = (uint64_t*)ptr8;
+    DEREF_AND_INCR(ptr64, uint64_t);
+
+    char* charIterator = (char*)ptr64;
+    const char* propNamePtr = charIterator;
+
+    while(*charIterator != '\0') {
+        charIterator++;
+    }
+    charIterator++;
+    std::string propName = propNamePtr;
+
+    std::string buffer = "";
+    size_t writtenBytes = propReg->queryProperty(propName, buffer);
+    if(writtenBytes > 0) {
+        result = buffer;
+    }
+
+    return writtenBytes;
 }
 
-ErrCode submitPropRequest(void* context) {
-    if(context == nullptr) return RC_BAD_ARG;
-    PropConfig* propConfig = static_cast<PropConfig*>(context);
+size_t submitPropGetRequest(const std::string& propName,
+                            std::string& result,
+                            const std::string& defVal) {
+    std::shared_ptr<PropertiesRegistry> propReg = PropertiesRegistry::getInstance();
 
-    const char* defaultValue = "na";
-    submitPropGetRequest(propConfig->mPropName, propConfig->mResult, defaultValue);
+    std::string buffer = "";
+    size_t writtenBytes = propReg->queryProperty(propName, buffer);
+    if(writtenBytes > 0) {
+        result = buffer;
+    } else {
+        result = defVal;
+    }
 
-    return RC_SUCCESS;
+    return writtenBytes;
 }

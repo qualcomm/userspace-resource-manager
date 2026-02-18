@@ -11,7 +11,7 @@ SignalConfigs:
     Derivatives: ["solar"]
     Timeout: 4000
     Resources:
-    - {ResCode: "0x80010000", ResInfo: "0x00000000", Values: [700]}
+    - {ResCode: "0x00010000", ResInfo: "0x00000000", Values: [700]}
 
   - SigId: "0x0001"
     Category: "0x0d"
@@ -34,7 +34,7 @@ SignalConfigs:
     Derivatives: ["solar"]
     Timeout: 4000
     Resources:
-      - {ResCode: "0x80010000", ResInfo: "0x00000000", Values: [1200]}
+      - {ResCode: "0x00010000", ResInfo: "0x00000000", Values: [1200]}
 
   - SigId: "0x0003"
     Category: "0x0d"
@@ -59,7 +59,7 @@ SignalConfigs:
     Derivatives: ["solar"]
     Timeout: 4000
     Resources:
-    - {ResCode: "0x80ff0000", ResInfo: "0x00000000", Values: [917]}
+    - {ResCode: "0x00ff0000", ResInfo: "0x00000000", Values: [917]}
 
   - SigId: "0x0005"
     Category: "0x0d"
@@ -70,9 +70,9 @@ SignalConfigs:
     Derivatives: ["solar"]
     Timeout: 4000
     Resources:
-    - {ResCode: "0x80ff0000", ResInfo: "0x00000000", Values: [883]}
-    - {ResCode: "0x80ff0001", ResInfo: "0x00000000", Values: [920]}
-    - {ResCode: "0x80ff0003", ResInfo: "0x00000000", Values: [1555]}
+    - {ResCode: "0x00ff0000", ResInfo: "0x00000000", Values: [883]}
+    - {ResCode: "0x00ff0001", ResInfo: "0x00000000", Values: [920]}
+    - {ResCode: "0x00ff0003", ResInfo: "0x00000000", Values: [1555]}
 
   - SigId: "0x0006"
     Category: "0x0d"
@@ -83,8 +83,8 @@ SignalConfigs:
     Derivatives: ["solar"]
     Timeout: 4000
     Resources:
-    - {ResCode: "0x80010000", ResInfo: "0x00000000", Values: [883]}
-    - {ResCode: "0x80010001", ResInfo: "0x00000000", Values: [920]}
+    - {ResCode: "0x00010000", ResInfo: "0x00000000", Values: [883]}
+    - {ResCode: "0x00010001", ResInfo: "0x00000000", Values: [920]}
     - {ResCode: "Zero", ResInfo: "0x00000000", Values: [1555]}
 
   - SigId: "0x0006"
@@ -96,7 +96,7 @@ SignalConfigs:
     Permissions: ["system"]
     Timeout: 14500
     Resources:
-      - {ResCode: "0x80dbaaa0", ResInfo: "0x000776aa", Values: [887]}
+      - {ResCode: "0x00dbaaa0", ResInfo: "0x000776aa", Values: [887]}
 
   - SigId: "0x0007"
     Category: "0x0d"
@@ -153,11 +153,11 @@ SignalConfigs:
     Permissions: ["third_party", "system"]
     Timeout: 10000
     Resources:
-      - {ResCode: "0x80ff0000", ResInfo: "0x00000000", Values: [668]}
-      - {ResCode: "0x80ff0001", ResInfo: "0x00000000", Values: [897]}
-      - {ResCode: "0x80ff0003", ResInfo: "0x00000000", Values: [1533]}
-      - {ResCode: "0x80ff0004", ResInfo: "0x00000000", Values: [231]}
-      - {ResCode: "0x80ff000a", ResInfo: "0x00000000", Values: [1976]}  # logical cluster: 0
-      - {ResCode: "0x80ff000a", ResInfo: "0x00000100", Values: [1989]}  # logical cluster: 1
-      - {ResCode: "0x80ff000a", ResInfo: "0x00000200", Values: [2012]}  # logical cluster: 2
-      - {ResCode: "0x80ff000d", ResInfo: "0x00000000", Values: [802, 41128]}  # cgroup: audio
+      - {ResCode: "0x00ff0000", ResInfo: "0x00000000", Values: [668]}
+      - {ResCode: "0x00ff0001", ResInfo: "0x00000000", Values: [897]}
+      - {ResCode: "0x00ff0003", ResInfo: "0x00000000", Values: [1533]}
+      - {ResCode: "0x00ff0004", ResInfo: "0x00000000", Values: [231]}
+      - {ResCode: "0x00ff000a", ResInfo: "0x00000000", Values: [1976]}  # logical cluster: 0
+      - {ResCode: "0x00ff000a", ResInfo: "0x00000100", Values: [1989]}  # logical cluster: 1
+      - {ResCode: "0x00ff000a", ResInfo: "0x00000200", Values: [2012]}  # logical cluster: 2
+      - {ResCode: "0x00ff000d", ResInfo: "0x00000000", Values: [802, 41128]}  # cgroup: audio

@@ -15,6 +15,20 @@ void RequestReceiver::forwardMessage(int32_t clientSocket, MsgForwardInfo* info)
     info->mModuleID = moduleID;
     info->mRequestType = requestType;
 
+    if(info->mRequestType == REQ_PROP_GET) {
+        std::string result = "";
+        size_t writeLen = submitPropGetRequest(info, result);
+        if(writeLen == 0) {
+            result = "na";
+            writeLen = result.length();
+        }
+
+        if(write(clientSocket, result.c_str(), writeLen) == -1) {
+            TYPELOGV(ERRNO_LOG, "write", strerror(errno));
+        }
+        return;
+    }
+
     info->mHandle = AuxRoutines::generateUniqueHandle();
     if(info->mHandle < 0) {
         // Handle Generation Failure

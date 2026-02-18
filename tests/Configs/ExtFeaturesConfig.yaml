@@ -12,4 +12,4 @@ FeatureConfigs:
     Name: "FEAT-2"
     LibPath: "/usr/lib/libpropagate.so"
     Description: "Simple Observer-Observable Feature, defined by the BU"
-    Signals: ["0x80a105ea", "0x800ccca5"]
+    Signals: ["0x00a105ea", "0x000ccca5"]

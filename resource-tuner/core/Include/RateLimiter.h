@@ -44,7 +44,7 @@ private:
     uint32_t mDelta;
     double mPenaltyFactor;
     double mRewardFactor;
-    int8_t shouldBeProcessed(int32_t clientPID);
+    int8_t shouldBeProcessed(pid_t clientPID);
 
     RateLimiter();
 
@@ -60,7 +60,7 @@ public:
      *            - 1: If the Request can be accepted.\n
      *            - 0: otherwise
      */
-    int8_t isRateLimitHonored(int32_t clientTID);
+    int8_t isRateLimitHonored(pid_t clientTID);
 
     /**
      * @brief Checks if the Global Rate Limit is honored.

@@ -9,13 +9,13 @@ PropertyConfigs:
     Value: "20"
 
   - Name: resource_tuner.pulse.duration
-    Value: "60000"
+    Value: "23000"
 
   - Name: resource_tuner.garbage_collection.duration
-    Value: "83000"
+    Value: "1000"
 
   - Name: resource_tuner.garbage_collection.batch_size
-    Value: "5"
+    Value: "20"
 
   - Name: resource_tuner.rate_limiter.delta
     Value: "5"
@@ -39,4 +39,4 @@ PropertyConfigs:
     Value: "SYSLOG"
 
   - Name: urm.extensions_lib.count
-    Value: "3"
+    Value: "6"
