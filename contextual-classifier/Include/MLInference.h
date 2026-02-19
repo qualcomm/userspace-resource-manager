@@ -54,11 +54,6 @@ class MLInference : public Inference {
     // Method to clean the text as same as we are doing in floret model building.
     std::string CleanTextPython(const std::string &input);
 
-    void LogTopKPredictions(
-        int pid,
-        const std::vector<std::pair<fasttext::real, int32_t>>& predictions,
-        int k);
-
 };
 
 #endif // ML_INFERENCE_H

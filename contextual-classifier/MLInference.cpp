@@ -57,11 +57,11 @@ MLInference::MLInference(const std::string &ft_model_path) : Inference(ft_model_
         syslog(LOG_DEBUG, "Floret model loaded. Embedding dimension: %d", embedding_dim_);
 
     } catch (const std::exception &e) {
-        syslog(LOG_CRIT, "Failed to load fastText model: %s", e.what());
+        syslog(LOG_CRIT, "Failed to load Floret model: %s", e.what());
         throw;
     }
 
-    syslog(LOG_INFO, "MLInference initialized. fastText dim: %d", embedding_dim_);
+    syslog(LOG_INFO, "MLInference initialized. Floret dim: %d", embedding_dim_);
     (void)ft_model_path;
 }
 
@@ -157,14 +157,6 @@ std::string MLInference::CleanTextPython(const std::string &input) {
         if(!t.empty() && t.length() > 1){
             clean_tokens.push_back(t);
         }
-
-        /* # Have commented this code for Debug purpose.
-        // Remove duplicates tokens
-        if (!t.empty() && seen.find(t) == seen.end()) {
-            seen.insert(t);
-            clean_tokens.push_back(t);
-        }
-        */
     }
     
     // Step 5: Join tokens with spaces
@@ -180,8 +172,8 @@ std::string MLInference::CleanTextPython(const std::string &input) {
 }
 
 CC_TYPE MLInference::Classify(int process_pid) {
-    //LOGD(CLASSIFIER_TAG,
-    //     format_string("Starting classification for PID:%d", process_pid));
+    LOGD(CLASSIFIER_TAG,
+         format_string("Starting classification for PID:%d", process_pid));
 
     const std::string proc_path = "/proc/" + std::to_string(process_pid);
     CC_TYPE contextType = CC_APP;
@@ -196,17 +188,14 @@ CC_TYPE MLInference::Classify(int process_pid) {
     auto end_collect = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed_collect =
         end_collect - start_collect;
-    //LOGD(CLASSIFIER_TAG,
-    //     format_string("Data collection for PID:%d took %f ms (rc=%d)",
-    //                   process_pid, elapsed_collect.count(), collect_rc));
 
     if (collect_rc != 0) {
         // Process exited or collection failed; skip further work.
         return contextType;
     }
 
-    //LOGD(CLASSIFIER_TAG,
-    //     format_string("Text features collected for PID:%d", process_pid));
+    LOGD(CLASSIFIER_TAG,
+         format_string("Text features collected for PID:%d", process_pid));
 
     if (!AuxRoutines::fileExists(proc_path)) {
         return contextType;
@@ -229,26 +218,17 @@ CC_TYPE MLInference::Classify(int process_pid) {
              format_string("Invoking ML inference for PID:%d", process_pid));
 
         auto start_inference = std::chrono::high_resolution_clock::now();
-        //if (Inference) {
-            uint32_t rc = Predict(process_pid, raw_data, predicted_label);
-            auto end_inference = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> elapsed_inference =
-                end_inference - start_inference;
-            LOGD(CLASSIFIER_TAG,
-                 format_string("Inference for PID:%d took %f ms (rc=%u)",
-                               process_pid, elapsed_inference.count(), rc));
-            if (rc != 0) {
-                // Inference failed, keep contextType as UNKNOWN.
-                predicted_label.clear();
-            }
-        /*} else {
-            LOGW(CLASSIFIER_TAG,
-                 format_string("No Inference object available for PID:%d",
-                               process_pid));
-        }*/
 
-        // Map stripped label -> CC_APP enum.
-        // MLInference::Predict() returns after stripping "__label__".
+        uint32_t rc = Predict(process_pid, raw_data, predicted_label);
+        auto end_inference = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed_inference = end_inference - start_inference;
+        LOGD(CLASSIFIER_TAG, format_string("Inference for PID:%d took %f ms (rc=%u)",
+                            process_pid, elapsed_inference.count(), rc));
+        if (rc != 0) {
+            // Inference failed, keep contextType as UNKNOWN.
+            predicted_label.clear();
+        }
+
         if (predicted_label == "app") {
             contextType = CC_APP;
         } else if (predicted_label == "browser") {
@@ -273,35 +253,6 @@ CC_TYPE MLInference::Classify(int process_pid) {
     }
 
     return contextType;
-}
-
-void MLInference::LogTopKPredictions(
-    int pid,
-    const std::vector<std::pair<fasttext::real, int32_t>>& predictions,
-    int k) {
-    
-    syslog(LOG_DEBUG, "Top %d predictions for PID %d:", k, pid);
-    
-    const std::string prefix = "__label__";
-    
-    for (size_t i = 0; i < std::min(predictions.size(), size_t(k)); ++i) {
-        fasttext::real prob = predictions[i].first;
-        
-        // Convert log probability to actual probability
-        if (prob < 0) {
-            prob = std::exp(prob);
-        }
-        
-        int32_t lid = predictions[i].second;
-        std::string lbl = ft_model_.getDictionary()->getLabel(lid);
-        
-        // Remove "__label__" prefix
-        if (lbl.compare(0, prefix.length(), prefix) == 0) {
-            lbl = lbl.substr(prefix.length());
-        }
-        
-        syslog(LOG_DEBUG, "  %zu. %s: %.4f", i + 1, lbl.c_str(), static_cast<float>(prob));
-    }
 }
 
 uint32_t MLInference::Predict(int pid,
@@ -333,14 +284,9 @@ uint32_t MLInference::Predict(int pid,
         return 1;
     }
     
-    // Printing the concatenated text
-    //syslog(LOG_DEBUG,"Concatenated Text value : %s", concatenated_text.c_str());
 
     // Apply cleaning same what we did during building model
     std::string cleaned_text = CleanTextPython(concatenated_text);
-    
-    // Printing the cleaned text
-    //syslog(LOG_DEBUG, "Cleaned text: %s", cleaned_text.c_str());
 
     if (cleaned_text.empty()) {
         syslog(LOG_WARNING, "Text became empty after cleaning for PID: %d", pid);
@@ -352,7 +298,7 @@ uint32_t MLInference::Predict(int pid,
     cleaned_text += "\n";
     std::istringstream iss(cleaned_text);
 
-    // ✓ Use fasttext types (provided by Floret)
+    // Use fasttext types (provided by Floret)
     const int k = 3;
     std::vector<std::pair<fasttext::real, int32_t>> predictions;
     predictions.reserve(k);
@@ -379,9 +325,6 @@ uint32_t MLInference::Predict(int pid,
         cat = "Unknown";
         return 1;
     }
-
-    // Call Function for top k prediction according to model.
-    //LogTopKPredictions(pid, predictions, k);
 
     // Extract top prediction
     fasttext::real probability = predictions[0].first;
