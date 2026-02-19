@@ -18,17 +18,17 @@ target_include_directories(UrmAuxUtils PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/CoreMo
 install(TARGETS UrmAuxUtils LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 # Install Headers
-install(
-  FILES ${CMAKE_CURRENT_SOURCE_DIR}/Common/Include/UrmPlatformAL.h
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Urm
+set(HEADER_FILES "")
+list(APPEND HEADER_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/Include/UrmPlatformAL.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/Include/Resource.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/Include/ErrCodes.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Common/Include/Utils.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Components/Include/Logger.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Components/Include/DLManager.h
 )
 
 install(
-  FILES ${CMAKE_CURRENT_SOURCE_DIR}/Common/Include/Resource.h
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Urm
-)
-
-install(
-  FILES ${CMAKE_CURRENT_SOURCE_DIR}/Components/Include/Logger.h
+  FILES ${HEADER_FILES}
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Urm
 )

@@ -108,6 +108,10 @@ private:
                                 const std::string& comm,
                                 int32_t cgroupIdentifier);
 
+    void configureAssociatedAppSignals(pid_t incomingPID,
+                                       pid_t incomingTID,
+                                       const std::string& comm);
+
     void untuneRequestHelper(int64_t handle);
 
 public:

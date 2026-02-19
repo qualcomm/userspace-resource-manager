@@ -9,13 +9,10 @@
 #include <unordered_map>
 
 #include "UrmPlatformAL.h"
-#include "Utils.h"
-#include "TargetRegistry.h"
 #include "Resource.h"
-#include "UrmSettings.h"
-#include "AuxRoutines.h"
 #include "Extensions.h"
 #include "Logger.h"
+#include "Utils.h"
 
 /**
  * @struct ResourceApplyType

@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
 #include "ResourceRegistry.h"
+#include "AuxRoutines.h"
+#include "UrmSettings.h"
+#include "TargetRegistry.h"
 
 static const int32_t unsupportedResoure = -2;
 

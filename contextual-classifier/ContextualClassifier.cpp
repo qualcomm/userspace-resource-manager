@@ -259,13 +259,17 @@ void ContextualClassifier::ClassifierMain() {
                 }
                 this->mCurrRestuneHandles.clear();
 
-                // Step 2:
+                // Step 3:
                 // - Move the process to focused-cgroup, Also involves removing the process
                 //  already there from the cgroup.
                 // - Move the "threads" from per-app config to appropriate cgroups
                 this->MoveAppThreadsToCGroup(ev.pid, ev.tgid, comm, FOCUSED_CGROUP_IDENTIFIER);
 
-                // Step 3: If the post processing block exists, call it
+                // Step 4:
+                // Configure any per-app config specified signals.
+                this->configureAssociatedAppSignals(ev.pid, ev.tgid, comm);
+
+                // Step 5: If the post processing block exists, call it
                 // It might provide us a more specific sigID or sigType
                 PostProcessingCallback postCb =
                     Extensions::getPostProcessingCallback(comm);
@@ -281,7 +285,7 @@ void ContextualClassifier::ClassifierMain() {
                     sigType = postProcessData.mSigType;
                 }
 
-                // Step 4: Apply actions, call tuneSignal
+                // Apply actions, call tuneSignal
                 this->ApplyActions(sigId, sigType, ev.pid, ev.tgid);
             }
         } else if(ev.type == CC_APP_CLOSE) {
@@ -533,7 +537,19 @@ void ContextualClassifier::MoveAppThreadsToCGroup(pid_t incomingPID,
             Request::cleanUpRequest(request);
         }
 
+    } catch(const std::exception& e) {
+        LOGE(CLASSIFIER_TAG,
+             "Failed to move per-app threads to cgroup, Error: " + std::string(e.what()));
+    }
+}
+
+void ContextualClassifier::configureAssociatedAppSignals(
+                                    pid_t incomingPID,
+                                    pid_t incomingTID,
+                                    const std::string& comm) {
+    try {
         // Configure any associated signal
+        AppConfig* appConfig = AppConfigs::getInstance()->getAppConfig(comm);
         if(appConfig != nullptr && appConfig->mSignalCodes != nullptr) {
             int32_t numSignals = appConfig->mNumSignals;
             // Go over the list of proc names (comm) and get their pids
@@ -556,7 +572,6 @@ void ContextualClassifier::MoveAppThreadsToCGroup(pid_t incomingPID,
                 }
             }
         }
-
     } catch(const std::exception& e) {
         LOGE(CLASSIFIER_TAG,
              "Failed to move per-app threads to cgroup, Error: " + std::string(e.what()));
