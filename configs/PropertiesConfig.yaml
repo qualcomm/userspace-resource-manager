@@ -39,4 +39,4 @@ PropertyConfigs:
     Value: "SYSLOG"
 
   - Name: urm.extensions_lib.count
-    Value: "3"
+    Value: "6"

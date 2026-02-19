@@ -162,6 +162,12 @@ void TargetRegistry::generatePolicyBasedMapping(std::vector<std::string>& policy
     }
 }
 
+static std::string trimStr(const std::string &s) {
+    size_t start = s.find_first_not_of(" \t");
+    size_t end = s.find_last_not_of(" \t\r");
+    return (start == std::string::npos) ? "" : s.substr(start, end - start + 1);
+}
+
 void TargetRegistry::getClusterIdBasedMapping() {
     const std::string cpuDir = "/sys/devices/system/cpu";
     const std::regex cpuRegex("^cpu([0-9]+)$");
@@ -548,6 +554,95 @@ ErrCode TargetRegistry::addIrqAffine(std::vector<std::string>& values,
         }
     }
 
+    return RC_SUCCESS;
+}
+
+ErrCode TargetRegistry::addLogLimit(std::vector<std::string>& values) {
+    if(values.size() < 1) {
+        return RC_INVALID_VALUE;
+    }
+
+    std::string logLevel = values[0];
+    if(logLevel != "minimal") {
+        return RC_SUCCESS;
+    }
+
+    const std::string journaldConfFile = "/etc/systemd/journald.conf";
+    const std::unordered_map<std::string, std::string> configOptions = {
+        {"RuntimeMaxUse", "20M"},
+        {"RuntimeMaxFileSize", "128K"},
+        {"MaxLevelStore", "notice"},
+        {"MaxLevelSyslog", "notice"},
+        {"MaxLevelKMsg", "notice"},
+        {"MaxLevelConsole", "notice"},
+        {"ForwardToSyslog", "no"}
+    };
+
+    std::ifstream confInStream(journaldConfFile);
+    if(!confInStream) {
+        return RC_SUCCESS;
+    }
+
+    std::ostringstream oldContent;
+    std::ostringstream newContent;
+    std::string line;
+    int8_t journalSectionFound = false;
+
+    std::unordered_map<std::string, int8_t> keyUpdated;
+    for(auto &entry : configOptions) {
+        keyUpdated[entry.first] = false;
+    }
+
+    while(std::getline(confInStream, line)) {
+        std::string trimmedLine = trimStr(line);
+        int8_t replaced = false;
+
+        if(trimmedLine == "[Journal]") {
+            journalSectionFound = true;
+        }
+
+        for(auto &entry : configOptions) {
+            if(trimmedLine.find(entry.first + "=") == 0 ||
+               trimmedLine.find("#" + entry.first + "=") == 0) {
+                newContent << entry.first << "=" << entry.second << "\n";
+                keyUpdated[entry.first] = true;
+                replaced = true;
+                break;
+            }
+        }
+        if(!replaced) {
+            newContent << line << "\n";
+        }
+        oldContent << line << "\n";
+    }
+    confInStream.close();
+
+    if(!journalSectionFound) {
+        newContent << "\n[Journal]\n";
+    }
+
+    for(auto &entry : configOptions) {
+        if(!keyUpdated[entry.first]) {
+            newContent << entry.first << "=" << entry.second << "\n";
+        }
+    }
+
+    std::ofstream confOutStream(journaldConfFile);
+    confOutStream << newContent.str();
+    confOutStream.close();
+
+    // Set printk kernel logging to minimal
+    const std::string printkPath = "/proc/sys/kernel/printk";
+    const std::string newLevels = "3 4 1 3";
+
+    std::ofstream printkFile(printkPath);
+    if(printkFile.is_open()) {
+        printkFile << newLevels;
+        printkFile.close();
+    }
+
+    // Restart journald
+    RestuneSDBus::getInstance()->restartService("systemd-journald.service");
     return RC_SUCCESS;
 }
 

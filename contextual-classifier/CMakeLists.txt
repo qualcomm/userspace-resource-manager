@@ -6,6 +6,7 @@ include_directories(${CMAKE_SOURCE_DIR}/modula/CoreModules/Include)
 include_directories(${CMAKE_SOURCE_DIR}/extensions/Include)
 include_directories(${CMAKE_SOURCE_DIR}/resource-tuner/core/Include)
 include_directories(${CMAKE_SOURCE_DIR}/resource-tuner/signals/Include/)
+include_directories(${CMAKE_SOURCE_DIR}/resource-tuner/dbus-modules/Include/)
 
 # Single shared library that contains parser + classifier + netlink glue
 add_library(ContextualClassifier SHARED

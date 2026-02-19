@@ -89,8 +89,8 @@ static int32_t onSdBusMessageReceived(sd_bus_message* message,
 static int32_t eventLoopTerminator(sd_event_source *s,
                                    const struct signalfd_siginfo *si,
                                    void *userdata) {
-    (void)s;;
-    (void)si;;
+    (void)s;
+    (void)si;
     (void)userdata;
     sd_event_exit(event, 0);
     return 0;

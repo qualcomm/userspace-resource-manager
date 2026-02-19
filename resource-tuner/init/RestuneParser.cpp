@@ -107,6 +107,7 @@ static int8_t isKey(const std::string& keyName) {
         INIT_CONFIGS_IRQ_CONFIGS_LIST,
         INIT_CONFIG_IRQ_AFFINE_TO_CLUSTER,
         INIT_CONFIG_IRQ_AFFINE_ONE,
+        INIT_CONFIG_LOGGING_CONF,
         SIGNAL_CONFIGS_ROOT,
         SIGNAL_CONFIGS_ELEM_SIGID,
         SIGNAL_CONFIGS_ELEM_CATEGORY,
@@ -153,6 +154,8 @@ static int8_t isKeyTypeList(const std::string& keyName) {
     if(keyName == INIT_CONFIGS_IRQ_CONFIGS_LIST) return true;
     if(keyName == INIT_CONFIG_IRQ_AFFINE_TO_CLUSTER) return true;
     if(keyName == INIT_CONFIG_IRQ_AFFINE_ONE) return true;
+
+    if(keyName == INIT_CONFIG_LOGGING_CONF) return true;
 
     if(keyName == RESOURCE_CONFIGS_ELEM_MODES) return true;
     if(keyName == RESOURCE_CONFIGS_ELEM_TARGETS_ENABLED) return true;
@@ -465,6 +468,7 @@ ErrCode RestuneParser::parseInitConfigYamlNode(const std::string& filePath) {
     int8_t docMarker = false;
     int8_t inAffineClusterList = false;
     int8_t inAffineOneList = false;
+    int8_t inLoggingConfList = false;
 
     std::string value;
     std::string topKey;
@@ -496,6 +500,8 @@ ErrCode RestuneParser::parseInitConfigYamlNode(const std::string& filePath) {
                     inAffineClusterList = true;
                 } else if(topKey == INIT_CONFIG_IRQ_AFFINE_ONE) {
                     inAffineOneList = true;
+                } else if(topKey == INIT_CONFIG_LOGGING_CONF) {
+                    inLoggingConfList = true;
                 }
 
                 break;
@@ -524,6 +530,15 @@ ErrCode RestuneParser::parseInitConfigYamlNode(const std::string& filePath) {
                     }
                     itemArray.clear();
                     inAffineOneList = !inAffineOneList;
+
+                } else if(inLoggingConfList) {
+                    if(RC_IS_OK(rc)) {
+                        rc = TargetRegistry::getInstance()->addLogLimit(itemArray);
+                        if(RC_IS_NOTOK(rc)) {
+                            return RC_YAML_INVALID_SYNTAX;
+                        }
+                    }
+                    inLoggingConfList = !inLoggingConfList;
                 }
 
                 keyTracker.pop();
@@ -635,7 +650,9 @@ ErrCode RestuneParser::parseInitConfigYamlNode(const std::string& filePath) {
                 ADD_TO_CACHE_INFO_BUILDER(INIT_CONFIGS_ELEM_CACHE_INFO_BLK_CNT, setNumBlocks);
                 ADD_TO_CACHE_INFO_BUILDER(INIT_CONFIGS_ELEM_CACHE_INFO_PRIO_AWARE, setPriorityAware);
 
-                if(topKey == INIT_CONFIG_IRQ_AFFINE_TO_CLUSTER || topKey == INIT_CONFIG_IRQ_AFFINE_ONE) {
+                if(topKey == INIT_CONFIG_IRQ_AFFINE_TO_CLUSTER ||
+                   topKey == INIT_CONFIG_IRQ_AFFINE_ONE ||
+                   topKey == INIT_CONFIG_LOGGING_CONF) {
                     itemArray.push_back(value);
                 }
 

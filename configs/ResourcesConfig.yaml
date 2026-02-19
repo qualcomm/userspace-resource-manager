@@ -398,3 +398,12 @@ ResourceConfigs:
     Modes: ["display_on"]
     Policy: "pass_through"
     ApplyType: "global"
+
+  - ResType: "0x0c"
+    ResID: "0x0000"
+    Name: "RES_PER_TASK_AFFINITY"
+    Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on"]
+    Policy: "pass_through"
+    ApplyType: "global"

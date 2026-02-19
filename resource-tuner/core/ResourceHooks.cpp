@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
 #include <unistd.h>
+#include <sched.h>
 
 #include "Utils.h"
 #include "Logger.h"
@@ -566,6 +567,45 @@ static void limitCpuTime(void* context) {
     }
 }
 
+static void setTaskAffinity(void* context) {
+    if(context == nullptr) return;
+    Resource* resource = static_cast<Resource*>(context);
+    if(resource->getValuesCount() < 2) return;
+
+    pid_t pid = resource->getValueAt(0);
+
+    // Get current mask
+    cpu_set_t mask;
+    if(sched_getaffinity(pid, sizeof(cpu_set_t), &mask) == -1) {
+        TYPELOGV(ERRNO_LOG, "sched_getaffinity", strerror(errno));
+    } else {
+        std::string procDesc = "task_affinity_" + std::to_string(pid);
+        std::string maskStr = "";
+
+        // Serialize the mask as a string
+        for(int32_t i = 0; i < CPU_SETSIZE; i++) {
+            if(CPU_ISSET(i, &mask)) {
+                if(maskStr.length() > 0) {
+                    maskStr.append(",");
+                }
+                maskStr.append(std::to_string(i));
+            }
+        }
+
+        ResourceRegistry::getInstance()->addDefaultValue(procDesc, maskStr);
+    }
+
+    CPU_ZERO(&mask);
+    for(int32_t i = 1; i < resource->getValuesCount(); i++) {
+        int32_t cpuId = resource->getValueAt(i);
+        CPU_SET(cpuId, &mask);
+    }
+
+    if(sched_setaffinity(pid, sizeof(mask), &mask) == -1) {
+        TYPELOGV(ERRNO_LOG, "sched_setaffinity", strerror(errno));
+    }
+}
+
 static void removeProcessFromCGroup(void* context) {
     if(context == nullptr) return;
     Resource* resource = static_cast<Resource*>(context);
@@ -682,12 +722,49 @@ static void resetRunOnCoresExclusively(void* context) {
     }
 }
 
+static void resetTaskAffinity(void* context) {
+    if(context == nullptr) return;
+    Resource* resource = static_cast<Resource*>(context);
+    if(resource->getValuesCount() < 2) return;
+
+    pid_t pid = resource->getValueAt(0);
+
+    std::string procDesc = "task_affinity_" + std::to_string(pid);
+    std::string defVal = ResourceRegistry::getInstance()->getDefaultValue(procDesc);
+
+    if(defVal.length() == 0) {
+        return;
+    }
+
+    // Reconstruct Original Mask
+    cpu_set_t originalMask;
+    CPU_ZERO(&originalMask);
+
+    std::string value;
+    std::istringstream iss(defVal);
+    while(std::getline(iss, value, ',')) {
+        try {
+            int32_t cpuId = std::stoi(value);
+            CPU_SET(cpuId, &originalMask);
+
+        } catch (const std::exception&) {
+            return;
+        }
+    }
+
+    if(sched_setaffinity(pid, sizeof(originalMask), &originalMask) == -1) {
+        TYPELOGV(ERRNO_LOG, "sched_setaffinity", strerror(errno));
+    }
+}
+
 // Register the specific Callbacks
 URM_REGISTER_RES_APPLIER_CB(0x00090000, moveProcessToCGroup);
 URM_REGISTER_RES_APPLIER_CB(0x00090001, moveThreadToCGroup);
 URM_REGISTER_RES_APPLIER_CB(0x00090002, setRunOnCores);
 URM_REGISTER_RES_APPLIER_CB(0x00090003, setRunOnCoresExclusively);
 URM_REGISTER_RES_APPLIER_CB(0x00090005, limitCpuTime);
+URM_REGISTER_RES_APPLIER_CB(0x000c0000, setTaskAffinity);
 URM_REGISTER_RES_TEAR_CB(0x00090000, removeProcessFromCGroup);
 URM_REGISTER_RES_TEAR_CB(0x00090001, removeThreadFromCGroup);
 URM_REGISTER_RES_TEAR_CB(0x00090003, resetRunOnCoresExclusively);
+URM_REGISTER_RES_TEAR_CB(0x000c0000, resetTaskAffinity)

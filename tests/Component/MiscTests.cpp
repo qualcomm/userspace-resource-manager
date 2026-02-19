@@ -110,10 +110,10 @@ URM_TEST(TestAuxRoutineFileExists, {
     fileExists = AuxRoutines::fileExists("/etc/urm/tests/configs/NetworkConfig.yaml");
     E_ASSERT((fileExists == false));
 
-    fileExists = AuxRoutines::fileExists(UrmSettings::mCommonResourceFilePath);
+    fileExists = AuxRoutines::fileExists(UrmSettings::mCommonResourcesPath);
     E_ASSERT((fileExists == true));
 
-    fileExists = AuxRoutines::fileExists(UrmSettings::mCommonPropertiesFilePath);
+    fileExists = AuxRoutines::fileExists(UrmSettings::mCommonPropertiesPath);
     E_ASSERT((fileExists == true));
 
     fileExists = AuxRoutines::fileExists("");

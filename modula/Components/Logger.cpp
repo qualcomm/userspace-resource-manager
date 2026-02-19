@@ -572,7 +572,7 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
 
         case CommonMessageTypes::NOTIFY_PARSING_START:
             vsnprintf(buffer, sizeof(buffer),
-                      "Proceeding with [%s] Config Parsing", args);
+                      "Proceeding with [%s] Config Parsing, Path: [%s]", args);
 
             Logger::log(LOG_INFO, "URM_SERVER_INIT", funcName, buffer);
             break;
@@ -589,13 +589,6 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "[%s] Configs Could not be parsed", args);
 
             Logger::log(LOG_ERR, "URM_SERVER_INIT", funcName, buffer);
-            break;
-
-        case CommonMessageTypes::NOTIFY_CUSTOM_CONFIG_FILE:
-            vsnprintf(buffer, sizeof(buffer),
-                      "Custom [%s] Config file provided [path: %s]", args);
-
-            Logger::log(LOG_INFO, "URM_SERVER_INIT", funcName, buffer);
             break;
 
         case CommonMessageTypes::NOTIFY_PARSER_FILE_NOT_FOUND:
@@ -744,6 +737,13 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "Probability: %.4f", args);
 
             Logger::log(LOG_INFO, "CONTEXTUAL_CLASSIFIER", funcName, buffer);
+            break;
+
+        case CommonMessageTypes::SYSTEM_BUS_CONN_FAILED:
+            vsnprintf(buffer, sizeof(buffer),
+                      "Failed to establish connection with system bus, Error: %s", args);
+
+            Logger::log(LOG_ERR, "RESTUNE_COCO_TABLE", funcName, std::string(buffer));
             break;
 
         default:

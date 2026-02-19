@@ -80,6 +80,9 @@
 #define INIT_CONFIG_IRQ_AFFINE_ONE "AffineIRQ"
 #define INIT_CONFIG_IRQ_AFFINE_TO_CLUSTER "AffineIRQToCluster"
 
+// Journal Configs
+#define INIT_CONFIG_LOGGING_CONF "LogLevel"
+
 // Properties
 #define PROPERTY_CONFIGS_ROOT "PropertyConfigs"
 #define PROPERTY_CONFIGS_ELEM_NAME "Name"
