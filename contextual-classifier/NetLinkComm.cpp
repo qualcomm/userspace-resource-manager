@@ -11,29 +11,39 @@
 #include "NetLinkComm.h"
 #include "ContextualClassifier.h"
 
-#define CLASSIFIER_TAG "NetLinkComm"
+#define CLASSIFIER_TAG "CLASSIFIER_NETLINK"
 #define PROCP_THRESH 50
 
-static pid_t getParent(pid_t pid) {
-    std::string statusFile = "/proc/" + std::to_string(pid) + "/status";
-    std::ifstream file(statusFile);
-    std::string line;
-
-    if(!file.is_open()) {
-        return 0;
+static int8_t procHasControlTerminal(pid_t pid) {
+    std::string procStatPath = STAT(pid);
+    std::string stat = AuxRoutines::readFromFile(procStatPath);
+    if(stat.empty()) {
+        return false;
     }
 
-    while(std::getline(file, line)) {
-        if(line.rfind("PPid:", 0) == 0) {
-            std::istringstream iss(line);
-            std::string label;
-            pid_t parentPid;
-            iss >> label >> parentPid;
-            return parentPid;
-        }
+    // Find the closing ')' of the comm field.
+    size_t pos = stat.rfind(')');
+    if(pos == std::string::npos) {
+        return false;
     }
 
-    return 0;
+    // Start parsing right after ')' and skip any spaces.
+    pos++;
+    while(pos < stat.size() && stat[pos] == ' ') {
+        pos++;
+    }
+    if(pos >= stat.size()) {
+        return false;
+    }
+
+    std::istringstream statStream(stat.substr(pos));
+
+    char state = '\0';
+    int64_t ppid = 0, pgrp = 0, session = 0, ttyNr = 0;
+    statStream >> state >> ppid >> pgrp >> session >> ttyNr;
+
+    // For daemon / system services, tty number (controlling terminal) will be 0.
+    return (ttyNr != 0);
 }
 
 NetLinkComm::NetLinkComm() {
@@ -148,7 +158,7 @@ int32_t NetLinkComm::recvEvent(ProcEvent &ev) {
             ev.type = CC_APP_OPEN;
 
             rc = CC_APP_OPEN;
-            if(!AuxRoutines::fileExists(COMM(ev.pid)) || (getParent(ev.pid) <= PROCP_THRESH)) {
+            if(!AuxRoutines::fileExists(COMM(ev.pid)) || !procHasControlTerminal(ev.pid)) {
                 rc = ev.type = CC_IGNORE;
             }
             break;
@@ -159,7 +169,7 @@ int32_t NetLinkComm::recvEvent(ProcEvent &ev) {
             ev.type = CC_APP_CLOSE;
 
             rc = CC_APP_CLOSE;
-            if(!AuxRoutines::fileExists(COMM(ev.pid)) || (getParent(ev.pid) <= PROCP_THRESH)) {
+            if(!AuxRoutines::fileExists(COMM(ev.pid)) || !procHasControlTerminal(ev.pid)) {
                 rc = ev.type = CC_IGNORE;
             }
             break;

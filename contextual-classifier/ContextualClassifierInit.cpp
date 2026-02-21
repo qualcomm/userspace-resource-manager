@@ -47,11 +47,11 @@ static ErrCode init(void *arg = nullptr) {
 
     dlerror();
 
-    g_cc_init = reinterpret_cast<cc_init_fn>(dlsym(g_cc_handle, "cc_init"));
+    g_cc_init = reinterpret_cast<cc_init_fn>(dlsym(g_cc_handle, "ccInit"));
     const char *err = dlerror();
     if (err != nullptr || !g_cc_init) {
         LOGE(CLASSIFIER_TAG,
-             format_string("Failed to resolve cc_init in %s: %s", so_name,
+             format_string("Failed to resolve ccInit in %s: %s", so_name,
                            err ? err : "unknown"));
         dlclose(g_cc_handle);
         g_cc_handle = nullptr;
@@ -60,11 +60,11 @@ static ErrCode init(void *arg = nullptr) {
         return RC_SUCCESS;
     }
 
-    g_cc_term = reinterpret_cast<cc_term_fn>(dlsym(g_cc_handle, "cc_terminate"));
+    g_cc_term = reinterpret_cast<cc_term_fn>(dlsym(g_cc_handle, "ccTerminate"));
     err = dlerror();
     if (err != nullptr || !g_cc_term) {
         LOGE(CLASSIFIER_TAG,
-             format_string("Failed to resolve cc_terminate in %s: %s", so_name,
+             format_string("Failed to resolve ccTerminate in %s: %s", so_name,
                            err ? err : "unknown"));
         dlclose(g_cc_handle);
         g_cc_handle = nullptr;
