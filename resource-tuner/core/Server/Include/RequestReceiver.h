@@ -24,7 +24,7 @@
  *          appropriate module, using that module's registered callback.
  *          Note, the callback is invoked on a separate thread (taken from the ThreadPool)
  */
-class RequestReceiver {
+class __attribute__((visibility("default"))) RequestReceiver {
 private:
     static std::shared_ptr<RequestReceiver> mRequestReceiverInstance;
 
@@ -43,6 +43,6 @@ public:
     }
 };
 
-void listenerThreadStartRoutine();
+__attribute__((visibility("default"))) void listenerThreadStartRoutine();
 
 #endif

@@ -10,11 +10,13 @@
 #include <memory>
 #include <shared_mutex>
 
+#include "RestuneVisibility.h"
+
 /**
  * @brief PropertiesRegistry
  * @details Stores and manages all the properties parsed from the Properties Config files.
  */
-class PropertiesRegistry {
+class RESTUNE_INTERNAL_EXPORT PropertiesRegistry {
 private:
     static std::shared_ptr<PropertiesRegistry> propRegistryInstance;
     std::unordered_map<std::string, std::string> mProperties;

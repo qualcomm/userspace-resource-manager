@@ -22,6 +22,8 @@
 #include "Logger.h"
 #include "Utils.h"
 
+#include "RestuneVisibility.h"
+
 #define PER_CLIENT_TID_CAP 32
 
 typedef struct _client_info {
@@ -48,7 +50,7 @@ typedef struct {
  *          - Essentially ClientDataManager is a central storage for Client Data, and other Components
  *            like RateLimiter, PulseMonitor and RequestManager are clients of the ClientDataManager.
  */
-class ClientDataManager {
+class RESTUNE_INTERNAL_EXPORT ClientDataManager {
 private:
     static std::shared_ptr<ClientDataManager> mClientDataManagerInstance;
     static std::mutex instanceProtectionLock;

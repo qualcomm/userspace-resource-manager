@@ -94,7 +94,7 @@ typedef struct {
  * @details Stores information Relating to all the Resources available for Tuning.
  *          Note: This information is extracted from Config YAML files.
  */
-class ResourceRegistry {
+class __attribute__((visibility("default"))) ResourceRegistry {
 private:
     static std::shared_ptr<ResourceRegistry> resourceRegistryInstance;
     int32_t mTotalResources;

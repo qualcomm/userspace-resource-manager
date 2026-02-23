@@ -13,6 +13,8 @@
 #include "UrmPlatformAL.h"
 #include "ErrCodes.h"
 
+#include "RestuneVisibility.h"
+
 typedef struct {
     std::string mAppName;
     int32_t mNumThreads;
@@ -22,7 +24,7 @@ typedef struct {
     uint32_t* mSignalCodes;
 } AppConfig;
 
-class AppConfigs {
+class RESTUNE_INTERNAL_EXPORT AppConfigs {
 private:
     static std::shared_ptr<AppConfigs> appConfigRegistryInstance;
     std::unordered_map<std::string, AppConfig*> mAppConfig;
