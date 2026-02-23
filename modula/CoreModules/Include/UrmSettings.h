@@ -79,7 +79,6 @@ public:
     static const std::string mDeviceNamePath;
     static const std::string mBaseCGroupPath;
     static const std::string mPersistenceFile;
-    static const std::string mExtensionPluginsLibPath;
 
     // Target Information Stores
     static MetaConfigs metaConfigs;

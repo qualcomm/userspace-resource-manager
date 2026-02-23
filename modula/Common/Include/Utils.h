@@ -126,6 +126,7 @@ typedef void (*MessageReceivedCallback)(int32_t, MsgForwardInfo*);
 #define COMM_S(pidstr) ("/proc/" + pidstr + "/comm")
 #define STATUS(pid) ("/proc/" + std::to_string(pid) + "/status")
 #define CMDLINE(pid) ("/proc/" + std::to_string(pid) + "/cmdline")
+#define STAT(pid) ("/proc/" + std::to_string(pid) + "/stat")
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)

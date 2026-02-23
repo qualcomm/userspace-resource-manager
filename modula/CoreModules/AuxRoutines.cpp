@@ -244,3 +244,23 @@ int64_t AuxRoutines::getCurrentTimeInMilliseconds() {
     auto now = std::chrono::system_clock::now();
     return std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 }
+
+MinLRUCache::MinLRUCache(int32_t maxSize) {
+    this->mMaxSize = maxSize;
+    this->mDataSet.reserve(this->mMaxSize);
+}
+
+void MinLRUCache::insert(int64_t data) {
+    if(this->mDataSet.size() >= this->mMaxSize) {
+        int64_t oldestElement = this->mRecencyQueue.front();
+        this->mRecencyQueue.pop();
+        this->mDataSet.erase(oldestElement);
+    }
+
+    this->mDataSet.insert(data);
+    this->mRecencyQueue.push(data);
+}
+
+int8_t MinLRUCache::isPresent(int64_t data) {
+    return (this->mDataSet.find(data) != this->mDataSet.end());
+}

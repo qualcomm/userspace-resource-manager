@@ -4,19 +4,20 @@
 #ifndef CONTEXTUAL_CLASSIFIER_H
 #define CONTEXTUAL_CLASSIFIER_H
 
-#include "ComponentRegistry.h"
-#include "NetLinkComm.h"
-#include "AppConfigs.h"
-#include "Resource.h"
-
-#include <condition_variable>
 #include <mutex>
 #include <queue>
 #include <string>
+#include <vector>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
+#include <condition_variable>
+
+#include "Resource.h"
+#include "AppConfigs.h"
+#include "NetLinkComm.h"
+#include "AuxRoutines.h"
+#include "ComponentRegistry.h"
 
 class Inference;
 
@@ -65,6 +66,9 @@ private:
     Inference *mInference;
     std::vector<int64_t> mCurrRestuneHandles;
 
+    // PID cache to check for duplicates
+    MinLRUCache mClassifierPidCache;
+
     // Event queue for classifier main thread
     std::queue<ProcEvent> mPendingEv;
     std::mutex mQueueMutex;
@@ -108,18 +112,15 @@ private:
                                 const std::string& comm,
                                 int32_t cgroupIdentifier);
 
-    void configureAssociatedAppSignals(pid_t incomingPID,
-                                       pid_t incomingTID,
-                                       const std::string& comm);
+    void configureAppSignals(pid_t incomingPID,
+                             pid_t incomingTID,
+                             const std::string& comm);
 
     void untuneRequestHelper(int64_t handle);
 
 public:
     ContextualClassifier();
     ~ContextualClassifier();
-    Inference *getInference() {
-        return mInference;
-    }
 
     ErrCode Init();
     ErrCode Terminate();
