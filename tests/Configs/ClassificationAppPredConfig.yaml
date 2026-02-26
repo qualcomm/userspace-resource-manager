@@ -1,0 +1,134 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
+# Classification App Prediction Configuration
+#
+# This file defines test applications for validating the ML-based classifier.
+# Each app is spawned and classified to verify the model works correctly.
+#
+# Classification Labels:
+#   APP (1)        - General applications, editors, productivity tools
+#   BROWSER (2)    - Web browsers
+#   GAME (3)       - Games
+#   MULTIMEDIA (4) - Media players and editors
+
+test_applications:
+  # MULTIMEDIA Applications
+
+  - name: "vlc"
+    executable: "/usr/bin/vlc"
+    args: ["--intf", "dummy"]
+    expected_category: "CC_MULTIMEDIA"
+    expected_label: 4
+    description: "VLC media player"
+    startup_delay_ms: 3000
+
+  - name: "mpv"
+    executable: "/usr/bin/mpv"
+    args: ["--idle", "--no-video"]
+    expected_category: "CC_MULTIMEDIA"
+    expected_label: 4
+    description: "MPV media player"
+    startup_delay_ms: 2000
+
+  - name: "audacity"
+    executable: "/usr/bin/audacity"
+    args: []
+    expected_category: "CC_MULTIMEDIA"
+    expected_label: 4
+    description: "Audacity audio editor"
+    startup_delay_ms: 3000
+
+  - name: "gstreamer"
+    executable: "/usr/bin/gst-launch-1.0"
+    args: ["videotestsrc", "pattern=smpte", "!", "videoconvert", "!", "autovideosink"]
+    expected_category: "CC_MULTIMEDIA"
+    expected_label: 4
+    description: "GStreamer multimedia framework with GUI display"
+    startup_delay_ms: 3000
+
+  # BROWSER Applications
+
+  - name: "firefox"
+    executable: "/usr/bin/firefox"
+    args: ["--headless", "--no-remote"]
+    expected_category: "CC_BROWSER"
+    expected_label: 2
+    description: "Firefox web browser"
+    startup_delay_ms: 4000
+
+  - name: "chrome"
+    executable: "/usr/bin/google-chrome"
+    args: ["--headless", "--disable-gpu", "--no-sandbox"]
+    expected_category: "CC_BROWSER"
+    expected_label: 2
+    description: "Google Chrome"
+    startup_delay_ms: 4000
+
+  - name: "falkon"
+    executable: "/usr/bin/falkon"
+    args: ["--headless", "--disable-gpu", "--no-sandbox"]
+    expected_category: "CC_BROWSER"
+    expected_label: 2
+    description: "Falkon web browser"
+    startup_delay_ms: 4000
+
+  - name: "chromium"
+    executable: "/usr/bin/chromium-browser"
+    args: ["--headless", "--disable-gpu", "--no-sandbox"]
+    expected_category: "CC_BROWSER"
+    expected_label: 2
+    description: "Chromium web browser"
+    startup_delay_ms: 4000
+
+  # APP Applications
+
+  - name: "gimp"
+    executable: "/usr/bin/gimp"
+    args: ["--no-interface"]
+    expected_category: "CC_APP"
+    expected_label: 1
+    description: "GIMP image editor"
+    startup_delay_ms: 4000
+
+  - name: "libreoffice-writer"
+    executable: "/usr/bin/libreoffice"
+    args: ["--writer", "--headless"]
+    expected_category: "CC_APP"
+    expected_label: 1
+    description: "LibreOffice Writer"
+    startup_delay_ms: 3500
+
+  - name: "blender"
+    executable: "/usr/bin/blender"
+    args: ["--background"]
+    expected_category: "CC_APP"
+    expected_label: 1
+    description: "Blender 3D creation suite"
+    startup_delay_ms: 4500
+
+  - name: "vi"
+    executable: "/usr/bin/vi"
+    args: ["-e", "-s"]
+    expected_category: "CC_APP"
+    expected_label: 1
+    description: "Vi text editor (ex mode)"
+    startup_delay_ms: 1500
+
+  # GAME Applications
+
+  - name: "nsnake"
+    executable: "/snap/bin/nsnake"
+    args: []
+    expected_category: "CC_GAME"
+    expected_label: 3
+    description: "nSnake - Classic snake game for terminal"
+    startup_delay_ms: 2000
+
+  - name: "bastet"
+    executable: "/usr/games/bastet"
+    args: []
+    expected_category: "CC_GAME"
+    expected_label: 3
+    description: "Bastet - Bastard Tetris game"
+    startup_delay_ms: 2000

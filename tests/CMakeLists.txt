@@ -30,7 +30,7 @@ if(BUILD_TESTS)
     install(TARGETS UrmTestPlugin DESTINATION ${CMAKE_INSTALL_LIBDIR}/urm)
 
     add_executable(
-        RestuneComponentTests
+        UrmComponentTests
         ${CMAKE_CURRENT_SOURCE_DIR}/Component/MemoryPoolTests.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Component/ClientDataManagerTests.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Component/ParserTests.cpp
@@ -44,21 +44,31 @@ if(BUILD_TESTS)
         ${CMAKE_CURRENT_SOURCE_DIR}/Component/DeviceInfoTests.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Component/CocoTableTests.cpp
         # ${CMAKE_CURRENT_SOURCE_DIR}/Component/RequestMapTests.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/Component/Trigger.cpp)
+        ${CMAKE_CURRENT_SOURCE_DIR}/Component/Trigger.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Component/ContextClassificationTest.cpp)
 
-    target_link_libraries(RestuneComponentTests PUBLIC UrmAuxUtils
-                                                       UrmExtAPIs
-                                                       RestuneCore
-                                                       RestuneTestUtils)
+    target_link_libraries(UrmComponentTests PUBLIC UrmAuxUtils
+                                                   UrmExtAPIs
+                                                   RestuneCore
+                                                   ContextualClassifier
+                                                   ml_inference_lib
+                                                   RestuneTestUtils
+                                                   ${LIBYAML_LIBRARIES})
+    target_include_directories(UrmComponentTests PRIVATE ${LIBYAML_INCLUDE_DIRS}
+                                                         ${CMAKE_SOURCE_DIR}/contextual-classifier/Include
+                                                         ${CMAKE_SOURCE_DIR}/resource-tuner/Include
+                                                         ${CMAKE_SOURCE_DIR}/common/Include)
 
-    install(TARGETS RestuneComponentTests DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS UrmComponentTests DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-    add_executable(RestuneIntegrationTests Integration/IntegrationTests.cpp)
-    target_link_libraries(RestuneIntegrationTests PUBLIC UrmAuxUtils
-                                                         UrmClient
-                                                         RestuneTestUtils
-                                                         ${LIBYAML_LIBRARIES})
-    target_include_directories(RestuneIntegrationTests PRIVATE ${LIBYAML_INCLUDE_DIRS})
-    install(TARGETS RestuneIntegrationTests RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    add_executable(UrmIntegrationTests Integration/IntegrationTests.cpp Integration/CCIntegrationTest.cpp)
+    add_definitions(-DUSE_FLORET=1)
+
+    target_link_libraries(UrmIntegrationTests PUBLIC UrmAuxUtils
+                                                     UrmClient
+                                                     RestuneTestUtils
+                                                     ${LIBYAML_LIBRARIES})
+    target_include_directories(UrmIntegrationTests PRIVATE ${LIBYAML_INCLUDE_DIRS})
+    install(TARGETS UrmIntegrationTests RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 endif()
