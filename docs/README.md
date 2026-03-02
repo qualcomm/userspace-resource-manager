@@ -4,9 +4,12 @@
 
 
 - [1. Overview](#1-overview)
-  - [1.1. Why URM is Needed](#11-why-urm-is-needed)
-  - [1.2. Powerful System-Level Control](#12-powerful-system-level-control)
-  - [1.3. Dynamic Resource Provisioning via Signals](#13-dynamic-resource-provisioning-via-signals)
+  - [1.1. URM Features](#11-urm-features)
+  - [1.2. Why URM is Needed](#12-why-urm-is-needed)
+  - [1.3. What URM offers](#13-what-urm-offers)
+    - [1.3.1 Provisioning System Resources](#131-provisioning-system-resources)
+    - [1.3.2 Use-case/Workload/Scenario Tuning](#132-use-case-workload-scenario-tuning)
+    - [1.3.3 Per-App Tuning](#133-per-app-tuning)
   - [1.4. Extension Framework](#14-extension-framework)
 
 - [2. Getting Started](#2-getting-started)
@@ -83,36 +86,62 @@
 - [9. License](#9-license)
 
 # 1. Overview
-The Userspace Resource Manager (URM) is a lightweight, extensible framework designed to intelligently manage and provision system resources from userspace. It brings together two key components that enable dynamic, context‑aware optimization of performance and power across diverse embedded and resource‑constrained environments:
+Userspace Resource Manager (URM) is a lightweight, extensible framework designed to intelligently manage and provision system resources from userspace. It brings together two key components that enable dynamic, context‑aware optimization of performance and power across diverse embedded and resource‑constrained environments:
 - Contextual Classifier
-A FastText‑based classifier that identifies static workload contexts—such as camera pipelines, multimedia sessions, installations, or background services. By understanding what the system is running, URM can apply the right resource strategy without manual intervention.
+A Floret‑based classifier that identifies static workload contexts—such as camera pipelines, multimedia sessions, installations, or background services. By understanding what the system is running, URM can apply the right resource strategy without manual intervention.
 - Resource Tuner
 A userspace engine that dynamically provisions system resources—CPU, memory, GPU, I/O, caches, and more—using standard kernel interfaces such as procfs, sysfs, and cgroups. This enables fine‑grained control of system operating points to balance performance and power for each application or use case.
 ```
-+---------------------------+
-| Process Event Listener    |
-|       (NetLinkComm)       |
-+-------------+-------------+
-              |                (Event trigger)
-              |             (from app using APIs)
-              V                      |
-+---------------------------+        |
-|    Contextual Classifier  |        |
-+-------------+-------------+        |
-              |                      |
-          (Workload)                 |
-              |                      |
-              V                      |
-+---------------------------+        |
-|     Resource Tuner        |<-------+
-+-------------+-------------+
-              |
-              V
-      +--------------+
-      |    Action    |
-      +--------------+
+                +---------------------------+
+                | Process Event Listener    |
+                |       (NetLinkComm)       |
+                +-------------+-------------+
+                              |                (Event trigger)
+                              |             (from app using APIs)
+                              v                      |
+                +---------------------------+        |
+      +---------|    Contextual Classifier  |        |
+      |         +-------------+-------------+        |
+      |                       |                      |
+      |                   (Workload)                 |
+      |                       |                      |
+      v                       v                      |
+ +----+----+    +---------------------------+        |
+ |  Yaml   |<---|     Resource Tuner        |<-------+
+ | Configs |    +-------------+-------------+
+ +---------+                  |
+                              v
+                       +--------------+
+                       |    Action    |
+                       +--------------+
 ```
-### 1.1. Why URM is Needed
+### 1.1. URM Features
+- Usecase detection
+- System respource provisioning
+- Usecase/workload tuning
+- Perapp tuning support
+- Concurrent requests support
+- Multi-target support
+- Auto package selection (overlays support, ex. picking up adreno resources over freedrino when available)
+- Yaml Configs & target specific yaml configs
+  - Init configs
+  - Resource configs
+  - Signal configs
+  - Perapp config
+  - Target config (optional, can be specified when want to override urm auto-detected configuration)
+- Custom yaml configs
+- Customized resources
+- Extensions (Customers, developers can develop plugins for their features)
+- Cgroups support
+- Mpam support
+- Security frameworks support (currently sepolicies)
+- Rate Limiter (avoids flooding of requests, tracked client-wise)
+- Action Thresholds
+- Authorizer (System, 3rd party requests differentiation)
+- Request Priorities (Support for high, low priorities)
+- Pulse Monitor (Removes dead client requests)
+
+### 1.2. Why URM is Needed
 Modern workloads vary drastically across segments like servers, compute, XR, mobile, and IoT. Each use case exhibits unique characteristics. Some may demand high CPU frequency, others may require sustained GPU throughput, and many hinge on efficient caching or more memory bandwidth.
 
 At the same time, these workloads run on a broad spectrum of hardware platforms with different capabilities, power envelopes, and user expectations. A "one‑size‑fits‑all" tuning approach fails in such environments.
@@ -124,18 +153,57 @@ URM addresses this challenge by offering:
 
 This allows systems to achieve consistent performance while minimizing energy consumption.
 
-### 1.2. Powerful System‑Level Control
-Fine‑tuning system resources is a powerful tool for any developer or OEM building high‑performance embedded systems. With URM, developers can directly influence operating points to match workload demands.
-For example: to boost performance, increase the CPU DCVS minimum frequency to 1 GHz to improve responsiveness during compute‑intensive scenarios. To save power, cap the maximum CPU frequency at 1.5 GHz when the workload is light, preventing unnecessary turbo boosts and improving battery life. Such targeted interventions can significantly enhance user experience while optimizing for energy efficiency.
+### 1.3. What URM offers
 
-### 1.3. Dynamic Resource Provisioning via Signals
-URM introduces Signals, a mechanism that adjusts system resources in real time based on events such as:
+#### 1.3.1 Provisioning System Resources
+URM help in modifying system behavior to manage intermittent workloads. For example, if a
+specific code segment must run at a higher CPU frequency for a certain duration, use URM APIs
+within that code to boost the CPU frequency. URM efficiently handles concurrent resource requests from multiple clients. When several requests are aimed at the same resource, URM aggregates them to achieve the optimal performance level needed by the device. When a client is no longer active, URM releases all the tuneresource requests associated with that client.
 
+URM offers tuneResources, untuneResources, retuneResources APIs for provisioning system resources. Full details of these APIs and their usage examples were given in [URM Interface](#4-urm-interface)
+
+Here are few examples of how resources can be used for influencing system behavior
+- Moving tasks to silver cluster
+![affinity](Figures/task_affinity.png "tasks affinity")
+Resources:
+RES_CGRP_RUN_CORES, RES_CGRP_MOVE_PID
+
+- Running tasks exclusively on a cluster
+![exclusivity](Figures/run_exclusively.png "tasks exclusivity")
+Resources:
+RES_CGRP_RUN_CORES_EXCL, RES_CGRP_MOVE_PID
+
+- Reducing CPU Share to 50%
+![cpushare](Figures/cpu_share.png "cpu share")
+Resources:
+RES_CGRP_LIMIT_CPU_TIME, RES_CGRP_MOVE_PID
+
+- Marking low-latency threads
+![lowlatency](Figures/low_latency.png "low latency")
+Resources:
+RES_CGRP_CPU_LATENCY, RES_CGRP_MOVE_PID
+
+- Utilclamp
+![utilclamp](Figures/utilclamp.png "utilclamp")
+Resources:
+RES_CGRP_UCLAMP_MIN, RES_CGRP_MOVE_PID
+
+- LPM
+![lpm](Figures/lpm.png "lpm")
+Resources:
+(RES_PM_QOS_LATENCY, CLUSTER_BIG_ALL_CORES)
+
+#### 1.3.2 Use-case/Workload/Scenario Tuning
+URM uses Signals, a mechanism that adjusts system resources in real time based on events such as:
 - App launches
-- App installations
 - On‑device workflows or triggers
 
 These behaviors are governed by flexible, human‑readable YAML configurations, making policies easy to author, review, and evolve.
+
+URM detects an app open and sends a URM_OPEN signal, applies tuning in yaml config if available. URM also offers signal APIs (tuneSignal, untuneSignal) which can be called from within code segments of application or framework to address the needs of any intermittent workload, scenario to get better power and perforamnce trade-off.
+
+#### 1.3.3 Per-App tuning
+URM helps to tune apps, tuning can be given in yaml config file and applies this tuning when an app is opened. Developers, customers can tune their apps as per their requirement. Per-app configs were explained in detail in [Per-App Configs](#435-per-app-configs) section.
 
 ### 1.4. Extension Framework
 URM also provides extension APIs that allow other modules or applications to:
@@ -167,9 +235,14 @@ The following resource codes are supported resources or operations on upstream L
 |-------------------------------------|-------------------|
 |   RES_CPU_DMA_LATENCY               |   0x 00 01 0000   |
 |   RES_PM_QOS_LATENCY                |   0x 00 01 0001   |
+|   RES_CPU_IDLE_DISABLE_ST0          |   0x 00 01 0002   |
+|   RES_CPU_IDLE_DISABLE_ST1          |   0x 00 01 0003   |
+|   RES_CPU_IDLE_DISABLE_ST2          |   0x 00 01 0004   |
 |   RES_SCHED_UTIL_CLAMP_MIN          |   0x 00 03 0000   |
 |   RES_SCHED_UTIL_CLAMP_MAX          |   0x 00 03 0001   |
 |   RES_SCHED_ENERGY_AWARE            |   0x 00 03 0002   |
+|   RES_SCHED_RT_RUNTIME              |   0x 00 03 0003   |
+|   RES_PER_TASK_AFFINITY             |   0x 00 03 0004   |
 |   RES_SCALE_MIN_FREQ                |   0x 00 04 0000   |
 |   RES_SCALE_MAX_FREQ                |   0x 00 04 0001   |
 |   RES_RATE_LIMIT_US                 |   0x 00 04 0002   |
@@ -192,11 +265,13 @@ The following resource codes are supported resources or operations on upstream L
 |   RES_CGRP_MIN_MEM                  |   0x 00 09 000d   |
 |   RES_CGRP_SWAP_MAX_MEMORY          |   0x 00 09 000e   |
 |   RES_CGRP_IO_WEIGHT                |   0x 00 09 000f   |
-|   RES_CGRP_BFQ_IO_WEIGHT            |   0x 00 09 0010   |
 |   RES_CGRP_CPU_LATENCY              |   0x 00 09 0011   |
 |   RES_DEVFREQ_UFS_MAX               |   0x 00 0a 0000   |
 |   RES_DEVFREQ_UFS_MIN               |   0x 00 0a 0001   |
 |   RES_DEVFREQ_UFS_POLL_INTV         |   0x 00 0a 0002   |
+|   RES_IRQ_AFFINE                    |   0x 00 0b 0000   |
+|   RES_DEF_IRQ_AFFINE                |   0x 00 0b 0001   |
+
 
 The above mentioned list of enums are available in the interface file "UrmPlatformAL.h".
 
