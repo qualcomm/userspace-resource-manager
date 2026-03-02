@@ -1,6 +1,8 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 #include "TargetRegistry.h"
+#include "UrmSettings.h"
+#include "RestuneDBus.h"
 
 // Create all the CGroups specified via InitConfig.yaml during the init phase.
 static ErrCode createCGroup(CGroupConfigInfo* cGroupConfig) {
@@ -831,8 +833,13 @@ uint64_t getTargetInfo(int32_t option,
 
             int32_t cluster = args[0];
             int32_t coreCount = args[1];
-            int32_t physicalClusterId = targetRegistry->getPhysicalClusterId(cluster);
 
+            if(cluster == GET_MAX_CLUSTER) {
+                int32_t clusterCount = UrmSettings::targetConfigs.mTotalClusterCount;
+                cluster = clusterCount - 1;
+            }
+
+            int32_t physicalClusterId = targetRegistry->getPhysicalClusterId(cluster);
             ClusterInfo* clusInfo = targetRegistry->getClusterInfo(physicalClusterId);
             if(clusInfo == nullptr) {
                 return 0;

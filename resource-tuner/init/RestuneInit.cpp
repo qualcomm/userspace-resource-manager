@@ -287,7 +287,7 @@ static ErrCode fetchTargetInfo() {
     for(int32_t i = 0; i < 4; i++) {
         std::string filePath = customConfPaths[i];
         if(filePath.length() > 0 && AuxRoutines::fileExists(filePath)) {
-            opStatus = parseUtil(filePath, "target-custom", ConfigType::RESOURCE_CONFIG);
+            opStatus = parseUtil(filePath, "target-custom", ConfigType::TARGET_CONFIG);
             if(RC_IS_NOTOK(opStatus)) {
                 return opStatus;
             }

@@ -11,12 +11,12 @@
 */
 class Message {
 protected:
-    int8_t mReqType; //!< Type of the request. Possible values: TUNE, UNTUNE, RETUNE, TUNESIGNAL, FREESIGNAL.
     int64_t mHandle; //!< The unique generated handle for the request.
     int64_t mDuration; //!< Duration. -1 means infinite duration.
     int32_t mProperties; //!< Request Properties, includes Priority and Background Processing Status.
     int32_t mClientPID; //!< Process ID of the client making the request.
     int32_t mClientTID; //!< Thread ID of the client making the request.
+    int8_t mReqType; //!< Type of the request. Possible values: TUNE, UNTUNE, RETUNE, TUNESIGNAL, FREESIGNAL.
 
 public:
     Message() : mProperties(0) {}
