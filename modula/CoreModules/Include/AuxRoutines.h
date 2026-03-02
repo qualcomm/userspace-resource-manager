@@ -6,6 +6,7 @@
 
 #include <mutex>
 #include <queue>
+#include <memory>
 #include <string>
 #include <cstring>
 #include <sstream>
@@ -17,10 +18,9 @@
 #include <unordered_set>
 
 #include "Logger.h"
-#include "Signal.h"
-#include "Request.h"
-#include "UrmSettings.h"
 #include "ClientEndpoint.h"
+#include "UrmSettings.h"
+#include "SafeOps.h"
 
 class AuxRoutines {
 private:

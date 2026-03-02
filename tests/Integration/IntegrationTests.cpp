@@ -1,6 +1,8 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
+#include <thread>
+
 #include "ErrCodes.h"
 #include "UrmPlatformAL.h"
 #include "Utils.h"
@@ -1379,6 +1381,127 @@ URM_TEST(TestMultipleClientsLazyApplyPolicy, {
         value = AuxRoutines::readFromFile(testResourceName);
         newValue = C_STOI(value);
         std::cout<<LOG_BASE<<testResourceName<<" Reset Value: "<<newValue<<std::endl;
+        E_ASSERT((newValue == originalValue));
+
+        delete[] resourceList;
+    }
+})
+
+/**
+ * API under test: Tune / Untune
+ * - Single client sends requests for Provisioning a single resource, with certain duration
+ * - Here the resource in question has the "Pass-Through" policy, hence the configured value
+ *   should be affected immediately.
+ */
+URM_TEST(TestSimplePassThroughApplication, {
+    // Check the original value for the Resource
+    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource1.txt";
+    int32_t testResourceOriginalValue = 240;
+
+    std::string value;
+    int32_t originalValue, newValue;
+
+    value = AuxRoutines::readFromFile(testResourceName);
+    originalValue = C_STOI(value);
+    std::cout<<LOG_BASE<<testResourceName<<" Original Value: "<<originalValue<<std::endl;
+    E_ASSERT((originalValue == testResourceOriginalValue));
+
+    SysResource* resourceList = new SysResource[1];
+    memset(&resourceList[0], 0, sizeof(SysResource));
+    resourceList[0].mResCode = CONSTRUCT_RES_CODE(0xff, 0x000e);
+    resourceList[0].mNumValues = 1;
+    resourceList[0].mResValue.value = 317;
+
+    int64_t handle = tuneResources(8000, RequestPriority::REQ_PRIORITY_HIGH, 1, resourceList);
+    std::cout<<LOG_BASE<<"Handle Returned: "<<handle<<std::endl;
+
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+
+    value = AuxRoutines::readFromFile(testResourceName);
+    newValue = C_STOI(value);
+    std::cout<<LOG_BASE<<testResourceName<<" Configured Value: "<<newValue<<std::endl;
+    E_ASSERT((newValue == 317));
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+
+    value = AuxRoutines::readFromFile(testResourceName);
+    newValue = C_STOI(value);
+    std::cout<<LOG_BASE<<testResourceName<<" Reset Value: "<<originalValue<<std::endl;
+    E_ASSERT((newValue == originalValue));
+
+    delete[] resourceList;
+})
+
+/**
+ * API under test: Tune / Untune
+ * - Two clients send requests for Provisioning the same resource concurrently, with different durations
+ * - Req1: duration: d1, value: v1
+ * - Req2: duration: d2, value: v2
+ * Here: d1 > d2
+ * - Here the resource in question has the "Pass-Through" policy, hence the configured value
+ *   should be affected immediately.
+ * The value configured by the request with a later timestamp will take effect, even when it expires
+ * the value will remain configured until both the requests for the resource have expired.
+ */
+URM_TEST(TestSimplePassThroughConcurrentApplication, {
+    // Check the original value for the Resource
+    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource1.txt";
+    int32_t testResourceOriginalValue = 240;
+
+    std::string value;
+    int32_t originalValue, newValue;
+
+    value = AuxRoutines::readFromFile(testResourceName);
+    originalValue = C_STOI(value);
+    std::cout<<LOG_BASE<<testResourceName<<" Original Value: "<<originalValue<<std::endl;
+    E_ASSERT((originalValue == testResourceOriginalValue));
+
+    int32_t rc1 = fork();
+    if(rc1 == 0) {
+        SysResource* resourceList = new SysResource[1];
+        memset(&resourceList[0], 0, sizeof(SysResource));
+        resourceList[0].mResCode = CONSTRUCT_RES_CODE(0xff, 0x000e);
+        resourceList[0].mNumValues = 1;
+        resourceList[0].mResValue.value = 365;
+
+        int64_t handle = tuneResources(18000, RequestPriority::REQ_PRIORITY_HIGH, 1, resourceList);
+        std::cout<<LOG_BASE<<"Handle Returned: "<<handle<<std::endl;
+
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        delete[] resourceList;
+        exit(EXIT_SUCCESS);
+
+    } else if(rc1 > 0) {
+        wait(nullptr);
+    
+        SysResource* resourceList = new SysResource[1];
+        memset(&resourceList[0], 0, sizeof(SysResource));
+        resourceList[0].mResCode = CONSTRUCT_RES_CODE(0xff, 0x000e);
+        resourceList[0].mNumValues = 1;
+        resourceList[0].mResValue.value = 394;
+
+        int64_t handle = tuneResources(8000, RequestPriority::REQ_PRIORITY_HIGH, 1, resourceList);
+        std::cout<<LOG_BASE<<"Handle Returned: "<<handle<<std::endl;
+
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+
+        value = AuxRoutines::readFromFile(testResourceName);
+        newValue = C_STOI(value);
+        std::cout<<LOG_BASE<<testResourceName<<" Configured Value: "<<newValue<<std::endl;
+        E_ASSERT((newValue == 394));
+
+        std::this_thread::sleep_for(std::chrono::seconds(8));
+
+        value = AuxRoutines::readFromFile(testResourceName);
+        newValue = C_STOI(value);
+        std::cout<<LOG_BASE<<testResourceName<<" Configured Value: "<<newValue<<std::endl;
+        E_ASSERT((newValue == 394));
+
+        std::this_thread::sleep_for(std::chrono::seconds(8));
+
+        value = AuxRoutines::readFromFile(testResourceName);
+        newValue = C_STOI(value);
+        std::cout<<LOG_BASE<<testResourceName<<" Reset Value: "<<originalValue<<std::endl;
         E_ASSERT((newValue == originalValue));
 
         delete[] resourceList;

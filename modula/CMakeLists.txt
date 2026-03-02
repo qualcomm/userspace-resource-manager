@@ -26,6 +26,10 @@ list(APPEND HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/Common/Include/Utils.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Components/Include/Logger.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Components/Include/DLManager.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Components/Include/SafeOps.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Components/Include/ClientEndpoint.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/CoreModules/Include/AuxRoutines.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/CoreModules/Include/UrmSettings.h
 )
 
 install(

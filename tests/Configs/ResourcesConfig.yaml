@@ -161,3 +161,15 @@ ResourceConfigs:
     Modes: ["display_on", "doze"]
     Policy: "instant_apply"
     ApplyType: "cgroup"
+
+  - ResType: "0xff"
+    ResID: "0x000e"
+    Name: "TEST_RESOURCE_5"
+    Path: "/etc/urm/tests/nodes/target_test_resource1.txt"
+    Supported: true
+    HighThreshold: 400
+    LowThreshold: 0
+    Permissions: "system"
+    Modes: ["display_on", "display_off"]
+    Policy: "pass_through"
+    ApplyType: "global"

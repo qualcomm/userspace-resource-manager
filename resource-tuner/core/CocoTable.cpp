@@ -452,6 +452,7 @@ int8_t CocoTable::removeRequest(Request* request) {
             } else {
                 this->fastPathReset(resource);
             }
+            continue;
         }
 
         // Check if the node is currently at the head of it's resource DLL.

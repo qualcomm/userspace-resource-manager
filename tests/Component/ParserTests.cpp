@@ -276,52 +276,52 @@ URM_TEST(PropertyParsingTests, {
     {
         std::string resultBuffer;
 
-        int8_t propFound = submitPropGetRequest("test.debug.enabled", resultBuffer, "false");
+        size_t bytesWritten = submitPropGetRequest("test.debug.enabled", resultBuffer, "false");
 
-        E_ASSERT((propFound == true));
+        E_ASSERT((bytesWritten > 0));
         E_ASSERT((strcmp(resultBuffer.c_str(), "true") == 0));
     }
 
     {
         std::string resultBuffer;
 
-        int8_t propFound = submitPropGetRequest("test.current.worker_thread.count", resultBuffer, "false");
+        size_t bytesWritten = submitPropGetRequest("test.current.worker_thread.count", resultBuffer, "false");
 
-        E_ASSERT((propFound == true));
+        E_ASSERT((bytesWritten > 0));
         E_ASSERT((strcmp(resultBuffer.c_str(), "125") == 0));
     }
 
     {
         std::string resultBuffer;
 
-        int8_t propFound = submitPropGetRequest("test.historic.worker_thread.count", resultBuffer, "5");
+        size_t bytesWritten = submitPropGetRequest("test.historic.worker_thread.count", resultBuffer, "5");
 
-        E_ASSERT((propFound == false));
+        E_ASSERT((bytesWritten == 0));
         E_ASSERT((strcmp(resultBuffer.c_str(), "5") == 0));
     }
 
     {
         std::thread th1([&]{
             std::string resultBuffer;
-            int8_t propFound = submitPropGetRequest("test.current.worker_thread.count", resultBuffer, "false");
+            size_t bytesWritten = submitPropGetRequest("test.current.worker_thread.count", resultBuffer, "false");
 
-            E_ASSERT((propFound == true));
+            E_ASSERT((bytesWritten > 0));
             E_ASSERT((strcmp(resultBuffer.c_str(), "125") == 0));
         });
 
         std::thread th2([&]{
             std::string resultBuffer;
-            int8_t propFound = submitPropGetRequest("test.debug.enabled", resultBuffer, "false");
+            size_t bytesWritten = submitPropGetRequest("test.debug.enabled", resultBuffer, "false");
 
-            E_ASSERT((propFound == true));
+            E_ASSERT((bytesWritten > 0));
             E_ASSERT((strcmp(resultBuffer.c_str(), "true") == 0));
         });
 
         std::thread th3([&]{
             std::string resultBuffer;
-            int8_t propFound = submitPropGetRequest("test.doc.build.mode.enabled", resultBuffer, "false");
+            size_t bytesWritten = submitPropGetRequest("test.doc.build.mode.enabled", resultBuffer, "false");
 
-            E_ASSERT((propFound == true));
+            E_ASSERT((bytesWritten > 0));
             E_ASSERT((strcmp(resultBuffer.c_str(), "false") == 0));
         });
 

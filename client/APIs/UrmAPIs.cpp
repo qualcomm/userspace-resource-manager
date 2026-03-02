@@ -240,11 +240,11 @@ int8_t getProp(const char* prop, char* buffer, size_t bufferSize, const char* de
 
         // read the response
         char resultBuf[bufferSize];
+        memset(resultBuf, 0, sizeof(resultBuf));
         if(RC_IS_NOTOK(conn->readMsg(resultBuf, sizeof(resultBuf)))) {
             return -1;
         }
 
-        buffer[bufferSize - 1] = '\0';
         if(strncmp(resultBuf, "na", 2) == 0) {
             // Copy default value
             strncpy(buffer, defValue, bufferSize - 1);
