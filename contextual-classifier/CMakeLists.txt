@@ -56,6 +56,7 @@ if(FLORET_FOUND)
 
     target_link_libraries(ml_inference_lib PRIVATE ${FLORET_LIBRARIES})
     target_link_libraries(ContextualClassifier PRIVATE ml_inference_lib)
+    target_link_libraries(ContextualClassifier PRIVATE RestuneCore)
 
     target_include_directories(ml_inference_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Include)
     target_include_directories(ml_inference_lib PRIVATE ${FLORET_INCLUDE_DIRS})
