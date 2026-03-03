@@ -11,6 +11,7 @@
 
 // Test configuration and paths
 #define TEST_CLASS "INTEGRATION"
+#define TEST_SUBCAT "CC_INTEGRATION"
 #define CLASSIFIER_CONFIGS_DIR "/etc/urm/classifier/"
 
 // Path to the Floret supervised learning model binary

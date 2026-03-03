@@ -31,6 +31,7 @@
 
 // Test configuration paths and identifiers
 #define TEST_CLASS "COMPONENT"
+#define TEST_SUBCAT "CONTEXT_CLASSIFIER"
 #define CLASSIFIER_CONFIGS_DIR "/etc/urm/classifier/"
 #define TEST_CONFIG_PATH "/etc/urm/tests/configs/ClassificationAppPredConfig.yaml"
 
