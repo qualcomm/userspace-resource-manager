@@ -11,3 +11,9 @@ PerAppConfigs:
     Threads:
        - {"chrome": "FOCUSED_CGROUP_IDENTIFIER"}
     Configurations: ["0x80034aab"]
+
+  - App: "gst-launch-1.0"
+    Configurations: ["0x000d000a"]
+
+  - App: "vi"
+    Configurations: ["0x000d000a"]

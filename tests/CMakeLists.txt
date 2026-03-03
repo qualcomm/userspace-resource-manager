@@ -30,11 +30,11 @@ if(BUILD_TESTS)
     install(TARGETS UrmTestPlugin DESTINATION ${CMAKE_INSTALL_LIBDIR}/urm)
 
     add_executable(
-        RestuneComponentTests
-        ${CMAKE_CURRENT_SOURCE_DIR}/Component/ParserTests.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/Component/ExtensionIntfTests.cpp
+        UrmComponentTests
         ${CMAKE_CURRENT_SOURCE_DIR}/Component/MemoryPoolTests.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Component/ClientDataManagerTests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Component/ParserTests.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Component/ExtensionIntfTests.cpp  
         ${CMAKE_CURRENT_SOURCE_DIR}/Component/MiscTests.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Component/RequestQueueTests.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Component/ThreadPoolTests.cpp
@@ -46,19 +46,62 @@ if(BUILD_TESTS)
         # ${CMAKE_CURRENT_SOURCE_DIR}/Component/RequestMapTests.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Component/Trigger.cpp)
 
-    target_link_libraries(RestuneComponentTests PUBLIC UrmAuxUtils
-                                                       UrmExtAPIs
-                                                       RestuneCore
-                                                       RestuneTestUtils)
+    target_link_libraries(UrmComponentTests PUBLIC UrmAuxUtils
+                                                   UrmExtAPIs
+                                                   RestuneCore
+                                                   RestuneTestUtils
+                                                   ${LIBYAML_LIBRARIES})
+    target_include_directories(UrmComponentTests PRIVATE ${LIBYAML_INCLUDE_DIRS}
+                                                         ${CMAKE_SOURCE_DIR}/resource-tuner/Include
+                                                         ${CMAKE_SOURCE_DIR}/common/Include)
 
-    install(TARGETS RestuneComponentTests DESTINATION ${CMAKE_INSTALL_BINDIR})
+    if(BUILD_CLASSIFIER)
+        set(FLORET_FOUND FALSE)
+        set(FLORET_LIBRARIES "")
+        set(FLORET_INCLUDE_DIRS "")
 
-    add_executable(RestuneIntegrationTests Integration/IntegrationTests.cpp)
-    target_link_libraries(RestuneIntegrationTests PUBLIC UrmAuxUtils
-                                                         UrmClient
-                                                         RestuneTestUtils
-                                                         ${LIBYAML_LIBRARIES})
-    target_include_directories(RestuneIntegrationTests PRIVATE ${LIBYAML_INCLUDE_DIRS})
-    install(TARGETS RestuneIntegrationTests RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+        if(ENABLE_FLORET)
+            # Use pkg-config to find floret
+            pkg_check_modules(PC_FLORET QUIET floret)
+            if(PC_FLORET_FOUND)
+                set(FLORET_FOUND TRUE)
+                set(FLORET_LIBRARIES ${PC_FLORET_LIBRARIES})
+                set(FLORET_INCLUDE_DIRS ${PC_FLORET_INCLUDE_DIRS})
+                endif()
+         endif()
+
+        if(FLORET_FOUND)
+            message(STATUS "floret found, building MLInference with USE_FLORET=1")
+            add_definitions(-DUSE_FLORET=1)
+
+            target_sources(UrmComponentTests PRIVATE
+                ${CMAKE_CURRENT_SOURCE_DIR}/Component/ContextClassificationTest.cpp)
+
+            target_link_libraries(UrmComponentTests PUBLIC ContextualClassifier
+                                                           ml_inference_lib)
+
+            target_include_directories(UrmComponentTests PRIVATE
+                ${CMAKE_SOURCE_DIR}/contextual-classifier/Include)
+        else()
+            message(STATUS "floret not found")
+        endif()
+    endif()
+
+    install(TARGETS UrmComponentTests DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+    add_executable(UrmIntegrationTests Integration/IntegrationTests.cpp)
+
+    target_link_libraries(UrmIntegrationTests PUBLIC UrmAuxUtils
+                                                     UrmClient
+                                                     RestuneTestUtils
+                                                     ${LIBYAML_LIBRARIES})
+    target_include_directories(UrmIntegrationTests PRIVATE ${LIBYAML_INCLUDE_DIRS})
+
+    if(BUILD_CLASSIFIER)
+        target_sources(UrmIntegrationTests PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/Integration/CCIntegrationTest.cpp)
+    endif()
+
+    install(TARGETS UrmIntegrationTests RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 endif()
