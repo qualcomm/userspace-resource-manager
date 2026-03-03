@@ -8,6 +8,7 @@
 #include "URMTests.h"
 
 #define TEST_CLASS "COMPONENT"
+#define TEST_SUBCAT "TIMER"
 
 static std::shared_ptr<ThreadPool> tpoolInstance = std::shared_ptr<ThreadPool> (new ThreadPool(4, 5));
 static std::atomic<int8_t> isFinished;

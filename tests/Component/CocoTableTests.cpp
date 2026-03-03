@@ -6,6 +6,7 @@
 #include "URMTests.h"
 
 #define TEST_CLASS "COMPONENT"
+#define TEST_SUBCAT "COCO_TABLE"
 
 URM_TEST(TestCocoTableInsertRequest1, {
     E_ASSERT((CocoTable::getInstance()->insertRequest(nullptr) == false));

@@ -12,6 +12,7 @@
 #include "UrmAPIs.h"
 
 #define TEST_CLASS "INTEGRATION"
+#define TEST_SUBCAT "INTEGRATION"
 
 static TestBaseline baseline;
 
@@ -295,7 +296,7 @@ URM_TEST(TestInvalidResourceTuning, {
  * - Verify that the Resource Node's value remains unchanged.
  * Cross-Reference id: [F]
  */
-URM_TEST(OutOfBoundsResourceTuning, {
+URM_TEST(TestOutOfBoundsResourceTuning, {
     std::string testResourceName = "/etc/urm/tests/nodes/scaling_min_freq.txt";
     int32_t testResourceOriginalValue = 107;
 
@@ -431,7 +432,7 @@ URM_TEST(ResourceLogicalToPhysicalTranslationVerification3, {
     int32_t physicalClusterID = baseline.getExpectedPhysicalCluster(0);
     if(physicalClusterID == -1) {
         LOG_SKIP("Logical Cluster: 0 not found on test device, Skipping Test Case")
-        return;
+        SKIP
     }
 
     std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource2.txt";
@@ -1966,7 +1967,7 @@ URM_TEST(TestPriorityBasedResourceAcquisition1, {
  * - Verify that the Sysfs Node is reset, once the Request Expires.
  * Cross-Reference id: ['H']
  */
-URM_TEST(PriorityBasedResourceAcquisition2, {
+URM_TEST(TestPriorityBasedResourceAcquisition2, {
     std::string testResourceName = "/etc/urm/tests/nodes/scaling_min_freq.txt";
     int32_t testResourceOriginalValue = 107;
     int64_t handle;
@@ -2238,7 +2239,7 @@ URM_TEST(TestRequestInvalidRetuning1, {
  *   should be rejected.
  * Cross-Reference id: ['R3']
  */
-URM_TEST(RequestInvalidRetuning2, {
+URM_TEST(TestRequestInvalidRetuning2, {
     std::string testResourceName = "/etc/urm/tests/nodes/sched_util_clamp_min.txt";
     int32_t testResourceOriginalValue = 300;
 
@@ -2295,7 +2296,7 @@ URM_TEST(TestClusterTypeResourceTuneRequest1, {
     int32_t physicalClusterID = baseline.getExpectedPhysicalCluster(0);
     if(physicalClusterID == -1) {
         LOG_SKIP("Logical Cluster: 0 not found on test device, Skipping Test Case")
-        return;
+        SKIP
     }
 
     std::string nodePath = "/etc/urm/tests/nodes/cluster_type_resource_%d_cluster_id.txt";
@@ -2340,11 +2341,11 @@ URM_TEST(TestClusterTypeResourceTuneRequest1, {
     delete[] resourceList;
 })
 
-URM_TEST(ClusterTypeResourceTuneRequest2, {
+URM_TEST(TestClusterTypeResourceTuneRequest2, {
     int32_t physicalClusterID = baseline.getExpectedPhysicalCluster(2);
     if(physicalClusterID == -1) {
         LOG_SKIP("Logical Cluster: 2 not found on test device, Skipping Test Case")
-        return;
+        SKIP
     }
 
     std::string nodePath = "/etc/urm/tests/nodes/cluster_type_resource_%d_cluster_id.txt";
@@ -2822,7 +2823,7 @@ URM_TEST(TestWriteTo_scaling_min_freq_Node1, {
 
     if(physicalClusterID == -1) {
         LOG_SKIP("Logical Cluster: 0 not found on test device, Skipping Test Case")
-        return;
+        SKIP
     }
 
     char path[128];
@@ -2887,7 +2888,7 @@ URM_TEST(TestWriteTo_scaling_min_freq_Node2, {
 
     if(physicalClusterID == -1) {
         LOG_SKIP("Logical Cluster: 1 not found on test device, Skipping Test Case")
-        return;
+        SKIP
     }
 
     char path[128];
@@ -2959,7 +2960,7 @@ URM_TEST(TestConcurrentWriteTo_scaling_min_freq_Node3, {
 
     if(physicalClusterID == -1) {
         LOG_SKIP("Logical Cluster: 1 not found on test device, Skipping Test Case")
-        return;
+        SKIP
     }
 
     char path[128];
@@ -3343,7 +3344,7 @@ URM_TEST(TestWriteTo_pm_qos_resume_latency_us1, {
 
     if(physicalClusterID == -1) {
         LOG_SKIP("Logical Cluster: 0 not found on test device, Skipping Test Case")
-        return;
+        SKIP
     }
 
     std::string nodePath = "/sys/devices/system/cpu/cpu%d/power/pm_qos_resume_latency_us";
@@ -3398,7 +3399,7 @@ URM_TEST(TestWriteTo_pm_qos_resume_latency_us2, {
     int32_t physicalClusterID = baseline.getExpectedPhysicalCluster(1);
     if(physicalClusterID == -1) {
         LOG_SKIP("Logical Cluster: 1 not found on test device, Skipping Test Case")
-        return;
+        SKIP
     }
 
     std::string nodePath = "/sys/devices/system/cpu/cpu%d/power/pm_qos_resume_latency_us";

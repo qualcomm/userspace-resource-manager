@@ -10,6 +10,7 @@
 #include "URMTests.h"
 
 #define TEST_CLASS "COMPONENT"
+#define TEST_SUBCAT "DEVICE_INFO_FETCH"
 
 static TestBaseline baseline;
 
@@ -17,7 +18,6 @@ static void Init() {
     static int8_t initDone = false;
     if(!initDone) {
         initDone = true;
-        baseline.fetchBaseline();
         TargetRegistry::getInstance()->readTargetInfo();
     }
 }

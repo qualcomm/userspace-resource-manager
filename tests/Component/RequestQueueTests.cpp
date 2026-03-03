@@ -6,6 +6,7 @@
 #include "URMTests.h"
 
 #define TEST_CLASS "COMPONENT"
+#define TEST_SUBCAT "REQUEST_QUEUE"
 
 static void Init() {
     static int8_t initDone = false;

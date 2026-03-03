@@ -13,6 +13,7 @@
 #include "URMTests.h"
 
 #define TEST_CLASS "COMPONENT"
+#define TEST_SUBCAT "0_URM_PARSERS"
 
 URM_TEST(ResourceParsingTests, {
     {

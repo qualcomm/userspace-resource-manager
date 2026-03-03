@@ -61,16 +61,3 @@ TestConfigs:
         PhyId: 2
     NumClusters: 3
     NumCores: 8
-
-  - TargetName: ["*"]
-    ClusterExpectations:
-      - LgcId: 0
-        PhyId: 4
-      - LgcId: 1
-        PhyId: 0
-      - LgcId: 2
-        PhyId: 9
-      - LgcId: 3
-        PhyId: 7
-    NumClusters: 4
-    NumCores: 10

@@ -9,6 +9,7 @@
 #include "URMTests.h"
 
 #define TEST_CLASS "COMPONENT"
+#define TEST_SUBCAT "SAFE_OPS"
 
 // Test cases for Add function
 URM_TEST(Overflow1, {

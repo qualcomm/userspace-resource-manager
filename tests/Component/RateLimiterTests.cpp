@@ -7,6 +7,7 @@
 #include "URMTests.h"
 
 #define TEST_CLASS "COMPONENT"
+#define TEST_SUBCAT "RATE_LIMITER"
 
 static void Init() {
     static int8_t initDone = false;
