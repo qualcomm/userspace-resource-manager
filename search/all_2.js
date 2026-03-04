@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['3_201_20example_0',['4.2.3.1. Example',['../index.html#autotoc_md25',1,'']]],
+  ['3_201_20initialization_20configs_1',['4.3.1. Initialization Configs',['../index.html#autotoc_md34',1,'']]],
+  ['3_201_20provisioning_20system_20resources_2',['1.3.1 Provisioning System Resources',['../index.html#autotoc_md6',1,'']]],
+  ['3_201_20resources_3',['3.1. Resources',['../index.html#autotoc_md12',1,'']]],
+  ['3_202_20resource_20configs_4',['4.3.2. Resource Configs',['../index.html#autotoc_md35',1,'']]],
+  ['3_202_20signals_5',['3.2. Signals',['../index.html#autotoc_md13',1,'']]],
+  ['3_202_20use_20case_20workload_20scenario_20tuning_6',['1.3.2 Use-case/Workload/Scenario Tuning',['../index.html#autotoc_md7',1,'']]],
+  ['3_203_20per_20app_20tuning_7',['1.3.3 Per-App tuning',['../index.html#autotoc_md8',1,'']]],
+  ['3_203_20properties_20config_8',['4.3.3. Properties Config',['../index.html#autotoc_md36',1,'']]],
+  ['3_204_20signal_20configs_9',['4.3.4. Signal Configs',['../index.html#autotoc_md37',1,'']]],
+  ['3_205_20per_20app_20configs_10',['4.3.5. Per App Configs',['../index.html#autotoc_md38',1,'']]],
+  ['3_20client_20level_20permissions_11',['7.3. Client-Level Permissions',['../index.html#autotoc_md65',1,'']]],
+  ['3_20configs_12',['4.3. Configs',['../index.html#autotoc_md33',1,'']]],
+  ['3_20configurable_20resources_20and_20signals_13',['3. Configurable Resources and Signals',['../index.html#autotoc_md11',1,'']]],
+  ['3_20custom_20configs_14',['3. Custom Configs',['../extensions_usage.html#autotoc_md87',1,'']]],
+  ['3_20extension_20features_15',['6.3. Extension Features',['../index.html#autotoc_md57',1,'']]],
+  ['3_20how_20to_20add_20init_20configs_16',['3. How to add init configs',['../usage.html#autotoc_md101',1,'']]],
+  ['3_20properties_20config_17',['6.2.3. Properties Config',['../index.html#autotoc_md54',1,'']]],
+  ['3_20registering_20custom_20configs_18',['6.1.3. Registering Custom Configs',['../index.html#autotoc_md50',1,'']]],
+  ['3_20resource_20resinfo_20construction_19',['4.2.1.3. Resource ResInfo Construction',['../index.html#autotoc_md20',1,'']]],
+  ['3_20send_20a_20retune_20request_20',['3 send a retune request',['../client_cli.html#autotoc_md82',1,'3. Send a Retune Request'],['../index.html#autotoc_md43',1,'5.3. Send a Retune Request']]],
+  ['3_20untuneresources_21',['4.2.3. untuneResources',['../index.html#autotoc_md24',1,'']]],
+  ['3_20urm_20initialization_22',['7.2.3. URM Initialization',['../index.html#autotoc_md63',1,'']]],
+  ['3_20what_20urm_20offers_23',['1.3. What URM offers',['../index.html#autotoc_md5',1,'']]],
+  ['3_20where_20should_20the_20extfeaturesconfig_20yaml_20be_20placed_24',['3. Where should the ExtFeaturesConfig.yaml be placed?',['../ext_features.html#autotoc_md93',1,'']]]
+];
