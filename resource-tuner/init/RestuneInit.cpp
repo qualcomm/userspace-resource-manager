@@ -178,12 +178,10 @@ static ErrCode fetchMetaConfigs() {
         UrmSettings::metaConfigs.mPluginCount = (uint32_t)std::stol(resultBuffer);
 
        if(UrmSettings::metaConfigs.mDesiredThreadCount < 1) {
-            TYPELOGV(META_CONFIG_PARSE_FAILURE, "desiredThreadCount must be >= 1, setting to default value (5)");
             UrmSettings::metaConfigs.mDesiredThreadCount = 5; // Reset to default
         }
 
         if(UrmSettings::metaConfigs.mMaxScalingCapacity > 100) {
-            TYPELOGV(META_CONFIG_PARSE_FAILURE, "maxScalingCapacity too high, capping at 100");
             UrmSettings::metaConfigs.mMaxScalingCapacity = 100;
         }
 
@@ -428,8 +426,8 @@ static ErrCode fetchPerAppConfigs() {
 
 // Initialize Request and Timer ThreadPools
 static ErrCode preAllocateWorkers() {
-      int32_t desiredThreadCapacity = UrmSettings::metaConfigs.mDesiredThreadCount;
-      int32_t maxScalingCapacity = UrmSettings::metaConfigs.mMaxScalingCapacity;
+    uint32_t desiredThreadCapacity = UrmSettings::metaConfigs.mDesiredThreadCount;
+    uint32_t maxScalingCapacity = UrmSettings::metaConfigs.mMaxScalingCapacity;
 
     try {
         RequestReceiver::mRequestsThreadPool = new ThreadPool(desiredThreadCapacity,
