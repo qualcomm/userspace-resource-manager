@@ -9,6 +9,7 @@
 #include "URMTests.h"
 
 #define TEST_CLASS "COMPONENT"
+#define TEST_SUBCAT "MISC_CLASS_TESTS"
 
 // Request Cleanup Tests
 URM_TEST(TestResourceStructCoreClusterSettingAndExtraction, {

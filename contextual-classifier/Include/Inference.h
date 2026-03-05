@@ -14,7 +14,7 @@ public:
     explicit Inference(const std::string &model_path) : model_path_(model_path) {}
     virtual ~Inference() = default;
 
-    virtual CC_TYPE Classify(int pid) {
+    virtual CC_TYPE Classify(pid_t pid) {
         (void)pid;
         // Base implementation: no ML, just return default".
         return CC_APP;

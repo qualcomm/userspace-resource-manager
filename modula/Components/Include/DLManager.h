@@ -138,6 +138,7 @@ public:
     int32_t mTotalLinkers;
     int32_t mLinkerInUse; // must be a value b/w 0 to mTotalLinkers - 1
     int32_t mSize;
+    int32_t mRank;
 
     // Declared as public so that the cb's can be selectively set at DLManager creation time.
     PolicyRepo mSavedPolicies;

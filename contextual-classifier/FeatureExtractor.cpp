@@ -1,6 +1,7 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
+#include "AuxRoutines.h"
 #include "FeatureExtractor.h"
 #include "FeaturePruner.h"
 #include "Logger.h"
@@ -22,6 +23,8 @@
 #define SCANNER_TAG "FeatureExtractor"
 #define LOG_LINES 20
 
+std::unordered_map<std::string, std::unordered_set<std::string>> FeatureExtractor::mTokenIgnoreMap;
+
 static std::string format_string(const char *fmt, ...) {
     char buffer[1024];
     va_list args;
@@ -31,7 +34,7 @@ static std::string format_string(const char *fmt, ...) {
     return std::string(buffer);
 }
 
-bool FeatureExtractor::IsValidPidViaProc(pid_t pid) {
+int8_t FeatureExtractor::IsValidPidViaProc(pid_t pid) {
     std::string procPath = "/proc/" + std::to_string(pid);
     struct stat info;
     return (stat(procPath.c_str(), &info) == 0 && S_ISDIR(info.st_mode));
@@ -49,7 +52,7 @@ std::string join_vector(const std::vector<std::string> &vec) {
 }
 
 int FeatureExtractor::CollectAndStoreData( pid_t pid,
-    std::map<std::string, std::string> &output_data, bool dump_csv) {
+    std::map<std::string, std::string> &output_data, int8_t dump_csv) {
     if (!IsValidPidViaProc(pid)) {
         LOGE(SCANNER_TAG,
              format_string("PID %d does not exist in /proc.", pid));
@@ -479,7 +482,7 @@ FeatureExtractor::ParseFd(pid_t pid, const std::string &delimiters) {
                     FeaturePruner::removeDatesAndTimesFromToken(tok);
                 if (cleaned.empty())
                     continue;
-                bool isNumber =
+                int8_t isNumber =
                     std::all_of(cleaned.begin(), cleaned.end(), ::isdigit);
                 if (isNumber)
                     continue;

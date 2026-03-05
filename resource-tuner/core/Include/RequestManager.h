@@ -26,19 +26,6 @@ enum RequestProcessingStatus : int8_t {
     REQ_NOT_FOUND = 0x08,
 };
 
-class HandleCache {
-private:
-    size_t mMaxSize;
-    std::unordered_set<int64_t> mHandleSet;
-    std::queue<int64_t> mRecencyQueue;
-
-public:
-    HandleCache(int32_t maxSize = 30);
-
-    void insert(int64_t handle);
-    int8_t isPresent(int64_t handle);
-};
-
 /**
  * @brief RequestManager
  * @details Responsible for Tracking and Maintaining all the active Requests, currently
@@ -54,7 +41,7 @@ private:
     int64_t mTotalRequestServed;
     std::unordered_set<Request*> mRequestsList[2];
     std::unordered_map<int64_t, RequestInfo> mActiveRequests;
-    HandleCache mUntuneCache;
+    MinLRUCache mUntuneCache;
     std::shared_timed_mutex mRequestMapMutex;
 
     RequestManager();

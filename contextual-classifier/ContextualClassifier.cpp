@@ -1,45 +1,40 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
-#include <algorithm>
 #include <chrono>
+#include <string>
 #include <cstdarg>
 #include <cstdlib>
 #include <cstring>
-#include <dirent.h>
 #include <fstream>
-#include <pthread.h>
 #include <sstream>
-#include <string>
+#include <dirent.h>
+#include <algorithm>
+#include <pthread.h>
 
 #include "Utils.h"
-#include "UrmPlatformAL.h"
-#include "Request.h"
 #include "Logger.h"
+#include "Request.h"
+#include "Inference.h"
+#include "Extensions.h"
 #include "AuxRoutines.h"
+#include "UrmPlatformAL.h"
+#include "SignalRegistry.h"
+#include "RestuneInternal.h"
 #include "ContextualClassifier.h"
 #include "ClientGarbageCollector.h"
-#include "RestuneInternal.h"
-#include "SignalRegistry.h"
-#include "Extensions.h"
-#include "Inference.h"
 
 #define CLASSIFIER_TAG "CONTEXTUAL_CLASSIFIER"
 #define CLASSIFIER_CONFIGS_DIR "/etc/urm/classifier/"
 
-#define CURR_RESTUNE_CGRP_HNDL 0
-#define CURR_RESTUNE_SIG_HNDL 1
-
 static const std::string FT_MODEL_PATH =
-    CLASSIFIER_CONFIGS_DIR "fasttext_model_supervised.bin";
+    CLASSIFIER_CONFIGS_DIR "floret_model_supervised.bin";
 static const std::string IGNORE_PROC_PATH =
     CLASSIFIER_CONFIGS_DIR "classifier-blocklist.txt";
-static const std::string IGNORE_TOKENS_PATH =
-    CLASSIFIER_CONFIGS_DIR "ignore-tokens.txt";
 static const std::string ALLOW_LIST_PATH =
     CLASSIFIER_CONFIGS_DIR "allow-list.txt";
 
-#ifdef USE_FASTTEXT
+#ifdef USE_FLORET
 #include "MLInference.h"
 #include "FeatureExtractor.h"
 #include "FeaturePruner.h"
@@ -60,17 +55,15 @@ static ContextualClassifier *gClassifier = nullptr;
 static const int32_t pendingQueueControlSize = 30;
 
 ContextualClassifier::ContextualClassifier() {
-    this->mRestuneHandles[CURR_RESTUNE_CGRP_HNDL].mCurHandle = -1;
-    this->mRestuneHandles[CURR_RESTUNE_SIG_HNDL].mCurHandle = -1;
-    mInference = GetInferenceObject();
+    this->mInference = GetInferenceObject();
 }
 
-void ContextualClassifier::untuneRequestHelper(int32_t index) {
+void ContextualClassifier::untuneRequestHelper(int64_t handle) {
     try {
         Request* untuneRequest = MPLACED(Request);
 
         untuneRequest->setRequestType(REQ_RESOURCE_UNTUNING);
-        untuneRequest->setHandle(this->mRestuneHandles[index].mCurHandle);
+        untuneRequest->setHandle(handle);
         untuneRequest->setDuration(-1);
         // Passing priority as HIGH_TRANSFER_PRIORITY (= -1)
         // - Ensures untune requests are processed before even SERVER_HIGH priority tune requests
@@ -79,8 +72,8 @@ void ContextualClassifier::untuneRequestHelper(int32_t index) {
         //   not free up the underlying Request object, allowing for reuse.
         // Priority Level: -2 is used to force server termination and cleanup so should not be used otherwise.
         untuneRequest->setPriority(SYSTEM_HIGH);
-        untuneRequest->setClientPID(this->mRestuneHandles[index].mCurReqPid);
-        untuneRequest->setClientTID(this->mRestuneHandles[index].mCurReqTid);
+        untuneRequest->setClientPID(0);
+        untuneRequest->setClientTID(0);
 
         // fast path to Request Queue
         // Mark verification status as true. Request still goes through RequestManager though.
@@ -88,7 +81,7 @@ void ContextualClassifier::untuneRequestHelper(int32_t index) {
 
     } catch(const std::exception& e) {
         LOGE(CLASSIFIER_TAG,
-             "Failed to move per-app threads to cgroup, Error: " + std::string(e.what()));
+             "Failed to create untune request, Error: " + std::string(e.what()));
     }
 }
 
@@ -160,24 +153,24 @@ ContextualClassifier::~ContextualClassifier() {
 }
 
 ErrCode ContextualClassifier::Init() {
-    LOGI(CLASSIFIER_TAG, "Classifier module init.");
+    LOGI(CLASSIFIER_TAG, "Classifier module init");
 
     this->LoadIgnoredProcesses();
 
     // Single worker thread for classification
     this->mClassifierMain = std::thread(&ContextualClassifier::ClassifierMain, this);
 
-    if (this->mNetLinkComm.connect() == -1) {
-        LOGE(CLASSIFIER_TAG, "Failed to connect to netlink socket.");
+    if(this->mNetLinkComm.connect() == -1) {
+        LOGE(CLASSIFIER_TAG, "Failed to connect to netlink socket");
         return RC_SOCKET_OP_FAILURE;
     }
 
-    if (this->mNetLinkComm.setListen(true) == -1) {
-        LOGE(CLASSIFIER_TAG, "Failed to set proc event listener.");
+    if(this->mNetLinkComm.setListen(true) == -1) {
+        LOGE(CLASSIFIER_TAG, "Failed to set proc event listener");
         mNetLinkComm.closeSocket();
         return RC_SOCKET_OP_FAILURE;
     }
-    LOGI(CLASSIFIER_TAG, "Now listening for process events.");
+    LOGI(CLASSIFIER_TAG, "Now listening for process events");
 
     this->mNetlinkThread = std::thread(&ContextualClassifier::HandleProcEv, this);
     return RC_SUCCESS;
@@ -186,27 +179,25 @@ ErrCode ContextualClassifier::Init() {
 ErrCode ContextualClassifier::Terminate() {
     LOGI(CLASSIFIER_TAG, "Classifier module terminate.");
 
-    if (this->mNetLinkComm.getSocket() != -1) {
+    if(this->mNetLinkComm.getSocket() != -1) {
         this->mNetLinkComm.setListen(false);
     }
 
-    {
-        std::unique_lock<std::mutex> lock(this->mQueueMutex);
-        this->mNeedExit = true;
-        // Clear any pending PIDs so the worker doesn't see stale entries
-        while (!this->mPendingEv.empty()) {
-            this->mPendingEv.pop();
-        }
+    std::unique_lock<std::mutex> lock(this->mQueueMutex);
+    this->mNeedExit = true;
+    // Clear any pending PIDs so the worker doesn't see stale entries
+    while(!this->mPendingEv.empty()) {
+        this->mPendingEv.pop();
     }
     this->mQueueCond.notify_all();
 
     this->mNetLinkComm.closeSocket();
 
-    if (this->mNetlinkThread.joinable()) {
+    if(this->mNetlinkThread.joinable()) {
         this->mNetlinkThread.join();
     }
 
-    if (this->mClassifierMain.joinable()) {
+    if(this->mClassifierMain.joinable()) {
         this->mClassifierMain.join();
     }
 
@@ -258,12 +249,25 @@ void ContextualClassifier::ClassifierMain() {
                 sigId = this->GetSignalIDForWorkload(contextType);
 
                 // Step 2:
+                // Untune any Configurations from the last proc-invocation
+                for(int64_t handle: this->mCurrRestuneHandles) {
+                    if(handle > 0) {
+                        this->untuneRequestHelper(handle);
+                    }
+                }
+                this->mCurrRestuneHandles.clear();
+
+                // Step 3:
                 // - Move the process to focused-cgroup, Also involves removing the process
                 //  already there from the cgroup.
                 // - Move the "threads" from per-app config to appropriate cgroups
                 this->MoveAppThreadsToCGroup(ev.pid, ev.tgid, comm, FOCUSED_CGROUP_IDENTIFIER);
 
-                // Step 3: If the post processing block exists, call it
+                // Step 4:
+                // Configure any per-app config specified signals.
+                this->configureAppSignals(ev.pid, ev.tgid, comm);
+
+                // Step 5: If the post processing block exists, call it
                 // It might provide us a more specific sigID or sigType
                 PostProcessingCallback postCb =
                     Extensions::getPostProcessingCallback(comm);
@@ -279,7 +283,7 @@ void ContextualClassifier::ClassifierMain() {
                     sigType = postProcessData.mSigType;
                 }
 
-                // Step 4: Apply actions, call tuneSignal
+                // Apply actions, call tuneSignal
                 this->ApplyActions(sigId, sigType, ev.pid, ev.tgid);
             }
         } else if(ev.type == CC_APP_CLOSE) {
@@ -290,7 +294,7 @@ void ContextualClassifier::ClassifierMain() {
     }
 }
 
-int ContextualClassifier::HandleProcEv() {
+int32_t ContextualClassifier::HandleProcEv() {
     pthread_setname_np(pthread_self(), "urmNetlinkListener");
     int32_t rc = 0;
 
@@ -322,7 +326,12 @@ int ContextualClassifier::HandleProcEv() {
             case CC_APP_OPEN:
                 if(!this->shouldProcBeIgnored(ev.type, ev.pid)) {
                     const std::lock_guard<std::mutex> lock(mQueueMutex);
+                    if(this->mClassifierPidCache.isPresent(ev.pid)) {
+                        // Duplicate Notification, skip.
+                        break;
+                    }
                     this->mPendingEv.push(ev);
+                    this->mClassifierPidCache.insert(ev.pid);
                     if(this->mPendingEv.size() > pendingQueueControlSize) {
                         this->mPendingEv.pop();
                     }
@@ -357,12 +366,13 @@ int32_t ContextualClassifier::ClassifyProcess(pid_t processPid,
                                               uint32_t &ctxDetails) {
     (void)processTgid;
     (void)ctxDetails;
+
     CC_TYPE context = CC_APP;
 
     // Check if the process is still alive
     if(!AuxRoutines::fileExists(COMM(processPid))) {
         LOGD(CLASSIFIER_TAG,
-             "Skipping inference, process is dead: "+ comm);
+             "Skipping inference, process is dead: " + comm);
         return CC_IGNORE;
     }
 
@@ -379,26 +389,18 @@ void ContextualClassifier::ApplyActions(uint32_t sigId,
                                         uint32_t sigType,
                                         pid_t incomingPID,
                                         pid_t incomingTID) {
-
-    if(this->mRestuneHandles[CURR_RESTUNE_SIG_HNDL].mCurHandle != -1) {
-        untuneRequestHelper(CURR_RESTUNE_SIG_HNDL);
-        mRestuneHandles[CURR_RESTUNE_SIG_HNDL].mCurHandle = -1;
-    }
-
-    Request* request = createTuneRequestFromSignal(sigId, sigType, incomingPID, incomingTID);
+    Request* request =
+        createTuneRequestFromSignal(sigId, sigType, incomingPID, incomingTID);
     if(request != nullptr) {
         if(request->getResourcesCount() > 0) {
             // Record:
-            this->mRestuneHandles[CURR_RESTUNE_SIG_HNDL].mCurHandle = request->getHandle();
-            this->mRestuneHandles[CURR_RESTUNE_SIG_HNDL].mCurReqPid = incomingPID;
-            this->mRestuneHandles[CURR_RESTUNE_SIG_HNDL].mCurReqTid = incomingTID;
+            this->mCurrRestuneHandles.push_back(request->getHandle());
 
             // fast path to Request Queue
             submitResProvisionRequest(request, true);
 
         } else {
             Request::cleanUpRequest(request);
-            this->mRestuneHandles[CURR_RESTUNE_SIG_HNDL].mCurHandle = -1;
         }
     }
 }
@@ -406,6 +408,7 @@ void ContextualClassifier::ApplyActions(uint32_t sigId,
 void ContextualClassifier::RemoveActions(pid_t processPid, pid_t processTgid) {
 	(void)processPid;
     (void)processTgid;
+
     return;
 }
 
@@ -462,7 +465,7 @@ void ContextualClassifier::LoadIgnoredProcesses() {
             }
         }
     }
-    LOGI(CLASSIFIER_TAG, "Loaded filter processes.");
+    LOGI(CLASSIFIER_TAG, "Loaded filter processes");
 }
 
 int8_t ContextualClassifier::shouldProcBeIgnored(int32_t evType, pid_t pid) {
@@ -496,12 +499,6 @@ void ContextualClassifier::MoveAppThreadsToCGroup(pid_t incomingPID,
                                                   const std::string& comm,
                                                   int32_t cgroupIdentifier) {
     try {
-        // Check for any outstanding request, if found untune it.
-        if(this->mRestuneHandles[CURR_RESTUNE_CGRP_HNDL].mCurHandle != -1) {
-            untuneRequestHelper(CURR_RESTUNE_CGRP_HNDL);
-            mRestuneHandles[CURR_RESTUNE_CGRP_HNDL].mCurHandle = -1;
-        }
-
         int64_t handleGenerated = -1;
         // Issue a tune request for the new pid (and any associated app-config pids)
         Request* request = MPLACED(Request);
@@ -537,35 +534,65 @@ void ContextualClassifier::MoveAppThreadsToCGroup(pid_t incomingPID,
         // Anything to issue
         if(request->getResourcesCount() > 0) {
             // Record:
-            this->mRestuneHandles[CURR_RESTUNE_CGRP_HNDL].mCurHandle = handleGenerated;
-            this->mRestuneHandles[CURR_RESTUNE_CGRP_HNDL].mCurReqPid = incomingPID;
-            this->mRestuneHandles[CURR_RESTUNE_CGRP_HNDL].mCurReqTid = incomingTID;
+            this->mCurrRestuneHandles.push_back(request->getHandle());
 
             // fast path to Request Queue
             submitResProvisionRequest(request, true);
 
         } else {
             Request::cleanUpRequest(request);
-            this->mRestuneHandles[CURR_RESTUNE_CGRP_HNDL].mCurHandle = -1;
         }
 
     } catch(const std::exception& e) {
         LOGE(CLASSIFIER_TAG,
              "Failed to move per-app threads to cgroup, Error: " + std::string(e.what()));
-        this->mRestuneHandles[CURR_RESTUNE_CGRP_HNDL].mCurHandle = -1;
+    }
+}
+
+void ContextualClassifier::configureAppSignals(pid_t incomingPID,
+                                               pid_t incomingTID,
+                                               const std::string& comm) {
+    try {
+        // Configure any associated signal
+        AppConfig* appConfig = AppConfigs::getInstance()->getAppConfig(comm);
+        if(appConfig != nullptr && appConfig->mSignalCodes != nullptr) {
+            int32_t numSignals = appConfig->mNumSignals;
+            // Go over the list of proc names (comm) and get their pids
+            for(int32_t i = 0; i < numSignals; i++) {
+                Request* request = createTuneRequestFromSignal(
+                    appConfig->mSignalCodes[i],
+                    0,
+                    incomingPID,
+                    incomingTID);
+
+                if(request != nullptr) {
+                    if(request->getResourcesCount() > 0) {
+                        // fast path to Request Queue
+                        this->mCurrRestuneHandles.push_back(request->getHandle());
+                        submitResProvisionRequest(request, true);
+
+                    } else {
+                        Request::cleanUpRequest(request);
+                    }
+                }
+            }
+        }
+    } catch(const std::exception& e) {
+        LOGE(CLASSIFIER_TAG,
+             "Failed to acquire per-app config signal, Error: " + std::string(e.what()));
     }
 }
 
 // Public C interface exported from the contextual-classifier shared library.
 // These are what the URM module entrypoints will call.
-extern "C" ErrCode cc_init(void) {
+extern "C" ErrCode ccInit(void) {
     if(gClassifier == nullptr) {
         gClassifier = new ContextualClassifier();
     }
     return gClassifier->Init();
 }
 
-extern "C" ErrCode cc_terminate(void) {
+extern "C" ErrCode ccTerminate(void) {
     if(gClassifier != nullptr) {
         ErrCode opStatus = gClassifier->Terminate();
         delete gClassifier;

@@ -8,7 +8,6 @@
 #include <vector>
 
 #include "DLManager.h"
-#include "MemoryPool.h"
 
 /**
  * @brief Used to store information regarding Resources / Tunables which need to be

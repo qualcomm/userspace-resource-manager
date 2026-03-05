@@ -52,9 +52,6 @@ const std::string UrmSettings::mCustomAppConfigPath =
 const std::string UrmSettings::mDevIndexedAppPath =
                                     "/etc/urm/target/PerApp.yaml";
 
-const std::string UrmSettings::mExtensionPluginsLibPath =
-                                    "/usr/lib/urm/";
-
 const std::string UrmSettings::mDeviceNamePath =
                                     "/sys/devices/soc0/machine";
 const std::string UrmSettings::mBaseCGroupPath =

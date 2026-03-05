@@ -4,3 +4,6 @@ usr/lib/${DEB_HOST_MULTIARCH}/*.so*
 etc/urm/common/*
 usr/include/Urm/*
 usr/lib/systemd/system/urm.service
+etc/urm/classifier/*
+usr/lib/libContextualClassifier.so*
+usr/lib/libml_inference_lib.so*

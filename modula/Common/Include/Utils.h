@@ -71,7 +71,8 @@ enum Policy {
     HIGHER_BETTER, //!< This policy first applies the request writing the highest value to the node.
     LOWER_BETTER, //!< Self-explanatory. Works exactly opposite of the higher is better policy.
     LAZY_APPLY, //!< The requests are applied in a first-in-first-out manner.
-    PASS_THROUGH
+    PASS_THROUGH,  //!< Request Ordering is immaterial
+    PASS_THROUGH_APPEND, //!< Request Ordering is immaterial, however multiple values can co-exist
 };
 
 enum TranslationUnit {
@@ -111,6 +112,8 @@ typedef void (*MessageReceivedCallback)(int32_t, MsgForwardInfo*);
 // System Properties
 #define MAX_CONCURRENT_REQUESTS "resource_tuner.maximum.concurrent.requests"
 #define MAX_RESOURCES_PER_REQUEST "resource_tuner.maximum.resources.per.request"
+#define THREAD_POOL_DESIRED_CAPACITY "resource_tuner.thread_pool.desired_capacity"
+#define THREAD_POOL_MAX_SCALING_CAPACITY "resource_tuner.thread_pool.max_scaling_capacity"
 #define PULSE_MONITOR_DURATION "resource_tuner.pulse.duration"
 #define GARBAGE_COLLECTOR_DURATION "resource_tuner.garbage_collection.duration"
 #define GARBAGE_COLLECTOR_BATCH_SIZE "resource_tuner.garbage_collection.batch_size"
@@ -126,6 +129,7 @@ typedef void (*MessageReceivedCallback)(int32_t, MsgForwardInfo*);
 #define COMM_S(pidstr) ("/proc/" + pidstr + "/comm")
 #define STATUS(pid) ("/proc/" + std::to_string(pid) + "/status")
 #define CMDLINE(pid) ("/proc/" + std::to_string(pid) + "/cmdline")
+#define STAT(pid) ("/proc/" + std::to_string(pid) + "/stat")
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)

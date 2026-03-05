@@ -291,23 +291,3 @@ void RequestManager::clearPending() {
 }
 
 RequestManager::~RequestManager() {}
-
-HandleCache::HandleCache(int32_t maxSize) {
-    this->mMaxSize = maxSize;
-    this->mHandleSet.reserve(this->mMaxSize);
-}
-
-void HandleCache::insert(int64_t handle) {
-    if(this->mHandleSet.size() >= this->mMaxSize) {
-        int64_t oldestHandle = this->mRecencyQueue.front();
-        this->mRecencyQueue.pop();
-        this->mHandleSet.erase(oldestHandle);
-    }
-
-    this->mHandleSet.insert(handle);
-    this->mRecencyQueue.push(handle);
-}
-
-int8_t HandleCache::isPresent(int64_t handle) {
-    return (this->mHandleSet.find(handle) != this->mHandleSet.end());
-}

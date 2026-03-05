@@ -3,6 +3,8 @@
 
 #include "Logger.h"
 
+#define LOGFILE "/tmp/urm.log"
+
 int32_t Logger::mLowestLogLevel = LOG_DEBUG;
 int8_t Logger::mLevelSpecificLogging = false;
 RedirectOptions Logger::mRedirectOutputTo = RedirectOptions::LOG_TOSYSLOG;
@@ -68,7 +70,7 @@ void Logger::log(int32_t level,
         }
 
         case RedirectOptions::LOG_TOFILE: {
-            std::ofstream logFile("/tmp/log.txt", std::ios::app);
+            std::ofstream logFile(LOGFILE, std::ios::app);
             if(logFile.is_open()) {
                 logFile<<"["<<timestamp<<"] ["<<tag<<"] ["<<levelStr<<"] "<<funcName<<": "<<message<<std::endl;
                 logFile.close();
@@ -111,7 +113,7 @@ void Logger::log(int32_t level,
         }
 
         case RedirectOptions::LOG_TOFILE: {
-            std::ofstream logFile("/tmp/log.txt", std::ios::app);
+            std::ofstream logFile(LOGFILE, std::ios::app);
             if(logFile.is_open()) {
                 logFile<<"["<<timestamp<<"] ["<<tag<<"] ["<<levelStr<<"] "<<funcName<<": "<<message<<std::endl;
                 logFile.close();

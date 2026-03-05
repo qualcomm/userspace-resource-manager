@@ -173,7 +173,67 @@ static int8_t isKeyTypeList(const std::string& keyName) {
     return false;
 }
 
+static int32_t onDeviceNodesCount(const std::string& filePath) {
+    SETUP_LIBYAML_PARSING(filePath);
+
+    int8_t parsingDone = false;
+    int8_t docMarker = false;
+    int8_t parsingKey = false;
+    int32_t count = 0;
+
+    std::string value = "";
+
+    while(!parsingDone) {
+        if(!yaml_parser_parse(&parser, &event)) {
+            return RC_YAML_PARSING_ERROR;
+        }
+
+        switch(event.type) {
+            case YAML_STREAM_END_EVENT:
+                parsingDone = true;
+                break;
+
+            case YAML_MAPPING_START_EVENT:
+                if(!docMarker) {
+                    docMarker = true;
+                }
+                break;
+
+            case YAML_SCALAR_EVENT:
+                if(event.data.scalar.value != nullptr) {
+                    value = reinterpret_cast<char*>(event.data.scalar.value);
+                }
+
+                if(value == RESOURCE_CONFIGS_ELEM_RESOURCEPATH) {
+                    parsingKey = true;
+                } else {
+                    if(parsingKey) {
+                        if(AuxRoutines::fileExists(value)) {
+                            count++;
+                        }
+                    }
+                    parsingKey = false;
+                }
+
+                break;
+
+            default:
+                break;
+        }
+
+        yaml_event_delete(&event);
+    }
+
+    TEARDOWN_LIBYAML_PARSING
+    return count;
+}
+
 ErrCode RestuneParser::parseResourceConfigYamlNode(const std::string& filePath) {
+    if(onDeviceNodesCount(filePath) == 0) {
+        // None of the nodes exsit, no need to parse these configs
+        return RC_SUCCESS;
+    }
+
     SETUP_LIBYAML_PARSING(filePath);
 
     ErrCode rc = RC_SUCCESS;

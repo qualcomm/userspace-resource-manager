@@ -1,15 +1,18 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
-#include "ErrCodes.h"
-#include "UrmPlatformAL.h"
+#include <thread>
+
 #include "Utils.h"
+#include "UrmAPIs.h"
+#include "ErrCodes.h"
+#include "URMTests.h"
 #include "TestUtils.h"
 #include "TestBaseline.h"
-#include "URMTests.h"
-#include "UrmAPIs.h"
+#include "UrmPlatformAL.h"
 
 #define TEST_CLASS "INTEGRATION"
+#define TEST_SUBCAT "INTEGRATION"
 
 static TestBaseline baseline;
 
@@ -293,7 +296,7 @@ URM_TEST(TestInvalidResourceTuning, {
  * - Verify that the Resource Node's value remains unchanged.
  * Cross-Reference id: [F]
  */
-URM_TEST(OutOfBoundsResourceTuning, {
+URM_TEST(TestOutOfBoundsResourceTuning, {
     std::string testResourceName = "/etc/urm/tests/nodes/scaling_min_freq.txt";
     int32_t testResourceOriginalValue = 107;
 
@@ -429,7 +432,7 @@ URM_TEST(ResourceLogicalToPhysicalTranslationVerification3, {
     int32_t physicalClusterID = baseline.getExpectedPhysicalCluster(0);
     if(physicalClusterID == -1) {
         LOG_SKIP("Logical Cluster: 0 not found on test device, Skipping Test Case")
-        return;
+        SKIP
     }
 
     std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource2.txt";
@@ -526,7 +529,7 @@ URM_TEST(ResourceLogicalToPhysicalTranslationVerification4, {
  * - Verify that the Resource Node's value remains unchanged.
  * Cross-Reference id: [H]
  */
-URM_TEST(UnSupportedResourceTuningVerification, {
+URM_TEST(TestUnSupportedResourceTuningVerification, {
     std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource4.txt";
     int32_t testResourceOriginalValue = 516;
 
@@ -1127,7 +1130,7 @@ URM_TEST(TestMultipleClientsHigherIsBetterPolicy2, {
         exit(EXIT_SUCCESS);
 
     } else if(rc1 > 0) {
-        wait(nullptr);
+        waitpid(rc1, nullptr, 0);
         SysResource* resourceList = new SysResource[1];
         memset(&resourceList[0], 0, sizeof(SysResource));
         resourceList[0].mResCode = CONSTRUCT_RES_CODE(0xff, 0x0003);
@@ -1379,6 +1382,127 @@ URM_TEST(TestMultipleClientsLazyApplyPolicy, {
         value = AuxRoutines::readFromFile(testResourceName);
         newValue = C_STOI(value);
         std::cout<<LOG_BASE<<testResourceName<<" Reset Value: "<<newValue<<std::endl;
+        E_ASSERT((newValue == originalValue));
+
+        delete[] resourceList;
+    }
+})
+
+/**
+ * API under test: Tune / Untune
+ * - Single client sends requests for Provisioning a single resource, with certain duration
+ * - Here the resource in question has the "Pass-Through" policy, hence the configured value
+ *   should be affected immediately.
+ */
+URM_TEST(TestSimplePassThroughApplication, {
+    // Check the original value for the Resource
+    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource1.txt";
+    int32_t testResourceOriginalValue = 240;
+
+    std::string value;
+    int32_t originalValue, newValue;
+
+    value = AuxRoutines::readFromFile(testResourceName);
+    originalValue = C_STOI(value);
+    std::cout<<LOG_BASE<<testResourceName<<" Original Value: "<<originalValue<<std::endl;
+    E_ASSERT((originalValue == testResourceOriginalValue));
+
+    SysResource* resourceList = new SysResource[1];
+    memset(&resourceList[0], 0, sizeof(SysResource));
+    resourceList[0].mResCode = CONSTRUCT_RES_CODE(0xff, 0x000e);
+    resourceList[0].mNumValues = 1;
+    resourceList[0].mResValue.value = 317;
+
+    int64_t handle = tuneResources(8000, RequestPriority::REQ_PRIORITY_HIGH, 1, resourceList);
+    std::cout<<LOG_BASE<<"Handle Returned: "<<handle<<std::endl;
+
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+
+    value = AuxRoutines::readFromFile(testResourceName);
+    newValue = C_STOI(value);
+    std::cout<<LOG_BASE<<testResourceName<<" Configured Value: "<<newValue<<std::endl;
+    E_ASSERT((newValue == 317));
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+
+    value = AuxRoutines::readFromFile(testResourceName);
+    newValue = C_STOI(value);
+    std::cout<<LOG_BASE<<testResourceName<<" Reset Value: "<<originalValue<<std::endl;
+    E_ASSERT((newValue == originalValue));
+
+    delete[] resourceList;
+})
+
+/**
+ * API under test: Tune / Untune
+ * - Two clients send requests for Provisioning the same resource concurrently, with different durations
+ * - Req1: duration: d1, value: v1
+ * - Req2: duration: d2, value: v2
+ * Here: d1 > d2
+ * - Here the resource in question has the "Pass-Through" policy, hence the configured value
+ *   should be affected immediately.
+ * The value configured by the request with a later timestamp will take effect, even when it expires
+ * the value will remain configured until both the requests for the resource have expired.
+ */
+URM_TEST(TestSimplePassThroughConcurrentApplication, {
+    // Check the original value for the Resource
+    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource1.txt";
+    int32_t testResourceOriginalValue = 240;
+
+    std::string value;
+    int32_t originalValue, newValue;
+
+    value = AuxRoutines::readFromFile(testResourceName);
+    originalValue = C_STOI(value);
+    std::cout<<LOG_BASE<<testResourceName<<" Original Value: "<<originalValue<<std::endl;
+    E_ASSERT((originalValue == testResourceOriginalValue));
+
+    int32_t rc1 = fork();
+    if(rc1 == 0) {
+        SysResource* resourceList = new SysResource[1];
+        memset(&resourceList[0], 0, sizeof(SysResource));
+        resourceList[0].mResCode = CONSTRUCT_RES_CODE(0xff, 0x000e);
+        resourceList[0].mNumValues = 1;
+        resourceList[0].mResValue.value = 365;
+
+        int64_t handle = tuneResources(18000, RequestPriority::REQ_PRIORITY_HIGH, 1, resourceList);
+        std::cout<<LOG_BASE<<"Handle Returned: "<<handle<<std::endl;
+
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        delete[] resourceList;
+        exit(EXIT_SUCCESS);
+
+    } else if(rc1 > 0) {
+        waitpid(rc1, nullptr, 0);
+    
+        SysResource* resourceList = new SysResource[1];
+        memset(&resourceList[0], 0, sizeof(SysResource));
+        resourceList[0].mResCode = CONSTRUCT_RES_CODE(0xff, 0x000e);
+        resourceList[0].mNumValues = 1;
+        resourceList[0].mResValue.value = 394;
+
+        int64_t handle = tuneResources(8000, RequestPriority::REQ_PRIORITY_HIGH, 1, resourceList);
+        std::cout<<LOG_BASE<<"Handle Returned: "<<handle<<std::endl;
+
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+
+        value = AuxRoutines::readFromFile(testResourceName);
+        newValue = C_STOI(value);
+        std::cout<<LOG_BASE<<testResourceName<<" Configured Value: "<<newValue<<std::endl;
+        E_ASSERT((newValue == 394));
+
+        std::this_thread::sleep_for(std::chrono::seconds(8));
+
+        value = AuxRoutines::readFromFile(testResourceName);
+        newValue = C_STOI(value);
+        std::cout<<LOG_BASE<<testResourceName<<" Configured Value: "<<newValue<<std::endl;
+        E_ASSERT((newValue == 394));
+
+        std::this_thread::sleep_for(std::chrono::seconds(8));
+
+        value = AuxRoutines::readFromFile(testResourceName);
+        newValue = C_STOI(value);
+        std::cout<<LOG_BASE<<testResourceName<<" Reset Value: "<<originalValue<<std::endl;
         E_ASSERT((newValue == originalValue));
 
         delete[] resourceList;
@@ -1730,7 +1854,7 @@ URM_TEST(TestInfiniteDurationTuneRequestAndInValidUntuning, {
     int32_t rc = fork();
     if(rc == 0) {
         // Child Process
-        untuneResources(handle);
+        (void)untuneResources(handle);
 
         exit(EXIT_SUCCESS);
 
@@ -1843,7 +1967,7 @@ URM_TEST(TestPriorityBasedResourceAcquisition1, {
  * - Verify that the Sysfs Node is reset, once the Request Expires.
  * Cross-Reference id: ['H']
  */
-URM_TEST(PriorityBasedResourceAcquisition2, {
+URM_TEST(TestPriorityBasedResourceAcquisition2, {
     std::string testResourceName = "/etc/urm/tests/nodes/scaling_min_freq.txt";
     int32_t testResourceOriginalValue = 107;
     int64_t handle;
@@ -2115,7 +2239,7 @@ URM_TEST(TestRequestInvalidRetuning1, {
  *   should be rejected.
  * Cross-Reference id: ['R3']
  */
-URM_TEST(RequestInvalidRetuning2, {
+URM_TEST(TestRequestInvalidRetuning2, {
     std::string testResourceName = "/etc/urm/tests/nodes/sched_util_clamp_min.txt";
     int32_t testResourceOriginalValue = 300;
 
@@ -2172,7 +2296,7 @@ URM_TEST(TestClusterTypeResourceTuneRequest1, {
     int32_t physicalClusterID = baseline.getExpectedPhysicalCluster(0);
     if(physicalClusterID == -1) {
         LOG_SKIP("Logical Cluster: 0 not found on test device, Skipping Test Case")
-        return;
+        SKIP
     }
 
     std::string nodePath = "/etc/urm/tests/nodes/cluster_type_resource_%d_cluster_id.txt";
@@ -2217,11 +2341,11 @@ URM_TEST(TestClusterTypeResourceTuneRequest1, {
     delete[] resourceList;
 })
 
-URM_TEST(ClusterTypeResourceTuneRequest2, {
+URM_TEST(TestClusterTypeResourceTuneRequest2, {
     int32_t physicalClusterID = baseline.getExpectedPhysicalCluster(2);
     if(physicalClusterID == -1) {
         LOG_SKIP("Logical Cluster: 2 not found on test device, Skipping Test Case")
-        return;
+        SKIP
     }
 
     std::string nodePath = "/etc/urm/tests/nodes/cluster_type_resource_%d_cluster_id.txt";
@@ -2699,7 +2823,7 @@ URM_TEST(TestWriteTo_scaling_min_freq_Node1, {
 
     if(physicalClusterID == -1) {
         LOG_SKIP("Logical Cluster: 0 not found on test device, Skipping Test Case")
-        return;
+        SKIP
     }
 
     char path[128];
@@ -2764,7 +2888,7 @@ URM_TEST(TestWriteTo_scaling_min_freq_Node2, {
 
     if(physicalClusterID == -1) {
         LOG_SKIP("Logical Cluster: 1 not found on test device, Skipping Test Case")
-        return;
+        SKIP
     }
 
     char path[128];
@@ -2831,17 +2955,7 @@ URM_TEST(TestWriteTo_scaling_min_freq_Node2, {
 URM_TEST(TestConcurrentWriteTo_scaling_min_freq_Node3, {
     // Apply a value to scaling_min_freq for the Gold Cluster
     // i.e. logical cluster id = 1
-    int32_t physicalClusterID = baseline.getExpectedPhysicalCluster(1);
-    std::string nodePath = "/sys/devices/system/cpu/cpufreq/policy%d/scaling_min_freq";
-
-    if(physicalClusterID == -1) {
-        LOG_SKIP("Logical Cluster: 1 not found on test device, Skipping Test Case")
-        return;
-    }
-
-    char path[128];
-    snprintf(path, sizeof(path), nodePath.c_str(), physicalClusterID);
-    std::string testResourceName = std::string(path);
+    std::string testResourceName = "/etc/urm/tests/nodes/scaling_min_freq.txt";
 
     std::string originalValueString = AuxRoutines::readFromFile(testResourceName);
     int32_t originalValue = C_STOI(originalValueString);
@@ -2857,12 +2971,13 @@ URM_TEST(TestConcurrentWriteTo_scaling_min_freq_Node3, {
     if(rc == 0) {
         SysResource* resourceList = new SysResource[1];
         memset(&resourceList[0], 0, sizeof(SysResource));
-        resourceList[0].mResCode = CONSTRUCT_RES_CODE(0x04, 0x0000);
+        resourceList[0].mResCode = CONSTRUCT_RES_CODE(0xff, 0x0002);
         resourceList[0].mNumValues = 1;
         resourceList[0].mResInfo = 0;
+
         // Valid Translation
-        resourceList[0].mResInfo = SET_RESOURCE_CLUSTER_VALUE(resourceList[0].mResInfo, 1);
-        resourceList[0].mResValue.value = 1554613;
+        resourceList[0].mResInfo = 0;
+        resourceList[0].mResValue.value = 613;
 
         int64_t handle = tuneResources(10000, RequestPriority::REQ_PRIORITY_HIGH, 1, resourceList);
         std::cout<<LOG_BASE<<"Handle Returned: "<<handle<<std::endl;
@@ -2876,12 +2991,12 @@ URM_TEST(TestConcurrentWriteTo_scaling_min_freq_Node3, {
         if(rc1 == 0) {
             SysResource* resourceList = new SysResource[1];
             memset(&resourceList[0], 0, sizeof(SysResource));
-            resourceList[0].mResCode = CONSTRUCT_RES_CODE(0x04, 0x0000);
+            resourceList[0].mResCode = CONSTRUCT_RES_CODE(0xff, 0x0002);
             resourceList[0].mNumValues = 1;
             resourceList[0].mResInfo = 0;
-            // Valid Translation
-            resourceList[0].mResInfo = SET_RESOURCE_CLUSTER_VALUE(resourceList[0].mResInfo, 1);
-            resourceList[0].mResValue.value = 1656608;
+
+            resourceList[0].mResInfo = 0;
+            resourceList[0].mResValue.value = 654;
 
             int64_t handle = tuneResources(30000, RequestPriority::REQ_PRIORITY_HIGH, 1, resourceList);
             std::cout<<LOG_BASE<<"Handle Returned: "<<handle<<std::endl;
@@ -2893,13 +3008,12 @@ URM_TEST(TestConcurrentWriteTo_scaling_min_freq_Node3, {
         } else {
             SysResource* resourceList = new SysResource[1];
             memset(&resourceList[0], 0, sizeof(SysResource));
-            resourceList[0].mResCode = CONSTRUCT_RES_CODE(0x04, 0x0000);
+            resourceList[0].mResCode = CONSTRUCT_RES_CODE(0xff, 0x0002);
             resourceList[0].mNumValues = 1;
             resourceList[0].mResInfo = 0;
 
-            // Valid Translation
-            resourceList[0].mResInfo = SET_RESOURCE_CLUSTER_VALUE(resourceList[0].mResInfo, 1);
-            resourceList[0].mResValue.value = 1771209;
+            resourceList[0].mResInfo = 0;
+            resourceList[0].mResValue.value = 709;
 
             int64_t handle = tuneResources(60000, RequestPriority::REQ_PRIORITY_HIGH, 1, resourceList);
             std::cout<<LOG_BASE<<"Handle Returned: "<<handle<<std::endl;
@@ -2910,14 +3024,14 @@ URM_TEST(TestConcurrentWriteTo_scaling_min_freq_Node3, {
             std::string value = AuxRoutines::readFromFile(testResourceName);
             int32_t newValue = C_STOI(value);
             std::cout<<LOG_BASE<<testResourceName<<" Configured Value: "<<newValue<<std::endl;
-            E_ASSERT((newValue >= 1554613));
+            E_ASSERT((newValue == 613));
 
             std::this_thread::sleep_for(std::chrono::seconds(10));
 
             value = AuxRoutines::readFromFile(testResourceName);
             newValue = C_STOI(value);
             std::cout<<LOG_BASE<<testResourceName<<" Configured Value: "<<newValue<<std::endl;
-            E_ASSERT((newValue >= 1656608));
+            E_ASSERT((newValue == 654));
 
             std::this_thread::sleep_for(std::chrono::seconds(40));
 
@@ -2925,16 +3039,18 @@ URM_TEST(TestConcurrentWriteTo_scaling_min_freq_Node3, {
             value = AuxRoutines::readFromFile(testResourceName);
             newValue = C_STOI(value);
             std::cout<<LOG_BASE<<testResourceName<<" Configured Value: "<<newValue<<std::endl;
-            E_ASSERT((newValue >= 1771209));
+            E_ASSERT((newValue == 709));
 
             // Wait for the Request to expire, check if the value resets
+            std::this_thread::sleep_for(std::chrono::seconds(40));
             value = AuxRoutines::readFromFile(testResourceName);
             newValue = C_STOI(value);
             std::cout<<LOG_BASE<<testResourceName<<" Reset Value: "<<newValue<<std::endl;
             E_ASSERT((newValue == originalValue));
 
             delete[] resourceList;
-
+            waitpid(rc, nullptr, 0);
+            waitpid(rc1, nullptr, 0);
         }
     }
 })
@@ -3220,7 +3336,7 @@ URM_TEST(TestWriteTo_pm_qos_resume_latency_us1, {
 
     if(physicalClusterID == -1) {
         LOG_SKIP("Logical Cluster: 0 not found on test device, Skipping Test Case")
-        return;
+        SKIP
     }
 
     std::string nodePath = "/sys/devices/system/cpu/cpu%d/power/pm_qos_resume_latency_us";
@@ -3275,7 +3391,7 @@ URM_TEST(TestWriteTo_pm_qos_resume_latency_us2, {
     int32_t physicalClusterID = baseline.getExpectedPhysicalCluster(1);
     if(physicalClusterID == -1) {
         LOG_SKIP("Logical Cluster: 1 not found on test device, Skipping Test Case")
-        return;
+        SKIP
     }
 
     std::string nodePath = "/sys/devices/system/cpu/cpu%d/power/pm_qos_resume_latency_us";
@@ -3552,6 +3668,12 @@ static std::string encodeCluster(const std::string& nodePath, int32_t physicalCl
 }
 
 URM_TEST(TestMultiResourceSignal, {
+    int32_t physicalClusterID = baseline.getExpectedPhysicalCluster(2);
+    if(physicalClusterID == -1) {
+        LOG_SKIP("Logical Cluster: 2 not found on test device, Skipping Test Case")
+        SKIP
+    }
+
     std::string clusResource = "/etc/urm/tests/nodes/cluster_type_resource_%d_cluster_id.txt";
     int32_t physicalClusterID0 = baseline.getExpectedPhysicalCluster(0);
     int32_t physicalClusterID1 = baseline.getExpectedPhysicalCluster(1);

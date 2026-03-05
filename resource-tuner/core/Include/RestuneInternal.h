@@ -8,17 +8,17 @@
 #ifndef FRAMEWORK_INTERNAL_H
 #define FRAMEWORK_INTERNAL_H
 
-#include "ErrCodes.h"
 #include "Request.h"
-#include "RequestQueue.h"
-#include "ThreadPool.h"
+#include "ErrCodes.h"
 #include "CocoTable.h"
+#include "ThreadPool.h"
 #include "RateLimiter.h"
+#include "RequestQueue.h"
+#include "TargetRegistry.h"
 #include "RequestManager.h"
+#include "RestuneInternal.h"
 #include "ResourceRegistry.h"
 #include "PropertiesRegistry.h"
-#include "RestuneInternal.h"
-#include "TargetRegistry.h"
 
 /**
  * @brief Submit a Resource Provisioning Request from a Client for processing.
@@ -43,7 +43,9 @@ void submitResProvisionRequest(Request* request, int8_t isVerified);
 
 size_t submitPropGetRequest(void* request, std::string& result);
 
-size_t submitPropGetRequest(const std::string& propName, std::string& result, const std::string& defVal);
+size_t submitPropGetRequest(const std::string& propName,
+                            std::string& result,
+                            const std::string& defVal);
 
 ErrCode translateToPhysicalIDs(Resource* resource);
 

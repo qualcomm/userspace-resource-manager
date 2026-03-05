@@ -7,6 +7,7 @@ DLManager::DLManager(int32_t linkerInUse) {
     this->mLinkerInUse = linkerInUse;
     this->mHead = this->mTail = nullptr;
     this->mSize = 0;
+    this->mRank = 0;
 }
 
 // Insert at end

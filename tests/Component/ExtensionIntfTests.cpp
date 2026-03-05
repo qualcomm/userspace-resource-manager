@@ -4,16 +4,10 @@
 #include "TestUtils.h"
 #include "ResourceRegistry.h"
 #include "RestuneParser.h"
-#include "Extensions.h"
 #include "URMTests.h"
 
 #define TEST_CLASS "COMPONENT"
-
-URM_REGISTER_CONFIG(RESOURCE_CONFIG, "/etc/urm/tests/configs/ResourcesConfig.yaml")
-URM_REGISTER_CONFIG(PROPERTIES_CONFIG, "/etc/urm/tests/configs/PropertiesConfig.yaml")
-URM_REGISTER_CONFIG(SIGNALS_CONFIG, "/etc/urm/tests/configs/SignalsConfig.yaml")
-URM_REGISTER_CONFIG(TARGET_CONFIG, "/etc/urm/tests/configs/TargetConfig.yaml")
-URM_REGISTER_CONFIG(INIT_CONFIG, "/etc/urm/tests/configs/InitConfig.yaml")
+#define TEST_SUBCAT "1_URM_EXTN_INTF"
 
 static int8_t funcCalled = false;
 static int32_t invokeCounter = 0;
@@ -33,17 +27,13 @@ static void customTear1(void* context) {
     funcCalled = true;
 }
 
-URM_REGISTER_RES_APPLIER_CB(0x00ff0000, customApplier1)
-URM_REGISTER_RES_TEAR_CB(0x00ff0001, customTear1)
-URM_REGISTER_RES_APPLIER_CB(0x00ff0002, customApplier2)
-
 static void Init() {
     static int8_t initDone = false;
     if(!initDone) {
         initDone = true;
-
-        RestuneParser configProcessor;
-        configProcessor.parseResourceConfigs(Extensions::getResourceConfigFilePath());
+        URM_REGISTER_RES_APPLIER_CB(0x00ff0000, customApplier1)
+        URM_REGISTER_RES_TEAR_CB(0x00ff0001, customTear1)
+        URM_REGISTER_RES_APPLIER_CB(0x00ff0002, customApplier2)
         ResourceRegistry::getInstance()->pluginModifications();
     }
 }

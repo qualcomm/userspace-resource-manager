@@ -1,0 +1,10 @@
+[Unit]
+Description=Custom Cgroup for URM
+
+[Slice]
+CPUQuota=100%
+MemoryMax=500M
+CPUWeight=100        # max weight for CPU
+IOWeight=100         # max weight for IO
+AllowedCPUs=0-7
+TasksMax=100         # maximum number of concurrent tasks (processes + threads) allowed in that cgroup

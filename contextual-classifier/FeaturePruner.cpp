@@ -100,11 +100,11 @@ std::string FeaturePruner::removePunctuation(const std::string &s) {
     return out;
 }
 
-bool FeaturePruner::isSingleCharToken(const std::string &s) {
+int8_t FeaturePruner::isSingleCharToken(const std::string &s) {
     return s.size() == 1;
 }
 
-bool FeaturePruner::isAllSpecialChars(const std::string &token) {
+int8_t FeaturePruner::isAllSpecialChars(const std::string &token) {
     if (token.empty())
         return false;
     for (size_t i = 0; i < token.size(); ++i) {
@@ -116,12 +116,12 @@ bool FeaturePruner::isAllSpecialChars(const std::string &token) {
     return true;
 }
 
-bool FeaturePruner::hasDigit(const std::string &str) {
+int8_t FeaturePruner::hasDigit(const std::string &str) {
     std::regex digitRegex("[0-9]");
     return std::regex_search(str, digitRegex);
 }
 
-bool FeaturePruner::isDigitsOnly(const std::string &str) {
+int8_t FeaturePruner::isDigitsOnly(const std::string &str) {
     return !str.empty() && std::all_of(str.begin(), str.end(), ::isdigit);
 }
 

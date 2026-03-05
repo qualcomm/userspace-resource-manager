@@ -7,8 +7,6 @@
 #include <unordered_map>
 
 #include "ErrCodes.h"
-#include "MemoryPool.h"
-#include "SafeOps.h"
 #include "Utils.h"
 
 #define URM_IDENTIFIER "urm"
@@ -18,6 +16,8 @@
 typedef struct {
     uint32_t mMaxConcurrentRequests;
     uint32_t mMaxResourcesPerRequest;
+    uint32_t mDesiredThreadCount;
+    uint32_t mMaxScalingCapacity;
     uint32_t mListeningPort;
     uint32_t mPulseDuration;
     uint32_t mClientGarbageCollectorDuration;
@@ -43,8 +43,6 @@ private:
     static int32_t serverOnlineStatus;
 
 public:
-    static const int32_t desiredThreadCount = 5;
-    static const int32_t maxScalingCapacity = 10;
 
     static const std::string mTargetConfDir;
 
@@ -79,7 +77,6 @@ public:
     static const std::string mDeviceNamePath;
     static const std::string mBaseCGroupPath;
     static const std::string mPersistenceFile;
-    static const std::string mExtensionPluginsLibPath;
 
     // Target Information Stores
     static MetaConfigs metaConfigs;

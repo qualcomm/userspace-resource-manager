@@ -1,6 +1,8 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
+#include <thread>
+
 #include "ErrCodes.h"
 #include "TestUtils.h"
 #include "AuxRoutines.h"
@@ -8,6 +10,7 @@
 #include "ClientDataManager.h"
 
 #define TEST_CLASS "COMPONENT"
+#define TEST_SUBCAT "CLIENT_DATA_MANAGER"
 
 static void Init() {
     static int8_t initDone = false;

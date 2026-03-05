@@ -22,7 +22,7 @@
 #include "SignalRegistry.h"
 #include "RestuneParser.h"
 
-#define MAX_EXTENSION_LIB_HANDLES 3
+#define MAX_EXTENSION_LIB_HANDLES 6
 static void** extensionLibHandles = nullptr;
 
 // Request Listener and Handler Threads
@@ -42,10 +42,7 @@ static void restoreToSafeState() {
 // If the lib is not present, we simply return Success. Since this lib is optional
 static ErrCode loadExtensionsLib() {
     if(extensionLibHandles == nullptr) {
-        extensionLibHandles = (void**) calloc(MAX_EXTENSION_LIB_HANDLES, sizeof(void*));
-        if(extensionLibHandles == nullptr) {
-            return RC_MODULE_INIT_FAILURE;
-        }
+        return RC_SUCCESS;
     }
 
     std::string libDirPath = std::string(LIBDIR_PATH) + "/urm/";
@@ -150,6 +147,12 @@ static ErrCode fetchMetaConfigs() {
         submitPropGetRequest(MAX_RESOURCES_PER_REQUEST, resultBuffer, "5");
         UrmSettings::metaConfigs.mMaxResourcesPerRequest = (uint32_t)std::stol(resultBuffer);
 
+        submitPropGetRequest(THREAD_POOL_DESIRED_CAPACITY, resultBuffer, "5");
+        UrmSettings::metaConfigs.mDesiredThreadCount = (uint32_t)std::stol(resultBuffer);
+
+        submitPropGetRequest(THREAD_POOL_MAX_SCALING_CAPACITY, resultBuffer, "10");
+        UrmSettings::metaConfigs.mMaxScalingCapacity = (uint32_t)std::stol(resultBuffer);
+
         submitPropGetRequest(PULSE_MONITOR_DURATION, resultBuffer, "60000");
         UrmSettings::metaConfigs.mPulseDuration = (uint32_t)std::stol(resultBuffer);
 
@@ -170,6 +173,14 @@ static ErrCode fetchMetaConfigs() {
 
         submitPropGetRequest(URM_MAX_PLUGIN_COUNT, resultBuffer, "3");
         UrmSettings::metaConfigs.mPluginCount = (uint32_t)std::stol(resultBuffer);
+
+        if(UrmSettings::metaConfigs.mDesiredThreadCount < 1) {
+            UrmSettings::metaConfigs.mDesiredThreadCount = 5; // Reset to default
+        }
+
+        if(UrmSettings::metaConfigs.mMaxScalingCapacity > 100) {
+            UrmSettings::metaConfigs.mMaxScalingCapacity = 100;
+        }
 
     } catch(const std::invalid_argument& e) {
         TYPELOGV(META_CONFIG_PARSE_FAILURE, e.what());
@@ -234,7 +245,7 @@ static ErrCode fetchCustomProperties() {
 
     for(int32_t i = 0; i < 4; i++) {
         std::string filePath = customConfPaths[i];
-        if(AuxRoutines::fileExists(filePath)) {
+        if(filePath.length() > 0 && AuxRoutines::fileExists(filePath)) {
             opStatus = parseUtil(filePath, "prop-custom", ConfigType::PROPERTIES_CONFIG);
             if(RC_IS_NOTOK(opStatus)) {
                 return opStatus;
@@ -264,7 +275,7 @@ static ErrCode fetchResources() {
 
     for(int32_t i = 0; i < 4; i++) {
         filePath = customConfPaths[i];
-        if(AuxRoutines::fileExists(filePath)) {
+        if(filePath.length() > 0 && AuxRoutines::fileExists(filePath)) {
             opStatus = parseUtil(filePath, "resource-custom", ConfigType::RESOURCE_CONFIG);
             if(RC_IS_NOTOK(opStatus)) {
                 return opStatus;
@@ -292,8 +303,8 @@ static ErrCode fetchTargetInfo() {
 
     for(int32_t i = 0; i < 4; i++) {
         std::string filePath = customConfPaths[i];
-        if(AuxRoutines::fileExists(filePath)) {
-            opStatus = parseUtil(filePath, "target-custom", ConfigType::RESOURCE_CONFIG);
+        if(filePath.length() > 0 && AuxRoutines::fileExists(filePath)) {
+            opStatus = parseUtil(filePath, "target-custom", ConfigType::TARGET_CONFIG);
             if(RC_IS_NOTOK(opStatus)) {
                 return opStatus;
             }
@@ -321,7 +332,7 @@ static ErrCode fetchInitInfo() {
 
     for(int32_t i = 0; i < 4; i++) {
         filePath = customConfPaths[i];
-        if(AuxRoutines::fileExists(filePath)) {
+        if(filePath.length() > 0 && AuxRoutines::fileExists(filePath)) {
             opStatus = parseUtil(filePath, "init-custom", ConfigType::INIT_CONFIG);
             if(RC_IS_NOTOK(opStatus)) {
                 return opStatus;
@@ -351,7 +362,7 @@ static ErrCode fetchSignals() {
 
     for(int32_t i = 0; i < 4; i++) {
         filePath = customConfPaths[i];
-        if(AuxRoutines::fileExists(filePath)) {
+        if(filePath.length() > 0 && AuxRoutines::fileExists(filePath)) {
             opStatus = parseUtil(filePath, "signal-custom", ConfigType::SIGNALS_CONFIG);
             if(RC_IS_NOTOK(opStatus)) {
                 return opStatus;
@@ -376,7 +387,7 @@ static ErrCode fetchExtFeatureConfigs() {
 
     for(int32_t i = 0; i < 4; i++) {
         std::string filePath = customConfPaths[i];
-        if(AuxRoutines::fileExists(filePath)) {
+        if(filePath.length() > 0 && AuxRoutines::fileExists(filePath)) {
             opStatus = parseUtil(filePath, "ext-features-custom", ConfigType::EXT_FEATURES_CONFIG);
             if(RC_IS_NOTOK(opStatus)) {
                 return opStatus;
@@ -412,8 +423,8 @@ static ErrCode fetchPerAppConfigs() {
 
 // Initialize Request and Timer ThreadPools
 static ErrCode preAllocateWorkers() {
-    int32_t desiredThreadCapacity = UrmSettings::desiredThreadCount;
-    int32_t maxScalingCapacity = UrmSettings::maxScalingCapacity;
+    uint32_t desiredThreadCapacity = UrmSettings::metaConfigs.mDesiredThreadCount;
+    uint32_t maxScalingCapacity = UrmSettings::metaConfigs.mMaxScalingCapacity;
 
     try {
         RequestReceiver::mRequestsThreadPool = new ThreadPool(desiredThreadCapacity,
@@ -495,17 +506,19 @@ static ErrCode init(void* arg) {
         return RC_MODULE_INIT_FAILURE;
     }
 
-    if(RC_IS_NOTOK(fetchMetaConfigs())) {
-        TYPELOGD(META_CONF_FETCH_FAILED);
+    std::string resultBuffer = "";
+    submitPropGetRequest(URM_MAX_PLUGIN_COUNT, resultBuffer, "6");
+    UrmSettings::metaConfigs.mPluginCount = (uint32_t)std::stol(resultBuffer);
+
+    uint32_t pluginCount = UrmSettings::metaConfigs.mPluginCount;
+    extensionLibHandles = (void**) calloc(pluginCount, sizeof(void*));
+    if(extensionLibHandles == nullptr) {
         return RC_MODULE_INIT_FAILURE;
     }
 
-    uint32_t pluginCount = UrmSettings::metaConfigs.mPluginCount;
-    if(pluginCount > MAX_EXTENSION_LIB_HANDLES) {
-        extensionLibHandles = (void**) realloc(extensionLibHandles, pluginCount * sizeof(void*));
-        if(extensionLibHandles == nullptr) {
-            return RC_MODULE_INIT_FAILURE;
-        }
+    if(RC_IS_NOTOK(fetchMetaConfigs())) {
+        TYPELOGD(META_CONF_FETCH_FAILED);
+        return RC_MODULE_INIT_FAILURE;
     }
 
     // Check if Extensions Plugin lib is available

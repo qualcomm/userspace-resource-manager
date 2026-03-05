@@ -11,29 +11,56 @@
 #include "NetLinkComm.h"
 #include "ContextualClassifier.h"
 
-#define CLASSIFIER_TAG "NetLinkComm"
-#define PROCP_THRESH 50
+#define CLASSIFIER_TAG "CLASSIFIER_NETLINK"
 
-static pid_t getParent(pid_t pid) {
-    std::string statusFile = "/proc/" + std::to_string(pid) + "/status";
-    std::ifstream file(statusFile);
-    std::string line;
-
-    if(!file.is_open()) {
-        return 0;
+static int8_t procHasControlTerminal(pid_t pid) {
+    std::string procStatPath = STAT(pid);
+    std::string stat = AuxRoutines::readFromFile(procStatPath);
+    if(stat.empty()) {
+        return false;
     }
 
-    while(std::getline(file, line)) {
-        if(line.rfind("PPid:", 0) == 0) {
-            std::istringstream iss(line);
-            std::string label;
-            pid_t parentPid;
-            iss >> label >> parentPid;
-            return parentPid;
-        }
+    // Find the closing ')' of the comm field.
+    size_t pos = stat.rfind(')');
+    if(pos == std::string::npos) {
+        return false;
     }
 
-    return 0;
+    // Start parsing right after ')' and skip any spaces.
+    pos++;
+    while(pos < stat.size() && stat[pos] == ' ') {
+        pos++;
+    }
+    if(pos >= stat.size()) {
+        return false;
+    }
+
+    std::istringstream statStream(stat.substr(pos));
+
+    char state = '\0';
+    int64_t ppid = 0, pgrp = 0, session = 0, ttyNr = 0;
+    statStream >> state >> ppid >> pgrp >> session >> ttyNr;
+
+    // For daemon / system services, tty number (controlling terminal) will be 0.
+    return (ttyNr != 0);
+}
+
+static int8_t procEnvironChecks(pid_t pid) {
+    std::string environ = "/proc/" + std::to_string(pid) + "/environ";
+    std::string envData = AuxRoutines::readFromFile(environ);
+    return (envData.find("DISPLAY") != std::string::npos);
+}
+
+static int8_t procPreliminaryChecks(pid_t pid) {
+    if(procHasControlTerminal(pid)) {
+        return true;
+    }
+
+    // Check environ data
+    if(procEnvironChecks(pid)) {
+        return true;
+    }
+    return false;
 }
 
 NetLinkComm::NetLinkComm() {
@@ -97,7 +124,7 @@ int32_t NetLinkComm::setListen(int8_t enable) {
 
     nlcn_msg.cn_mcast = enable ? PROC_CN_MCAST_LISTEN : PROC_CN_MCAST_IGNORE;
 
-    if(send(mNlSock, &nlcn_msg, sizeof(nlcn_msg), 0) == -1) {
+    if(send(this->mNlSock, &nlcn_msg, sizeof(nlcn_msg), 0) == -1) {
         TYPELOGV(ERRNO_LOG, "netlink send", strerror(errno));
         return -1;
     }
@@ -115,11 +142,12 @@ int32_t NetLinkComm::recvEvent(ProcEvent &ev) {
         };
     } nlcn_msg;
 
-    rc = recv(mNlSock, &nlcn_msg, sizeof(nlcn_msg), 0);
+    rc = recv(this->mNlSock, &nlcn_msg, sizeof(nlcn_msg), 0);
     if(rc == 0) {
         // Socket shutdown or no more data.
         return 0;
     }
+
     if(rc == -1) {
         if(errno == EINTR) {
             // Caller (ContextualClassifier::HandleProcEv) will handle EINTR.
@@ -148,7 +176,7 @@ int32_t NetLinkComm::recvEvent(ProcEvent &ev) {
             ev.type = CC_APP_OPEN;
 
             rc = CC_APP_OPEN;
-            if(!AuxRoutines::fileExists(COMM(ev.pid)) || (getParent(ev.pid) <= PROCP_THRESH)) {
+            if(!AuxRoutines::fileExists(COMM(ev.pid)) || !procPreliminaryChecks(ev.pid)) {
                 rc = ev.type = CC_IGNORE;
             }
             break;
@@ -156,12 +184,7 @@ int32_t NetLinkComm::recvEvent(ProcEvent &ev) {
         case PROC_EVENT_EXIT:
             ev.pid = nlcn_msg.proc_ev.event_data.exit.process_pid;
             ev.tgid = nlcn_msg.proc_ev.event_data.exit.process_tgid;
-            ev.type = CC_APP_CLOSE;
-
-            rc = CC_APP_CLOSE;
-            if(!AuxRoutines::fileExists(COMM(ev.pid)) || (getParent(ev.pid) <= PROCP_THRESH)) {
-                rc = ev.type = CC_IGNORE;
-            }
+            rc = ev.type = CC_APP_CLOSE;
             break;
 
         default:

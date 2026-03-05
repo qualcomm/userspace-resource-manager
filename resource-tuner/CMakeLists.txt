@@ -16,10 +16,10 @@ option(BUILD_TESTS "Testing" OFF)
 option(BUILD_STATE_DETECTOR "Display Detector" OFF)
 
 # Restune Core Lib
-file(GLOB SOURCES "core/*.cpp"
-                  "core/Server/*.cpp"
-                  "signals/*.cpp"
-                  "init/*.cpp")
+file(GLOB SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/core/*.cpp"
+                  "${CMAKE_CURRENT_SOURCE_DIR}/core/Server/*.cpp"
+                  "${CMAKE_CURRENT_SOURCE_DIR}/signals/*.cpp"
+                  "${CMAKE_CURRENT_SOURCE_DIR}/init/*.cpp")
 
 set(LINK_LIBS "")
 list(APPEND LINK_LIBS
@@ -30,12 +30,12 @@ list(APPEND LINK_LIBS
 
 if(LIB_SYSTEMD_DEP_FOUND)
   list(APPEND LINK_LIBS ${SYSTEMD_LIBRARIES})
-  list(APPEND SOURCES dbus-modules/RestuneDBusInternal.cpp)
+  list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/dbus-modules/RestuneDBusInternal.cpp)
   if(BUILD_STATE_DETECTOR)
-    list(APPEND SOURCES dbus-modules/StateDetector.cpp)
+    list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/dbus-modules/StateDetector.cpp)
   endif()
 else()
-  list(APPEND SOURCES dbus-modules/RestuneDBusStubs.cpp)
+  list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/dbus-modules/RestuneDBusStubs.cpp)
 endif()
 
 add_library(RestuneCore ${SOURCES})
@@ -59,3 +59,15 @@ endif()
 
 # Install RestuneCore
 install(TARGETS RestuneCore LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+# Install Headers
+set(HEADER_FILES "")
+list(APPEND HEADER_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/core/Include/ResourceRegistry.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/core/Include/TargetRegistry.h
+)
+
+install(
+  FILES ${HEADER_FILES}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Urm
+)

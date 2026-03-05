@@ -56,6 +56,11 @@ ClusterExpection* ClusterExpectationBuilder::build() {
     return this->mClusterExpectation;
 }
 
+TestBaseline::TestBaseline() {
+    this->mTotalClusterCount = this->mTotalCoreCount = -1;
+    this->parseTestConfigYamlNode(baselineYamlFilePath);
+}
+
 ErrCode TestBaseline::parseTestConfigYamlNode(const std::string& filePath) {
     SETUP_LIBYAML_PARSING(filePath);
 
@@ -187,10 +192,6 @@ ErrCode TestBaseline::parseTestConfigYamlNode(const std::string& filePath) {
 
     TEARDOWN_LIBYAML_PARSING
     return RC_SUCCESS;
-}
-
-ErrCode TestBaseline::fetchBaseline() {
-    return parseTestConfigYamlNode(baselineYamlFilePath);
 }
 
 void TestBaseline::displayBaseline() {

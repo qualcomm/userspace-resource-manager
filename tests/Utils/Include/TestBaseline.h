@@ -4,8 +4,8 @@
 #ifndef TEST_BASELINE_H
 #define TEST_BASELINE_H
 
-#include <unordered_map>
 #include <stack>
+#include <unordered_map>
 
 #include "YamlParser.h"
 #include "UrmSettings.h"
@@ -47,9 +47,8 @@ private:
     ErrCode parseTestConfigYamlNode(const std::string& filePath);
 
 public:
-    TestBaseline(): mTotalClusterCount(-1), mTotalCoreCount(-1) {}
+    TestBaseline();
 
-    ErrCode fetchBaseline();
     int32_t getExpectedClusterCount();
     int32_t getExpectedCoreCount();
     int32_t getExpectedPhysicalCluster(int32_t logicalID);
