@@ -40,7 +40,7 @@ sudo apt-get install debhelper dh-sequence-cmake cmake pkg-config build-essentia
 ```bash
 dpkg-buildpackage -us -uc -ui
 ```
-* Note: The generated .deb files are placed in the parent directory of your source tree (one level above the workspace).
+* Note: The generated `.deb` files are placed in the parent directory of your source tree (one level above the workspace).
 ```
 ls -l ../*.deb
 ```
