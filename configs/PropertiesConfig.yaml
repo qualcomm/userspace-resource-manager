@@ -9,10 +9,10 @@ PropertyConfigs:
     Value: "20"
 
   - Name: resource_tuner.thread_pool.desired_capacity
-    Value: "5"
+    Value: "2"
   
   - Name: resource_tuner.thread_pool.max_scaling_capacity
-    Value: "10"
+    Value: "5"
 
   - Name: resource_tuner.pulse.duration
     Value: "23000"
