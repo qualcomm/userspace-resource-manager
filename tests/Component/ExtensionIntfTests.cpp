@@ -1,10 +1,10 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
-#include "TestUtils.h"
-#include "ResourceRegistry.h"
-#include "RestuneParser.h"
 #include "URMTests.h"
+#include "TestUtils.h"
+#include "RestuneParser.h"
+#include "ResourceRegistry.h"
 
 #define TEST_CLASS "COMPONENT"
 #define TEST_SUBCAT "1_URM_EXTN_INTF"

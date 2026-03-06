@@ -89,6 +89,10 @@ int8_t AuxRoutines::fileExists(const std::string& filePath) {
     return access(filePath.c_str(), F_OK) == 0;
 }
 
+int8_t AuxRoutines::fileWritable(const std::string& filePath) {
+    return access(filePath.c_str(), W_OK) == 0;
+}
+
 std::string AuxRoutines::getMachineName() {
     return AuxRoutines::readFromFile(UrmSettings::mDeviceNamePath);
 }

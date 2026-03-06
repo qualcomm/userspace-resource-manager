@@ -824,37 +824,68 @@ uint64_t GET_TARGET_INFO(int32_t option,
     std::shared_ptr<TargetRegistry> targetRegistry = TargetRegistry::getInstance();
 
     switch(option) {
+        // Returns a 64-bit mask, encodes cpu ids in the range [0, 63]
+        // By default mask creation begins at the lowest core within the cluster
+        // and goes up one at a time to core: (start + min(numCpus, coreCount)).
+        // Where numCpus is the total count of cpus in the specified cluster.
+
+        // Reverse selection is also possible, if a negative coreCount is provided
+        // Whereby the highest abs(coreCount) cpu ids within the cluster are considered
+        // for mask generation.
         case GET_MASK: {
             if(numArgs < 2) {
                 return 0;
             }
 
             uint64_t mask = 0;
-
             int32_t cluster = args[0];
             int32_t coreCount = args[1];
 
             if(cluster == GET_MAX_CLUSTER) {
-                int32_t clusterCount = UrmSettings::targetConfigs.mTotalClusterCount;
-                cluster = clusterCount - 1;
+                cluster = UrmSettings::targetConfigs.mTotalClusterCount - 1;
             }
 
             int32_t physicalClusterId = targetRegistry->getPhysicalClusterId(cluster);
             ClusterInfo* clusInfo = targetRegistry->getClusterInfo(physicalClusterId);
-            if(clusInfo == nullptr) {
+            if(clusInfo == nullptr || clusInfo->mNumCpus <= 0) {
                 return 0;
             }
 
+            int8_t generateReverseMask = false;
             if(coreCount == 0) {
                 // Iterate over all the cores in the cluster
                 coreCount = clusInfo->mNumCpus;
             } else {
+                if(coreCount < 0) {
+                    // Sanity Check
+                    if(coreCount == std::numeric_limits<int32_t>::min()) {
+                        return 0;
+                    }
+
+                    coreCount *= -1;
+                    generateReverseMask = true;
+                }
+
                 // Bound the count to the number of cores in the cluster
                 coreCount = std::min(coreCount, clusInfo->mNumCpus);
             }
 
-            for(int32_t i = clusInfo->mStartCpu; i < (clusInfo->mStartCpu + coreCount); i++) {
-                mask |= (1UL << i);
+            int32_t curCpu = clusInfo->mStartCpu;
+            if(generateReverseMask) {
+                curCpu = clusInfo->mStartCpu + clusInfo->mNumCpus - 1;
+                while(coreCount--) {
+                    if(curCpu >= 0 && curCpu < 64) {
+                        mask |= (1ULL << curCpu);
+                    }
+                    curCpu--;
+                }
+            } else {
+                while(coreCount--) {
+                    if(curCpu >= 0 && curCpu < 64) {
+                        mask |= (1ULL << curCpu);
+                    }
+                    curCpu++;
+                }
             }
 
             return mask;

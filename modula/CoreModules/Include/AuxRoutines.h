@@ -32,6 +32,7 @@ public:
     static void deleteFile(const std::string& fileName);
     static void writeSysFsDefaults();
     static int8_t fileExists(const std::string& filePath);
+    static int8_t fileWritable(const std::string& filePath);
     static std::string getMachineName();
 
     static int8_t isNumericString(const std::string& str);
