@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout URM image repo
-      - uses: actions/checkout@v5
+        uses: actions/checkout@v5
         with:
           repository: qualcomm/urm-image
 
