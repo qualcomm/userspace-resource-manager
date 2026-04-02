@@ -570,29 +570,34 @@ static void limitCpuTime(void* context) {
 static void setTaskAffinity(void* context) {
     if(context == nullptr) return;
     Resource* resource = static_cast<Resource*>(context);
-    if(resource->getValuesCount() < 2) return;
+    if(resource->getValuesCount() < 3) return;
 
-    pid_t pid = resource->getValueAt(0);
-
-    // Get current mask
     cpu_set_t mask;
-    if(sched_getaffinity(pid, sizeof(cpu_set_t), &mask) == -1) {
-        TYPELOGV(ERRNO_LOG, "sched_getaffinity", strerror(errno));
-    } else {
-        std::string procDesc = "task_affinity_" + std::to_string(pid);
-        std::string maskStr = "";
+    // Supports multiple pids configuration at once.
+    int32_t pidCount = resource->getValueAt(0);
 
-        // Serialize the mask as a string
-        for(int32_t i = 0; i < CPU_SETSIZE; i++) {
-            if(CPU_ISSET(i, &mask)) {
-                if(maskStr.length() > 0) {
-                    maskStr.append(",");
+    for(int32_t i = 0; i < pidCount; i++) {
+        pid_t pid = resource->getValueAt(i);
+
+        // Get current mask
+        if(sched_getaffinity(pid, sizeof(cpu_set_t), &mask) == -1) {
+            TYPELOGV(ERRNO_LOG, "sched_getaffinity", strerror(errno));
+        } else {
+            std::string procDesc = "task_affinity_" + std::to_string(pid);
+            std::string maskStr = "";
+
+            // Serialize the mask as a string
+            for(int32_t i = 0; i < CPU_SETSIZE; i++) {
+                if(CPU_ISSET(i, &mask)) {
+                    if(maskStr.length() > 0) {
+                        maskStr.append(",");
+                    }
+                    maskStr.append(std::to_string(i));
                 }
-                maskStr.append(std::to_string(i));
             }
-        }
 
-        ResourceRegistry::getInstance()->addDefaultValue(procDesc, maskStr);
+            ResourceRegistry::getInstance()->addDefaultValue(procDesc, maskStr);
+        }
     }
 
     CPU_ZERO(&mask);
@@ -601,8 +606,12 @@ static void setTaskAffinity(void* context) {
         CPU_SET(cpuId, &mask);
     }
 
-    if(sched_setaffinity(pid, sizeof(mask), &mask) == -1) {
-        TYPELOGV(ERRNO_LOG, "sched_setaffinity", strerror(errno));
+    for(int32_t i = 0; i < pidCount; i++) {
+        pid_t pid = resource->getValueAt(i);
+
+        if(sched_setaffinity(pid, sizeof(mask), &mask) == -1) {
+            TYPELOGV(ERRNO_LOG, "sched_setaffinity", strerror(errno));
+        }
     }
 }
 
@@ -763,8 +772,8 @@ URM_REGISTER_RES_APPLIER_CB(0x00090001, moveThreadToCGroup);
 URM_REGISTER_RES_APPLIER_CB(0x00090002, setRunOnCores);
 URM_REGISTER_RES_APPLIER_CB(0x00090003, setRunOnCoresExclusively);
 URM_REGISTER_RES_APPLIER_CB(0x00090005, limitCpuTime);
-URM_REGISTER_RES_APPLIER_CB(0x000c0000, setTaskAffinity);
+URM_REGISTER_RES_APPLIER_CB(0x00030004, setTaskAffinity);
 URM_REGISTER_RES_TEAR_CB(0x00090000, removeProcessFromCGroup);
 URM_REGISTER_RES_TEAR_CB(0x00090001, removeThreadFromCGroup);
 URM_REGISTER_RES_TEAR_CB(0x00090003, resetRunOnCoresExclusively);
-URM_REGISTER_RES_TEAR_CB(0x000c0000, resetTaskAffinity)
+URM_REGISTER_RES_TEAR_CB(0x00030004, resetTaskAffinity)

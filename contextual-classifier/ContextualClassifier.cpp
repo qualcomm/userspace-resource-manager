@@ -100,7 +100,9 @@ static ResIterable* createMovePidResource(int32_t cGroupdId, pid_t pid) {
 static Request* createTuneRequestFromSignal(uint32_t sigId,
                                             uint32_t sigType,
                                             pid_t incomingPID,
-                                            pid_t incomingTID) {
+                                            pid_t incomingTID,
+                                            int32_t numArgs,
+                                            int32_t* args) {
     try {
         std::shared_ptr<SignalRegistry> sigRegistry = SignalRegistry::getInstance();
 
@@ -129,6 +131,20 @@ static Request* createTuneRequestFromSignal(uint32_t sigId,
 
             // Copy
             Resource* resource = MPLACEV(Resource, (*((*signalLocks)[i])));
+
+            // fill placeholders if any
+            int32_t listIndex = 0;
+            for(int32_t j = 0; j < numArgs; j++) {
+                if(resource->getValueAt(j) == -1) {
+                    if(args == nullptr) return nullptr;
+                    if(listIndex >= 0 && listIndex < numArgs) {
+                        resource->setValueAt(j, args[listIndex]);
+                        listIndex++;
+                    } else {
+                        return nullptr;
+                    }
+                }
+            }
 
             ResIterable* resIterable = MPLACED(ResIterable);
             resIterable->mData = resource;
@@ -228,6 +244,8 @@ void ContextualClassifier::ClassifierMain() {
             std::string comm;
             uint32_t sigId = URM_SIG_APP_OPEN;
             uint32_t sigType = DEFAULT_SIGNAL_TYPE;
+            int32_t numArgs = 0;
+            int32_t* args = nullptr;
             uint32_t ctxDetails = 0U;
 
             if(ev.pid != -1) {
@@ -276,15 +294,19 @@ void ContextualClassifier::ClassifierMain() {
                         .mPid = ev.pid,
                         .mSigId = sigId,
                         .mSigType = sigType,
+                        .mNumArgs = numArgs,
+                        .mArgs = args,
                     };
                     postCb((void*)&postProcessData);
 
                     sigId = postProcessData.mSigId;
                     sigType = postProcessData.mSigType;
+                    numArgs = postProcessData.mNumArgs;
+                    args = postProcessData.mArgs;
                 }
 
                 // Apply actions, call tuneSignal
-                this->ApplyActions(sigId, sigType, ev.pid, ev.tgid);
+                this->ApplyActions(sigId, sigType, ev.pid, ev.tgid, numArgs, args);
             }
         } else if(ev.type == CC_APP_CLOSE) {
             // No Action Needed, Pulse Monitor to take care of cleanup
@@ -388,9 +410,11 @@ int32_t ContextualClassifier::ClassifyProcess(pid_t processPid,
 void ContextualClassifier::ApplyActions(uint32_t sigId,
                                         uint32_t sigType,
                                         pid_t incomingPID,
-                                        pid_t incomingTID) {
+                                        pid_t incomingTID,
+                                        int32_t numArgs,
+                                        int32_t* args) {
     Request* request =
-        createTuneRequestFromSignal(sigId, sigType, incomingPID, incomingTID);
+        createTuneRequestFromSignal(sigId, sigType, incomingPID, incomingTID, numArgs, args);
     if(request != nullptr) {
         if(request->getResourcesCount() > 0) {
             // Record:
@@ -563,7 +587,9 @@ void ContextualClassifier::configureAppSignals(pid_t incomingPID,
                     appConfig->mSignalCodes[i],
                     0,
                     incomingPID,
-                    incomingTID);
+                    incomingTID,
+                    0,
+                    nullptr);
 
                 if(request != nullptr) {
                     if(request->getResourcesCount() > 0) {
