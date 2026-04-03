@@ -574,6 +574,7 @@ static void setTaskAffinity(void* context) {
     if(resource->getValuesCount() < (maxPidCount + 1)) return;
 
     cpu_set_t mask;
+    CPU_ZERO(&mask);
 
     // Supports multiple pids configuration at once, upto 6
     for(int32_t i = 0; i < maxPidCount; i++) {
@@ -609,8 +610,8 @@ static void setTaskAffinity(void* context) {
 
     for(int32_t i = 0; i < maxPidCount; i++) {
         pid_t pid = resource->getValueAt(i);
-        if(pid != -1) {
-            LOGE("WRITE_ERROR", "Writing pid = " + std::to_string(pid));
+        if(pid > 0) {
+            TYPELOGV(NOTIFY_NODE_WRITE, "sched_setaffinity()", pid);
             if(sched_setaffinity(pid, sizeof(mask), &mask) == -1) {
                 TYPELOGV(ERRNO_LOG, "sched_setaffinity", strerror(errno));
             }
