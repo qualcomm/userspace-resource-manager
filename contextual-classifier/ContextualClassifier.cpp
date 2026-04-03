@@ -134,14 +134,12 @@ static Request* createTuneRequestFromSignal(uint32_t sigId,
 
             // fill placeholders if any
             int32_t listIndex = 0;
-            for(int32_t j = 0; j < numArgs; j++) {
+            for(int32_t j = 0; j < resource->getValuesCount(); j++) {
                 if(resource->getValueAt(j) == -1) {
                     if(args == nullptr) return nullptr;
                     if(listIndex >= 0 && listIndex < numArgs) {
                         resource->setValueAt(j, args[listIndex]);
                         listIndex++;
-                    } else {
-                        return nullptr;
                     }
                 }
             }

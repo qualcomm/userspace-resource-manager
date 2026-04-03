@@ -570,14 +570,15 @@ static void limitCpuTime(void* context) {
 static void setTaskAffinity(void* context) {
     if(context == nullptr) return;
     Resource* resource = static_cast<Resource*>(context);
-    if(resource->getValuesCount() < 3) return;
+    int32_t maxPidCount = 6;
+    if(resource->getValuesCount() < (maxPidCount + 1)) return;
 
     cpu_set_t mask;
-    // Supports multiple pids configuration at once.
-    int32_t pidCount = resource->getValueAt(0);
 
-    for(int32_t i = 0; i < pidCount; i++) {
+    // Supports multiple pids configuration at once, upto 6
+    for(int32_t i = 0; i < maxPidCount; i++) {
         pid_t pid = resource->getValueAt(i);
+        if(pid <= 0) continue;
 
         // Get current mask
         if(sched_getaffinity(pid, sizeof(cpu_set_t), &mask) == -1) {
@@ -601,16 +602,18 @@ static void setTaskAffinity(void* context) {
     }
 
     CPU_ZERO(&mask);
-    for(int32_t i = 1; i < resource->getValuesCount(); i++) {
+    for(int32_t i = maxPidCount; i < resource->getValuesCount(); i++) {
         int32_t cpuId = resource->getValueAt(i);
         CPU_SET(cpuId, &mask);
     }
 
-    for(int32_t i = 0; i < pidCount; i++) {
+    for(int32_t i = 0; i < maxPidCount; i++) {
         pid_t pid = resource->getValueAt(i);
-
-        if(sched_setaffinity(pid, sizeof(mask), &mask) == -1) {
-            TYPELOGV(ERRNO_LOG, "sched_setaffinity", strerror(errno));
+        if(pid != -1) {
+            LOGE("WRITE_ERROR", "Writing pid = " + std::to_string(pid));
+            if(sched_setaffinity(pid, sizeof(mask), &mask) == -1) {
+                TYPELOGV(ERRNO_LOG, "sched_setaffinity", strerror(errno));
+            }
         }
     }
 }
@@ -734,35 +737,39 @@ static void resetRunOnCoresExclusively(void* context) {
 static void resetTaskAffinity(void* context) {
     if(context == nullptr) return;
     Resource* resource = static_cast<Resource*>(context);
-    if(resource->getValuesCount() < 2) return;
+    int32_t maxPidCount = 6;
+    if(resource->getValuesCount() < (maxPidCount + 1)) return;
 
-    pid_t pid = resource->getValueAt(0);
+    for(int i = 0; i < maxPidCount; i++) {
+        pid_t pid = resource->getValueAt(i);
+        if(pid <= 0) continue;
 
-    std::string procDesc = "task_affinity_" + std::to_string(pid);
-    std::string defVal = ResourceRegistry::getInstance()->getDefaultValue(procDesc);
+        std::string procDesc = "task_affinity_" + std::to_string(pid);
+        std::string defVal = ResourceRegistry::getInstance()->getDefaultValue(procDesc);
 
-    if(defVal.length() == 0) {
-        return;
-    }
-
-    // Reconstruct Original Mask
-    cpu_set_t originalMask;
-    CPU_ZERO(&originalMask);
-
-    std::string value;
-    std::istringstream iss(defVal);
-    while(std::getline(iss, value, ',')) {
-        try {
-            int32_t cpuId = std::stoi(value);
-            CPU_SET(cpuId, &originalMask);
-
-        } catch (const std::exception&) {
+        if(defVal.length() == 0) {
             return;
         }
-    }
 
-    if(sched_setaffinity(pid, sizeof(originalMask), &originalMask) == -1) {
-        TYPELOGV(ERRNO_LOG, "sched_setaffinity", strerror(errno));
+        // Reconstruct Original Mask
+        cpu_set_t originalMask;
+        CPU_ZERO(&originalMask);
+
+        std::string value;
+        std::istringstream iss(defVal);
+        while(std::getline(iss, value, ',')) {
+            try {
+                int32_t cpuId = std::stoi(value);
+                CPU_SET(cpuId, &originalMask);
+
+            } catch (const std::exception&) {
+                return;
+            }
+        }
+
+        if(sched_setaffinity(pid, sizeof(originalMask), &originalMask) == -1) {
+            TYPELOGV(ERRNO_LOG, "sched_setaffinity", strerror(errno));
+        }
     }
 }
 
