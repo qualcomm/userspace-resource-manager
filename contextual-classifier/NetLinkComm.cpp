@@ -162,15 +162,15 @@ int32_t NetLinkComm::recvEvent(ProcEvent &ev) {
     ev.type = CC_IGNORE;
 
     switch(nlcn_msg.proc_ev.what) {
-        case proc_event::PROC_EVENT_NONE:
-        case proc_event::PROC_EVENT_FORK:
-        case proc_event::PROC_EVENT_UID:
-        case proc_event::PROC_EVENT_GID: {
+        case PROC_EVENT_NONE:
+        case PROC_EVENT_FORK:
+        case PROC_EVENT_UID:
+        case PROC_EVENT_GID: {
             // No actionable item.
             break;
         }
 
-        case proc_event::PROC_EVENT_EXEC:
+        case PROC_EVENT_EXEC:
             ev.pid = nlcn_msg.proc_ev.event_data.exec.process_pid;
             ev.tgid = nlcn_msg.proc_ev.event_data.exec.process_tgid;
             ev.type = CC_APP_OPEN;
@@ -181,7 +181,7 @@ int32_t NetLinkComm::recvEvent(ProcEvent &ev) {
             }
             break;
 
-        case proc_event::PROC_EVENT_EXIT:
+        case PROC_EVENT_EXIT:
             ev.pid = nlcn_msg.proc_ev.event_data.exit.process_pid;
             ev.tgid = nlcn_msg.proc_ev.event_data.exit.process_tgid;
             rc = ev.type = CC_APP_CLOSE;
