@@ -132,15 +132,42 @@ pid_t AuxRoutines::fetchPid(const std::string& process_name) {
 }
 
 int8_t AuxRoutines::getProcName(pid_t pid, std::string& procName) {
-    std::string comm = "";
-    std::string commPath = COMM(pid);
+    // Try cmdline first for full process name
+    std::string cmdlinePath = "/proc/" + std::to_string(pid) + "/cmdline";
+    std::ifstream cmdlineFile(cmdlinePath);
+    
+    if(cmdlineFile.is_open()) {
+        std::string cmdline;
+        std::getline(cmdlineFile, cmdline, '\0'); // Arguments are null-separated
+        
+        if(!cmdline.empty()) {
+            // Extract just the executable name from the full path
+            size_t lastSlash = cmdline.find_last_of('/');
+            if(lastSlash != std::string::npos) {
+                procName = cmdline.substr(lastSlash + 1);
+            } else {
+                procName = cmdline;
+            }
+            
+            // Trim whitespace
+            size_t first = procName.find_first_not_of(" \t\n\r");
+            if(first != std::string::npos) {
+                size_t last = procName.find_last_not_of(" \t\n\r");
+                procName = procName.substr(first, (last - first + 1));
+            }
+            
+            return true;
+        }
+    }
+
+    // Fallback to comm if cmdline fails
+    std::string commPath = "/proc/" + std::to_string(pid) + "/comm";
     std::ifstream commFile(commPath);
-
-    std::string processName = "";
+    
     if(commFile.is_open()) {
+        std::string processName;
         std::getline(commFile, processName);
-
-        // Trim
+        
         size_t first = processName.find_first_not_of(" \t\n\r");
         if(first != std::string::npos) {
             size_t last = processName.find_last_not_of(" \t\n\r");
@@ -148,7 +175,7 @@ int8_t AuxRoutines::getProcName(pid_t pid, std::string& procName) {
             return true;
         }
     }
-
+    
     return false;
 }
 
