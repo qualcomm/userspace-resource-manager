@@ -1,0 +1,50 @@
+URM_CORE_1.0 {
+    global:
+        # --- Public C API ---
+        Restune_Init;
+        Restune_Deinit;
+
+        # --- C++ Classes & Functions ---
+        extern "C++" {
+            # 1. Previously Identified
+            RestuneParser::parse*;
+            *TargetRegistry*;
+            *ResourceRegistry*;
+            *submitPropGetRequest*;
+            *PulseMonitor*;
+
+            # 2. ADDED: Missing Singletons & Registries
+            *CocoTable*;
+            *RequestQueue*;
+            *ExtFeaturesRegistry*;
+            *RequestReceiver*;
+
+            # 3. ADDED: Thread & Daemon Functions
+            startClientGarbageCollectorDaemon*;
+            stopClientGarbageCollectorDaemon*;
+            listenerThreadStartRoutine*;
+
+	        # ADD THESE SPECIFIC EXPORTS:
+            "SignalRegistry::getInstance()";
+            "SignalRegistry::getSignalConfigById(unsigned int, unsigned int)";
+            "SignalRegistry::getSignalConfigById(unsigned long)";
+        
+            # Export the static member variable
+            "SignalRegistry::signalRegistryInstance";
+        
+            # Add other dependencies
+            *AuxRoutines*;
+            *submitResProvisionRequest*;
+            *Request*;
+            *Signal*;
+            *Logger*;
+            *AppConfigs*;
+            *ClientGarbageCollector*;
+            *ClientDataManager*;
+        };
+
+    local:
+        # Hide everything else
+        *;
+};
+
