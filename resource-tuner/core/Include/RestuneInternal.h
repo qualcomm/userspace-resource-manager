@@ -47,6 +47,4 @@ size_t submitPropGetRequest(const std::string& propName,
                             std::string& result,
                             const std::string& defVal);
 
-ErrCode translateToPhysicalIDs(Resource* resource);
-
 #endif
