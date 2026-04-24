@@ -56,7 +56,7 @@ static int8_t performPhysicalMapping(int32_t& coreValue, int32_t& clusterValue) 
     return true;
 }
 
-ErrCode translateToPhysicalIDs(Resource* resource) {
+static ErrCode translateToPhysicalIDs(Resource* resource) {
     ResConfInfo* rConf = ResourceRegistry::getInstance()->getResConf(resource->getResCode());
     switch(rConf->mApplyType) {
         case ResourceApplyType::APPLY_CORE: {

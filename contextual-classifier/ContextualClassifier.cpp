@@ -419,7 +419,7 @@ void ContextualClassifier::ApplyActions(uint32_t sigId,
             this->mCurrRestuneHandles.push_back(request->getHandle());
 
             // fast path to Request Queue
-            submitResProvisionRequest(request, true);
+            submitResProvisionRequest(request, false);
 
         } else {
             Request::cleanUpRequest(request);
@@ -593,7 +593,7 @@ void ContextualClassifier::configureAppSignals(pid_t incomingPID,
                     if(request->getResourcesCount() > 0) {
                         // fast path to Request Queue
                         this->mCurrRestuneHandles.push_back(request->getHandle());
-                        submitResProvisionRequest(request, true);
+                        submitResProvisionRequest(request, false);
 
                     } else {
                         Request::cleanUpRequest(request);
