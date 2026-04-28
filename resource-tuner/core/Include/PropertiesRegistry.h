@@ -64,6 +64,15 @@ public:
 
     int32_t getPropertiesCount();
 
+    /**
+     * @brief Apply RAM-based configuration overrides
+     * @param ramTier The RAM tier (low, medium, high, very_high)
+     * @return int8_t:
+     *            - 1: if RAM-based configs were successfully applied
+     *            - 0: otherwise
+     */
+    int8_t applyRAMBasedConfigs(const std::string& ramTier);
+
     static std::shared_ptr<PropertiesRegistry> getInstance() {
         if(propRegistryInstance == nullptr) {
             std::shared_ptr<PropertiesRegistry> localpropRegistryInstance(new PropertiesRegistry());

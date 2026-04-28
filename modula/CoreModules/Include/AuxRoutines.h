@@ -43,6 +43,10 @@ public:
     static int64_t generateUniqueHandle();
     static int64_t getCurrentTimeInMilliseconds();
     static std::string toLowerCase(const std::string& str);
+
+    // RAM detection utilities
+    static int64_t getTotalSystemRAM();
+    static std::string getRAMTier();
 };
 
 // Following are some client-lib centric utilities

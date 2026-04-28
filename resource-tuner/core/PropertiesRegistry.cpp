@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
 #include "PropertiesRegistry.h"
+#include "RAMConfigGenerator.h"
+#include "Logger.h"
 
 std::shared_ptr<PropertiesRegistry> PropertiesRegistry::propRegistryInstance = nullptr;
 
@@ -79,6 +81,43 @@ int8_t PropertiesRegistry::deleteProperty(const std::string& propertyName) {
 
 int32_t PropertiesRegistry::getPropertiesCount() {
     return this->mProperties.size();
+}
+
+int8_t PropertiesRegistry::applyRAMBasedConfigs(const std::string& ramTier) {
+    LOGI("PROPERTIES_REGISTRY", "Applying RAM-based configurations for tier: " + ramTier);
+
+    // Get all RAM-based configurations
+    auto ramConfigs = RAMConfigGenerator::getAllConfigs(ramTier);
+
+    int32_t appliedCount = 0;
+    for (const auto& config : ramConfigs) {
+        const std::string& propName = config.first;
+        const std::string& propValue = config.second;
+
+        // Check if property already exists
+        std::string existingValue;
+        if (queryProperty(propName, existingValue) > 0) {
+            // Property exists, modify it
+            if (modifyProperty(propName, propValue)) {
+                LOGI("PROPERTIES_REGISTRY",
+                     "Updated property: " + propName + " = " + propValue +
+                     " (was: " + existingValue + ")");
+                appliedCount++;
+            }
+        } else {
+            // Property doesn't exist, create it
+            if (createProperty(propName, propValue)) {
+                LOGI("PROPERTIES_REGISTRY",
+                     "Created property: " + propName + " = " + propValue);
+                appliedCount++;
+            }
+        }
+    }
+
+    LOGI("PROPERTIES_REGISTRY",
+         "Applied " + std::to_string(appliedCount) + " RAM-based configurations");
+
+    return appliedCount > 0 ? true : false;
 }
 
 PropertiesRegistry::~PropertiesRegistry() {}

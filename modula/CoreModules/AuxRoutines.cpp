@@ -294,3 +294,57 @@ std::string AuxRoutines::toLowerCase(const std::string& str) {
                    [](unsigned char c) { return std::tolower(c); });
     return result;
 }
+
+// Get total system RAM in MB from /proc/meminfo
+int64_t AuxRoutines::getTotalSystemRAM() {
+    std::ifstream meminfo("/proc/meminfo");
+    if (!meminfo.is_open()) {
+        LOGE("URM_AUX_ROUTINE", "Failed to open /proc/meminfo");
+        return -1;
+    }
+    std::string line;
+    while (std::getline(meminfo, line)) {
+        if (line.find("MemTotal:") == 0) {
+            std::istringstream iss(line);
+            std::string label;
+            int64_t value;
+            std::string unit;
+
+            iss >> label >> value >> unit;
+            meminfo.close();
+
+            // Convert KB to MB
+            return value / 1024;
+        }
+    }
+
+    meminfo.close();
+    LOGE("URM_AUX_ROUTINE", "MemTotal not found in /proc/meminfo");
+    return -1;
+}
+// Categorize RAM into tiers: low, medium, high, very_high
+std::string AuxRoutines::getRAMTier() {
+    int64_t totalRAM = getTotalSystemRAM();
+
+    if (totalRAM < 0) {
+        LOGW("URM_AUX_ROUTINE", "Failed to detect RAM, using default tier");
+        return "medium";
+    }
+
+    LOGI("URM_AUX_ROUTINE", "Detected Total RAM: " + std::to_string(totalRAM) + " MB");
+
+    // RAM tier thresholds (in MB)
+    if (totalRAM < 4096) {
+        LOGI("URM_AUX_ROUTINE", "RAM Tier: LOW (< 4GB)");
+        return "low";
+    } else if (totalRAM < 8192) {
+        LOGI("URM_AUX_ROUTINE", "RAM Tier: MEDIUM (4GB - 8GB)");
+        return "medium";
+    } else if (totalRAM < 65536) {
+        LOGI("URM_AUX_ROUTINE", "RAM Tier: HIGH (8GB - 64GB)");
+        return "high";
+    } else {
+        LOGI("URM_AUX_ROUTINE", "RAM Tier: VERY_HIGH (> 64GB)");
+        return "very_high";
+    }
+}

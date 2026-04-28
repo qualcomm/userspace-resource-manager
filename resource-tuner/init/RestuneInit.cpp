@@ -21,6 +21,7 @@
 #include "UrmSettings.h"
 #include "SignalRegistry.h"
 #include "RestuneParser.h"
+#include "RAMConfigGenerator.h"
 
 #define MAX_EXTENSION_LIB_HANDLES 6
 static void** extensionLibHandles = nullptr;
@@ -531,6 +532,14 @@ static ErrCode init(void* arg) {
     if(RC_IS_NOTOK(fetchCustomProperties())) {
         TYPELOGD(PROPERTY_RETRIEVAL_FAILED);
         return RC_MODULE_INIT_FAILURE;
+    }
+
+    // Detect RAM and apply RAM-based configurations
+    std::string ramTier = AuxRoutines::getRAMTier();
+    TYPELOGV(NOTIFY_RAM_TIER_DETECTED, ramTier.c_str());
+
+    if(!PropertiesRegistry::getInstance()->applyRAMBasedConfigs(ramTier)) {
+        LOGW("RESTUNE_SERVER_INIT", "Failed to apply RAM-based configurations, using defaults");
     }
 
     if(RC_IS_NOTOK(fetchMetaConfigs())) {

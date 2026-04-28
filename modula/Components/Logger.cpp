@@ -266,6 +266,14 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
 
             break;
 
+        case CommonMessageTypes::NOTIFY_RAM_TIER_DETECTED:
+            vsnprintf(buffer, sizeof(buffer),
+                      "Detected RAM Tier: [%s]", args);
+
+            Logger::log(LOG_INFO, "URM_SERVER_INIT", funcName, buffer);
+
+            break;
+
         case CommonMessageTypes::PULSE_MONITOR_INIT_FAILED:
             Logger::log(LOG_ERR, "URM_SERVER_INIT", funcName,
                         "Pulse Monitor Could not be started, " \
