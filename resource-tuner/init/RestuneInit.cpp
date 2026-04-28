@@ -6,6 +6,10 @@
 #include <string>
 #include <thread>
 #include <memory>
+#include <fstream>
+#include <sstream>
+#include <algorithm>
+#include <pthread.h>
 
 #include "Config.h"
 #include "ErrCodes.h"
@@ -77,6 +81,49 @@ static ErrCode loadExtensionsLib() {
         TYPELOGV(NOTIFY_EXTENSIONS_LIB_LOADED_SUCCESS, libsLoaded);
     }
     return RC_SUCCESS;
+}
+
+static uint64_t readTotalRamBytes() {
+    std::ifstream meminfo("/proc/meminfo");
+    std::string line;
+
+    while(std::getline(meminfo, line)) {
+        if(line.rfind("MemTotal:", 0) == 0) {
+            std::istringstream iss(line);
+            std::string key;
+            uint64_t memTotalKb = 0;
+            std::string unit;
+            iss >> key >> memTotalKb >> unit;
+            return memTotalKb * 1024ULL;
+        }
+    }
+
+    return 0ULL;
+}
+
+static size_t getConfiguredThreadStackSizeBytes() {
+    uint64_t ramBytes = readTotalRamBytes();
+    size_t stackSize = 16ULL * 1024ULL * 1024ULL;
+
+    if(ramBytes < (1ULL * 1024ULL * 1024ULL * 1024ULL)) {
+        stackSize = 2ULL * 1024ULL * 1024ULL;
+    } else if(ramBytes < (4ULL * 1024ULL * 1024ULL * 1024ULL)) {
+        stackSize = 4ULL * 1024ULL * 1024ULL;
+    } else if(ramBytes < (8ULL * 1024ULL * 1024ULL * 1024ULL)) {
+        stackSize = 8ULL * 1024ULL * 1024ULL;
+    }
+
+    size_t finalStackSize = std::max(stackSize, (size_t)PTHREAD_STACK_MIN);
+
+    // Log the RAM size and configured stack size
+    uint64_t ramMB = ramBytes / (1024ULL * 1024ULL);
+    uint64_t stackMB = finalStackSize / (1024ULL * 1024ULL);
+    LOGI("RESTUNE_THREAD_STACK",
+         "Total RAM: " + std::to_string(ramMB) + " MB, " \
+         "Configured Thread Stack Size: " + std::to_string(stackMB) + " MB (" + \
+         std::to_string(finalStackSize) + " bytes)");
+
+    return finalStackSize;
 }
 
 static void preAllocateMemory() {
@@ -425,14 +472,17 @@ static ErrCode fetchPerAppConfigs() {
 static ErrCode preAllocateWorkers() {
     uint32_t desiredThreadCapacity = UrmSettings::metaConfigs.mDesiredThreadCount;
     uint32_t maxScalingCapacity = UrmSettings::metaConfigs.mMaxScalingCapacity;
+    size_t threadStackSize = getConfiguredThreadStackSizeBytes();
 
     try {
         RequestReceiver::mRequestsThreadPool = new ThreadPool(desiredThreadCapacity,
-                                                              maxScalingCapacity);
+                                                              maxScalingCapacity,
+                                                              threadStackSize);
 
         // Allocate 2 extra threads for Pulse Monitor and Garbage Collector
         Timer::mTimerThreadPool = new ThreadPool(desiredThreadCapacity + 2,
-                                                 maxScalingCapacity);
+                                                 maxScalingCapacity,
+                                                 threadStackSize);
 
     } catch(const std::bad_alloc& e) {
         TYPELOGV(THREAD_POOL_CREATION_FAILURE, e.what());
