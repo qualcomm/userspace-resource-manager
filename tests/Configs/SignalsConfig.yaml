@@ -161,3 +161,13 @@ SignalConfigs:
       - {ResCode: "0x00ff000a", ResInfo: "0x00000100", Values: [1989]}  # logical cluster: 1
       - {ResCode: "0x00ff000a", ResInfo: "0x00000200", Values: [2012]}  # logical cluster: 2
       - {ResCode: "0x00ff000d", ResInfo: "0x00000000", Values: [802, 41128]}  # cgroup: audio
+
+  - SigId: "0x000b"
+    Category: "0x0d"
+    SigType: 27
+    Name: SIGNAL_WITH_SIGTYPE
+    Enable: true
+    Permissions: ["third_party", "system"]
+    Timeout: 10000
+    Resources:
+      - {ResCode: "0x00ff0004", ResInfo: "0x00000000", Values: [231]}

@@ -42,7 +42,7 @@ public:
 
     static int64_t generateUniqueHandle();
     static int64_t getCurrentTimeInMilliseconds();
-    static std::string toLowerCase(const std::string& str);
+    static void toLowerCase(std::string& str);
 };
 
 // Following are some client-lib centric utilities

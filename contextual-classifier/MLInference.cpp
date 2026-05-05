@@ -75,7 +75,7 @@ std::string MLInference::CleanTextPython(const std::string &input) {
 
     // Step 1: Convert to lowercase
     std::string line = input;
-    line = AuxRoutines::toLowerCase(line);
+    AuxRoutines::toLowerCase(line);
 
     // Step 2: Replace commas with spaces
     std::replace(line.begin(), line.end(), ',', ' ');

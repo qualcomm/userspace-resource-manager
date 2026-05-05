@@ -88,6 +88,7 @@ URM_TEST(SignalParsingTests, {
         E_ASSERT((signalInfo != nullptr));
         E_ASSERT((signalInfo->mSignalID == 0));
         E_ASSERT((signalInfo->mSignalCategory == 0x0d));
+        E_ASSERT((signalInfo->mSigType == 0));
         E_ASSERT((strcmp((const char*)signalInfo->mSignalName.data(), "TEST_SIGNAL_1") == 0));
         E_ASSERT((signalInfo->mTimeout == 4000));
 
@@ -184,6 +185,33 @@ URM_TEST(SignalParsingTests, {
         E_ASSERT((resource2->getValueAt(2) == 50));
         E_ASSERT((resource2->getValueAt(3) == 512));
         E_ASSERT((resource2->getResInfo() == 0));
+    }
+
+    {
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigById(CONSTRUCT_SIG_CODE(0x0d, 0x000b), 27);
+
+        E_ASSERT((signalInfo != nullptr));
+        E_ASSERT((signalInfo->mSignalID == 0x000b));
+        E_ASSERT((signalInfo->mSignalCategory == 0x0d));
+        E_ASSERT((signalInfo->mSigType == 27));
+        E_ASSERT((strcmp((const char*)signalInfo->mSignalName.data(), "SIGNAL_WITH_SIGTYPE") == 0));
+        E_ASSERT((signalInfo->mTimeout == 10000));
+
+        E_ASSERT((signalInfo->mPermissions != nullptr));
+        E_ASSERT((signalInfo->mDerivatives == nullptr));
+        E_ASSERT((signalInfo->mSignalResources != nullptr));
+
+        E_ASSERT((signalInfo->mPermissions->size() == 2));
+        E_ASSERT((signalInfo->mSignalResources->size() == 1));
+
+        E_ASSERT((signalInfo->mPermissions->at(0) == PERMISSION_THIRD_PARTY));
+        E_ASSERT((signalInfo->mPermissions->at(1) == PERMISSION_SYSTEM));
+
+        Resource* resource1 = signalInfo->mSignalResources->at(0);
+        E_ASSERT((resource1->getResCode() == 0x00ff0004));
+        E_ASSERT((resource1->getValuesCount() == 1));
+        E_ASSERT((resource1->getValueAt(0) == 231));
+        E_ASSERT((resource1->getResInfo() == 0));
     }
 })
 
