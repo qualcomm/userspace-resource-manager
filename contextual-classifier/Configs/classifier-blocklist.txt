@@ -1,4 +1,3 @@
-ls,cp,sh,mv,rm,mkdir,touch,find,irqbalance,cpuUsage.sh,which,sudo,cpu.sh,ln,uname
+ls,cp,sh,mv,rm,mkdir,touch,find,irqbalance,cpuUsage.sh,which,sudo,cpu.sh,ln,uname,gst-plugin-scan
 grep,sed,awk,cat,tail,head,less,more,sort,uniq,wc,cut,tr,tee
 ps,top,sleep,journalctl,xargs,logrotate,systemctl
-gst-plugin-scan
