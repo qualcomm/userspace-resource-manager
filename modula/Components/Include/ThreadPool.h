@@ -40,6 +40,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <exception>
+#include <pthread.h>
 
 #include "Utils.h"
 #include "Logger.h"
@@ -58,6 +59,8 @@ public:
 
 struct ThreadNode {
     std::thread* th;
+    pthread_t pthreadHandle;  // Store pthread handle when using custom stack size
+    int8_t usePthread;        // Flag to indicate if pthread is used
     ThreadNode* next;
 };
 
@@ -88,6 +91,7 @@ class ThreadPool {
 private:
     int32_t mDesiredPoolCapacity; //!< Desired or Base Thread Pool Capacity
     int32_t mMaxPoolCapacity; //!< Max Capacity upto which the Thread Pool can scale up.
+    size_t mThreadStackSize; //!< Stack size for each thread in bytes
 
     int32_t mCurrentThreadsCount;
     int32_t mTotalTasksCount;
@@ -105,7 +109,13 @@ private:
     int8_t threadRoutineHelper(int8_t isCoreThread);
 
 public:
-    ThreadPool(int32_t desiredCapacity, int32_t maxCapacity);
+    /**
+     * @brief Construct a new Thread Pool object
+     * @param desiredCapacity Desired number of threads in the pool
+     * @param maxCapacity Maximum capacity the pool can scale to
+     * @param stackSize Stack size for each thread in bytes (default: 0 = system default)
+     */
+    ThreadPool(int32_t desiredCapacity, int32_t maxCapacity, size_t stackSize = 0);
     ~ThreadPool();
 
     /**

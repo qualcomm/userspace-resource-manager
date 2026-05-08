@@ -147,6 +147,9 @@ int8_t ThreadPool::addNewThread(int8_t isCoreThread) {
     }
 
     thNode->next = nullptr;
+    thNode->th = nullptr;
+    thNode->pthreadHandle = 0;
+    thNode->usePthread = 0;
 
     try {
         auto threadStartRoutine = ([this](int8_t isCoreThread) {
@@ -158,7 +161,56 @@ int8_t ThreadPool::addNewThread(int8_t isCoreThread) {
         });
 
         try {
-            thNode->th = new std::thread(threadStartRoutine, isCoreThread);
+            // If custom stack size is specified, use pthread directly
+            if(this->mThreadStackSize > 0) {
+                pthread_attr_t attr;
+                if(pthread_attr_init(&attr) != 0) {
+                    FreeBlock<ThreadNode>(static_cast<void*>(thNode));
+                    throw std::system_error(errno, std::system_category(), "pthread_attr_init failed");
+                }
+
+                if(pthread_attr_setstacksize(&attr, this->mThreadStackSize) != 0) {
+                    pthread_attr_destroy(&attr);
+                    FreeBlock<ThreadNode>(static_cast<void*>(thNode));
+                    throw std::system_error(errno, std::system_category(), "pthread_attr_setstacksize failed");
+                }
+
+                // Create a wrapper structure to pass both this pointer and isCoreThread
+                struct ThreadArgs {
+                    ThreadPool* pool;
+                    int8_t isCoreThread;
+                };
+
+                ThreadArgs* args = new ThreadArgs{this, isCoreThread};
+
+                int result = pthread_create(&thNode->pthreadHandle, &attr,
+                    [](void* arg) -> void* {
+                        ThreadArgs* targs = static_cast<ThreadArgs*>(arg);
+                        ThreadPool* pool = targs->pool;
+                        int8_t isCoreThread = targs->isCoreThread;
+                        delete targs;
+
+                        while(true) {
+                            if(pool->threadRoutineHelper(isCoreThread)) {
+                                return nullptr;
+                            }
+                        }
+                    }, args);
+
+                pthread_attr_destroy(&attr);
+
+                if(result != 0) {
+                    delete args;
+                    FreeBlock<ThreadNode>(static_cast<void*>(thNode));
+                    throw std::system_error(result, std::system_category(), "pthread_create failed");
+                }
+
+                thNode->usePthread = 1;
+            } else {
+                // Use default std::thread creation
+                thNode->th = new std::thread(threadStartRoutine, isCoreThread);
+                thNode->usePthread = 0;
+            }
 
         } catch(const std::system_error& e) {
             FreeBlock<ThreadNode>(static_cast<void*>(thNode));
@@ -187,11 +239,12 @@ int8_t ThreadPool::addNewThread(int8_t isCoreThread) {
     return false;
 }
 
-ThreadPool::ThreadPool(int32_t desiredCapacity, int32_t maxCapacity) {
+ThreadPool::ThreadPool(int32_t desiredCapacity, int32_t maxCapacity, size_t stackSize) {
     this->mThreadQueueHead = this->mThreadQueueTail = nullptr;
 
     this->mDesiredPoolCapacity = desiredCapacity;
     this->mCurrentThreadsCount = 0;
+    this->mThreadStackSize = stackSize;
 
     if(maxCapacity < desiredCapacity) {
         maxCapacity = desiredCapacity;
@@ -225,7 +278,8 @@ ThreadPool::ThreadPool(int32_t desiredCapacity, int32_t maxCapacity) {
 
     LOGI("RESTUNE_THREAD_POOL",
          "Requested Thread Count = " + std::to_string(this->mDesiredPoolCapacity) + ", "  \
-         "Allocated Thread Count = " + std::to_string(this->mCurrentThreadsCount));
+         "Allocated Thread Count = " + std::to_string(this->mCurrentThreadsCount) + ", " \
+         "Stack Size = " + std::to_string(this->mThreadStackSize) + " bytes");
 
     this->mDesiredPoolCapacity = this->mCurrentThreadsCount;
 }
@@ -327,8 +381,16 @@ ThreadPool::~ThreadPool() {
             ThreadNode* nextNode = thNode->next;
 
             try {
-                if(thNode->th != nullptr && thNode->th->joinable()) {
-                    thNode->th->join();
+                if(thNode->usePthread) {
+                    // Join pthread
+                    if(thNode->pthreadHandle != 0) {
+                        pthread_join(thNode->pthreadHandle, nullptr);
+                    }
+                } else {
+                    // Join std::thread
+                    if(thNode->th != nullptr && thNode->th->joinable()) {
+                        thNode->th->join();
+                    }
                 }
             } catch(const std::exception& e) {}
 
