@@ -40,6 +40,18 @@ endif()
 
 add_library(RestuneCore ${SOURCES})
 
+# Convert build type to uppercase for case-insensitive comparison 
+# Handles variations like "Debug", "DEBUG", "debug" consistently
+string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPER_BUILD_TYPE)
+
+# Apply linker version script for Release builds only (excludes Debug and Test builds)
+# Controls symbol visibility to reduce memory footprint and library size
+if(NOT BUILD_TESTS AND NOT UPPER_BUILD_TYPE STREQUAL "DEBUG")
+	target_link_options(RestuneCore PRIVATE 
+    	"-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libRestuneCore.map"
+	)
+endif()
+
 set_target_properties(RestuneCore PROPERTIES VERSION 1.0.0 SOVERSION 1)
 target_link_libraries(RestuneCore PUBLIC ${LINK_LIBS})
 
