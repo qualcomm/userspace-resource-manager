@@ -10,11 +10,13 @@
 #include <unordered_set>
 
 #include "Utils.h"
-#include "UrmPlatformAL.h"
 #include "Logger.h"
 #include "Resource.h"
 #include "MemoryPool.h"
 #include "UrmSettings.h"
+#include "UrmPlatformAL.h"
+
+#define NSIG_PLACEHOLDER std::numeric_limits<int32_t>::min();
 
 /**
  * @struct SignalInfo

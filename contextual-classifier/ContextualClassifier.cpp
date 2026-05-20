@@ -24,7 +24,7 @@
 #include "ContextualClassifier.h"
 #include "ClientGarbageCollector.h"
 
-#define CLASSIFIER_TAG "CONTEXTUAL_CLASSIFIER"
+#define FILE_TAG "CONTEXTUAL_CLASSIFIER"
 #define CLASSIFIER_CONFIGS_DIR "/etc/urm/classifier/"
 
 static const std::string FT_MODEL_PATH =
@@ -40,22 +40,30 @@ static const std::string ALLOW_LIST_PATH =
 #include "FeaturePruner.h"
 
 // MLInference
-Inference *ContextualClassifier::GetInferenceObject() {
+Inference *ContextualClassifier::getInferenceObject() {
     return (new MLInference(FT_MODEL_PATH));
 }
 #else
 
 // Generic / Stub Inference Object
-Inference *ContextualClassifier::GetInferenceObject() {
+Inference *ContextualClassifier::getInferenceObject() {
     return (new Inference(FT_MODEL_PATH));
 }
 #endif
 
+typedef struct {
+    pid_t mPid;
+    pid_t mTgid;
+} AppLaunchInfo;
+
 static ContextualClassifier *gClassifier = nullptr;
 static const int32_t pendingQueueControlSize = 30;
+static const int32_t classifierPoolSize = 3;
 
 ContextualClassifier::ContextualClassifier() {
-    this->mInference = GetInferenceObject();
+    this->mCurInvalidateTag = 0;
+    this->mInference = this->getInferenceObject();
+    this->mClassifierPool = new ThreadPool(classifierPoolSize, classifierPoolSize);
 }
 
 void ContextualClassifier::untuneRequestHelper(int64_t handle) {
@@ -97,18 +105,17 @@ static ResIterable* createMovePidResource(int32_t cGroupdId, pid_t pid) {
     return resIterable;
 }
 
-static Request* createTuneRequestFromSignal(uint32_t sigId,
-                                            uint32_t sigType,
-                                            pid_t incomingPID,
-                                            pid_t incomingTID,
-                                            int32_t numArgs,
-                                            int32_t* args) {
+static Request* fillSignal(uint32_t sigId,
+                           uint32_t sigType,
+                           pid_t incomingPID,
+                           pid_t incomingTID,
+                           int32_t numArgs,
+                           int32_t* args) {
     try {
         std::shared_ptr<SignalRegistry> sigRegistry = SignalRegistry::getInstance();
 
         // Check if a Signal with the given ID exists in the Registry
         SignalInfo* signalInfo = sigRegistry->getSignalConfigById(sigId, sigType);
-
         if(signalInfo == nullptr) return nullptr;
 
         Request* request = MPLACED(Request);
@@ -135,7 +142,7 @@ static Request* createTuneRequestFromSignal(uint32_t sigId,
             // fill placeholders if any
             int32_t listIndex = 0;
             for(int32_t j = 0; j < resource->getValuesCount(); j++) {
-                if(resource->getValueAt(j) == -1) {
+                if(resource->getValueAt(j) == NSIG_PLACEHOLDER) {
                     if(args == nullptr) return nullptr;
                     if(listIndex >= 0 && listIndex < numArgs) {
                         resource->setValueAt(j, args[listIndex]);
@@ -156,14 +163,6 @@ static Request* createTuneRequestFromSignal(uint32_t sigId,
     }
 
     return nullptr;
-}
-
-ContextualClassifier::~ContextualClassifier() {
-    this->Terminate();
-    if(this->mInference) {
-		delete this->mInference;
-        this->mInference = NULL;
-	}
 }
 
 ErrCode ContextualClassifier::Init() {
@@ -199,6 +198,7 @@ ErrCode ContextualClassifier::Terminate() {
 
     std::unique_lock<std::mutex> lock(this->mQueueMutex);
     this->mNeedExit = true;
+
     // Clear any pending PIDs so the worker doesn't see stale entries
     while(!this->mPendingEv.empty()) {
         this->mPendingEv.pop();
@@ -216,6 +216,85 @@ ErrCode ContextualClassifier::Terminate() {
     }
 
     return RC_SUCCESS;
+}
+
+void ContextualClassifier::classifyAndProvision(void* context) {
+    if(context == nullptr) return;
+    AppLaunchInfo* appLaunchInfo = static_cast<AppLaunchInfo*>(context);
+
+    pid_t pid = appLaunchInfo->mPid;
+    pid_t tgid = appLaunchInfo->mTgid;
+
+    if(AuxRoutines::fetchComm(pid) != 0) {
+        return;
+    }
+
+    // Step 1:
+    // - Move the process to focused-cgroup, Also involves removing the process
+    //  already there from the cgroup.
+    // - Move the "threads" from per-app config to appropriate cgroups
+    this->MoveAppThreadsToCGroup(pid, tgid, comm, FOCUSED_CGROUP_IDENTIFIER);
+
+    // Step 2:
+    // Configure any per-app config specified signals.
+    std::vector<uint64_t> signalsNeeded;
+    AppConfig* appConfig = AppConfigs::getInstance()->getAppConfig(comm);
+    if(appConfig != nullptr && appConfig->mSignalCodes != nullptr) {
+        // Go over the list of proc names (comm) and get their pids
+        for(int32_t i = 0; i < appConfig->mNumSignals; i++) {
+            signalsNeeded.push_back(appConfig->mSignalCodes[i]);
+        }
+    }
+
+    // Step 3: Figure out workload type
+    TYPELOGV(NOTIFY_CLASSIFICATION_START, processPid, comm.c_str());
+    int32_t contextType = mInference->Classify(processPid);
+    if(contextType == CC_IGNORE) {
+        // Ignore and wait for next event
+        return;
+    }
+
+    // Identify if any signal configuration exists
+    // Will return the sigID based on the workload
+    // For example: game, browser, multimedia
+    uint32_t sigId = this->GetSignalIDForWorkload(contextType);
+    uint32_t sigType = DEFAULT_SIGNAL_TYPE;
+
+    // Step 4: If the post processing block exists, call it
+    // It might provide us a more specific sigID or sigType
+    PostProcessingCallback postCb =
+        Extensions::getPostProcessingCallback(comm);
+    if(postCb != nullptr) {
+        PostProcessCBData postProcessData = {
+            .mPid = pid,
+            .mSigId = sigId,
+            .mSigType = sigType,
+            .mNumArgs = numArgs,
+            .mArgs = args,
+        };
+        postCb((void*)&postProcessData);
+    }
+
+    // Step 5: Perform the needed configurations
+    signalsNeeded.push_back(CONSTRUCT_SIG_CODE(sigId, sigType));
+    for(uint64_t sigCode: signalsNeeded) {
+        Request* request = fillSignal(sigCode, pid, tid, numArgs, args);
+        if(request != nullptr) {
+            if(request->getResourcesCount() > 0) {
+                // Record:
+                this->mCurrRestuneHandles.push_back(request->getHandle());
+
+                // fast path to Request Queue
+                submitResProvisionRequest(request, false);
+
+            } else {
+                Request::cleanUpRequest(request);
+            }
+        }
+    }
+
+    // Clean Up
+    FreeBlock<AppLaunchInfo>(appLaunchInfo);
 }
 
 void ContextualClassifier::ClassifierMain() {
@@ -240,71 +319,27 @@ void ContextualClassifier::ClassifierMain() {
 
         if(ev.type == CC_APP_OPEN) {
             std::string comm;
-            uint32_t sigId = URM_SIG_APP_OPEN;
-            uint32_t sigType = DEFAULT_SIGNAL_TYPE;
-            int32_t numArgs = 0;
-            int32_t* args = nullptr;
-            uint32_t ctxDetails = 0U;
+            if(ev.pid == -1) {
+                continue;
+            }
 
-            if(ev.pid != -1) {
-                if(AuxRoutines::fetchComm(ev.pid, comm) != 0) {
-                    continue;
+            // Untune any Configurations from the last proc-invocation
+            if(UrmSettings::metaConfigs.mAcceptMode & ACCEPT_AND_REPLACE) {
+                ClientGarbageCollector::getInstance()->batchHandleCleanup(this->mCurInvalidateTag);
+                this->mCurInvalidateTag++;
+            }
+
+            try {
+                AppLaunchInfo* appLaunchInfo = MPLACED(AppLaunchInfo);
+                appLaunchInfo->mPid = ev.pid;
+                appLaunchInfo->mTgid = ev.tgid;
+
+                if(!this->mClassifierPool->enqueueTask(classifyAndProvision, appLaunchInfo)) {
+                    TYPELOGD(THREAD_POOL_ENQUEUE_FAILURE);
+                    FreeBlock<AppLaunchInfo>(appLaunchInfo);
                 }
-
-                // Step 1: Figure out workload type
-                int32_t contextType =
-                    this->ClassifyProcess(ev.pid, ev.tgid, comm, ctxDetails);
-				if(contextType == CC_IGNORE) {
-					// Ignore and wait for next event
-					continue;
-				}
-
-                // Identify if any signal configuration exists
-                // Will return the sigID based on the workload
-                // For example: game, browser, multimedia
-                sigId = this->GetSignalIDForWorkload(contextType);
-
-                // Step 2:
-                // Untune any Configurations from the last proc-invocation
-                for(int64_t handle: this->mCurrRestuneHandles) {
-                    if(handle > 0) {
-                        this->untuneRequestHelper(handle);
-                    }
-                }
-                this->mCurrRestuneHandles.clear();
-
-                // Step 3:
-                // - Move the process to focused-cgroup, Also involves removing the process
-                //  already there from the cgroup.
-                // - Move the "threads" from per-app config to appropriate cgroups
-                this->MoveAppThreadsToCGroup(ev.pid, ev.tgid, comm, FOCUSED_CGROUP_IDENTIFIER);
-
-                // Step 4:
-                // Configure any per-app config specified signals.
-                this->configureAppSignals(ev.pid, ev.tgid, comm);
-
-                // Step 5: If the post processing block exists, call it
-                // It might provide us a more specific sigID or sigType
-                PostProcessingCallback postCb =
-                    Extensions::getPostProcessingCallback(comm);
-                if(postCb != nullptr) {
-                    PostProcessCBData postProcessData = {
-                        .mPid = ev.pid,
-                        .mSigId = sigId,
-                        .mSigType = sigType,
-                        .mNumArgs = numArgs,
-                        .mArgs = args,
-                    };
-                    postCb((void*)&postProcessData);
-
-                    sigId = postProcessData.mSigId;
-                    sigType = postProcessData.mSigType;
-                    numArgs = postProcessData.mNumArgs;
-                    args = postProcessData.mArgs;
-                }
-
-                // Apply actions, call tuneSignal
-                this->ApplyActions(sigId, sigType, ev.pid, ev.tgid, numArgs, args);
+            } catch(const std::exception& e) {
+                continue;
             }
         } else if(ev.type == CC_APP_CLOSE) {
             // No Action Needed, Pulse Monitor to take care of cleanup
@@ -320,11 +355,7 @@ int32_t ContextualClassifier::HandleProcEv() {
 
     while(!this->mNeedExit) {
         ProcEvent ev{};
-        rc = mNetLinkComm.recvEvent(ev);
-        if(rc == CC_IGNORE) {
-            continue;
-        }
-        if(rc == -1) {
+        if((rc = mNetLinkComm.recvEvent(ev)) == -1) {
             if(errno == EINTR) {
                 continue;
             }
@@ -335,6 +366,10 @@ int32_t ContextualClassifier::HandleProcEv() {
 
             // Error would have already been logged by this point.
             return -1;
+        }
+
+        if(rc == CC_IGNORE) {
+            continue;
         }
 
         // Process still up?
@@ -380,60 +415,6 @@ int32_t ContextualClassifier::HandleProcEv() {
     return 0;
 }
 
-int32_t ContextualClassifier::ClassifyProcess(pid_t processPid,
-                                              pid_t processTgid,
-                                              const std::string &comm,
-                                              uint32_t &ctxDetails) {
-    (void)processTgid;
-    (void)ctxDetails;
-
-    CC_TYPE context = CC_APP;
-
-    // Check if the process is still alive
-    if(!AuxRoutines::fileExists(COMM(processPid))) {
-        LOGD(CLASSIFIER_TAG,
-             "Skipping inference, process is dead: " + comm);
-        return CC_IGNORE;
-    }
-
-    LOGD(CLASSIFIER_TAG,
-         "Starting classification for PID: "
-            + std::to_string(processPid)
-            + ", " + comm
-        );
-    context = mInference->Classify(processPid);
-    return context;
-}
-
-void ContextualClassifier::ApplyActions(uint32_t sigId,
-                                        uint32_t sigType,
-                                        pid_t incomingPID,
-                                        pid_t incomingTID,
-                                        int32_t numArgs,
-                                        int32_t* args) {
-    Request* request =
-        createTuneRequestFromSignal(sigId, sigType, incomingPID, incomingTID, numArgs, args);
-    if(request != nullptr) {
-        if(request->getResourcesCount() > 0) {
-            // Record:
-            this->mCurrRestuneHandles.push_back(request->getHandle());
-
-            // fast path to Request Queue
-            submitResProvisionRequest(request, false);
-
-        } else {
-            Request::cleanUpRequest(request);
-        }
-    }
-}
-
-void ContextualClassifier::RemoveActions(pid_t processPid, pid_t processTgid) {
-	(void)processPid;
-    (void)processTgid;
-
-    return;
-}
-
 uint32_t ContextualClassifier::GetSignalIDForWorkload(int32_t contextType) {
     switch(contextType) {
         case CC_MULTIMEDIA:
@@ -461,8 +442,7 @@ void ContextualClassifier::LoadIgnoredProcesses() {
 
     std::ifstream file(filePath);
     if(!file.is_open()) {
-        LOGW(CLASSIFIER_TAG,
-             "Could not open process filter file: " + filePath);
+        TYPELOGV(FILE_OPEN_FAIL, filePath.c_str(), strerror(errno));
         return;
     }
 
@@ -487,7 +467,6 @@ void ContextualClassifier::LoadIgnoredProcesses() {
             }
         }
     }
-    LOGI(CLASSIFIER_TAG, "Loaded filter processes");
 }
 
 int8_t ContextualClassifier::shouldProcBeIgnored(int32_t evType, pid_t pid) {
@@ -566,45 +545,21 @@ void ContextualClassifier::MoveAppThreadsToCGroup(pid_t incomingPID,
         }
 
     } catch(const std::exception& e) {
-        LOGE(CLASSIFIER_TAG,
-             "Failed to move per-app threads to cgroup, Error: " + std::string(e.what()));
+        TYPELOGV(MOV_TASK_CGRP_FAILURE, std::string(e.what()));
     }
 }
 
-void ContextualClassifier::configureAppSignals(pid_t incomingPID,
-                                               pid_t incomingTID,
-                                               const std::string& comm) {
-    try {
-        // Configure any associated signal
-        AppConfig* appConfig = AppConfigs::getInstance()->getAppConfig(comm);
-        if(appConfig != nullptr && appConfig->mSignalCodes != nullptr) {
-            int32_t numSignals = appConfig->mNumSignals;
-            // Go over the list of proc names (comm) and get their pids
-            for(int32_t i = 0; i < numSignals; i++) {
-                Request* request = createTuneRequestFromSignal(
-                    appConfig->mSignalCodes[i],
-                    0,
-                    incomingPID,
-                    incomingTID,
-                    0,
-                    nullptr);
-
-                if(request != nullptr) {
-                    if(request->getResourcesCount() > 0) {
-                        // fast path to Request Queue
-                        this->mCurrRestuneHandles.push_back(request->getHandle());
-                        submitResProvisionRequest(request, false);
-
-                    } else {
-                        Request::cleanUpRequest(request);
-                    }
-                }
-            }
-        }
-    } catch(const std::exception& e) {
-        LOGE(CLASSIFIER_TAG,
-             "Failed to acquire per-app config signal, Error: " + std::string(e.what()));
+ContextualClassifier::~ContextualClassifier() {
+    if(this->mClassifierPool != nullptr) {
+        delete this->mClassifierPool;
+        this->mClassifierPool = nullptr;
     }
+
+    this->Terminate();
+    if(this->mInference) {
+		delete this->mInference;
+        this->mInference = NULL;
+	}
 }
 
 // Public C interface exported from the contextual-classifier shared library.
