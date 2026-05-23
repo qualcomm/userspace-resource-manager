@@ -12,9 +12,6 @@ InitConfigs:
     - Name: "user.slice"
       Create: false
       ID: 3
-    - Name: "focused.slice/app.slice"
+    - Name: "urm.slice/focused.apps"
       Create: true
       ID: 4
-    - Name: "focused.slice"
-      Create: false
-      ID: 5

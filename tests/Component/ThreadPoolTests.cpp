@@ -8,6 +8,7 @@
 #include "URMTests.h"
 
 #define TEST_CLASS "COMPONENT"
+#define TEST_SUBCAT "THREAD_POOL"
 
 static std::mutex taskLock;
 static std::condition_variable taskCV;

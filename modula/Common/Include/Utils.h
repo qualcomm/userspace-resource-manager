@@ -112,6 +112,8 @@ typedef void (*MessageReceivedCallback)(int32_t, MsgForwardInfo*);
 // System Properties
 #define MAX_CONCURRENT_REQUESTS "resource_tuner.maximum.concurrent.requests"
 #define MAX_RESOURCES_PER_REQUEST "resource_tuner.maximum.resources.per.request"
+#define THREAD_POOL_DESIRED_CAPACITY "resource_tuner.thread_pool.desired_capacity"
+#define THREAD_POOL_MAX_SCALING_CAPACITY "resource_tuner.thread_pool.max_scaling_capacity"
 #define PULSE_MONITOR_DURATION "resource_tuner.pulse.duration"
 #define GARBAGE_COLLECTOR_DURATION "resource_tuner.garbage_collection.duration"
 #define GARBAGE_COLLECTOR_BATCH_SIZE "resource_tuner.garbage_collection.batch_size"

@@ -7,6 +7,8 @@
 #include "MemoryPool.h"
 #include "TestAggregator.h"
 
+#define TEST_SUBCAT "REQUEST_MAP"
+
 static void Init() {
     static int8_t initDone = false;
     if(!initDone) {

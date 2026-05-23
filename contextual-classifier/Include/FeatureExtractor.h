@@ -54,7 +54,7 @@ private:
 	static std::vector<std::string>
 	ExtractProcessNameAndMessage(const std::vector<std::string> &journalLines);
 
-	static bool IsValidPidViaProc(pid_t pid);
+	static int8_t IsValidPidViaProc(pid_t pid);
 
 public:
 	FeatureExtractor() {
@@ -69,7 +69,7 @@ public:
 	static int CollectAndStoreData(
 		pid_t pid,
 		std::map<std::string, std::string> &output_data,
-		bool dump_csv);
+		int8_t dump_csv);
 };
 
 #endif // FEATURE_EXTRACTOR_H

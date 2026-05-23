@@ -10,6 +10,7 @@
 #include "URMTests.h"
 
 #define TEST_CLASS "COMPONENT"
+#define TEST_SUBCAT "DEVICE_INFO_FETCH"
 
 static TestBaseline baseline;
 
@@ -17,7 +18,6 @@ static void Init() {
     static int8_t initDone = false;
     if(!initDone) {
         initDone = true;
-        baseline.fetchBaseline();
         TargetRegistry::getInstance()->readTargetInfo();
     }
 }
@@ -32,7 +32,7 @@ URM_TEST(TestDeviceClusterCount, {
 
     if(expectedClusterCount == -1) {
         LOG_SKIP("Baseline Could not be fetched for the Target, skipping");
-        return;
+        SKIP;
     }
 
     E_ASSERT((clusterCount == expectedClusterCount));
@@ -48,7 +48,7 @@ URM_TEST(TestDeviceCoreCount, {
 
     if(expectedCoreCount == -1) {
         LOG_SKIP("Baseline Could not be fetched for the Target, skipping");
-        return;
+        SKIP;
     }
 
     E_ASSERT((coreCount == expectedCoreCount));

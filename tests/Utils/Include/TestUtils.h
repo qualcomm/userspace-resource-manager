@@ -49,14 +49,6 @@ static std::string getTimestamp() {
 #define LOG_BASE "["<<getTimestamp()<<"] "<<__func__<<":"<<__LINE__<<") "
 #define LOG_SKIP(message) std::cout<<"["<<getTimestamp()<<"] "<<__func__<<": Skipped, Reason: "<<message<<std::endl;
 
-#define RUN_TEST(test)                                                              \
-do {                                                                                \
-    std::cout<<"["<<getTimestamp()<<"] Running Test: "<<#test<<std::endl;           \
-    test();                                                                         \
-    std::cout<<"["<<getTimestamp()<<"] "<<#test<<": Run Successful"<<std::endl;     \
-    std::cout<<"--------------------------------------------------"<<std::endl;     \
-} while(false);                                                                     \
-
 #define C_STOI(value) ({                                                            \
     int32_t parsedValue = -1;                                                       \
     try {                                                                           \

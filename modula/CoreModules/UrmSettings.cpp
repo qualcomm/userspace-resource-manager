@@ -57,7 +57,7 @@ const std::string UrmSettings::mDeviceNamePath =
 const std::string UrmSettings::mBaseCGroupPath =
                                     "/sys/fs/cgroup/";
 const std::string UrmSettings::focusedCgroup =
-                                    "focused.slice";
+                                    "urm.slice/focused.apps";
 
 const std::string UrmSettings::mPersistenceFile =
                                     "/etc/urm/data/resource_original_values.txt";

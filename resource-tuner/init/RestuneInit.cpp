@@ -139,6 +139,7 @@ static ErrCode fetchMetaConfigs() {
     try {
         // Fetch target Name
         UrmSettings::targetConfigs.targetName = AuxRoutines::getMachineName();
+        AuxRoutines::toLowerCase(UrmSettings::targetConfigs.targetName);
         TYPELOGV(NOTIFY_CURRENT_TARGET_NAME, UrmSettings::targetConfigs.targetName.c_str());
 
         submitPropGetRequest(MAX_CONCURRENT_REQUESTS, resultBuffer, "50");
@@ -146,6 +147,12 @@ static ErrCode fetchMetaConfigs() {
 
         submitPropGetRequest(MAX_RESOURCES_PER_REQUEST, resultBuffer, "5");
         UrmSettings::metaConfigs.mMaxResourcesPerRequest = (uint32_t)std::stol(resultBuffer);
+
+        submitPropGetRequest(THREAD_POOL_DESIRED_CAPACITY, resultBuffer, "5");
+        UrmSettings::metaConfigs.mDesiredThreadCount = (uint32_t)std::stol(resultBuffer);
+
+        submitPropGetRequest(THREAD_POOL_MAX_SCALING_CAPACITY, resultBuffer, "10");
+        UrmSettings::metaConfigs.mMaxScalingCapacity = (uint32_t)std::stol(resultBuffer);
 
         submitPropGetRequest(PULSE_MONITOR_DURATION, resultBuffer, "60000");
         UrmSettings::metaConfigs.mPulseDuration = (uint32_t)std::stol(resultBuffer);
@@ -164,6 +171,17 @@ static ErrCode fetchMetaConfigs() {
 
         submitPropGetRequest(RATE_LIMITER_REWARD_FACTOR, resultBuffer, "0.4");
         UrmSettings::metaConfigs.mRewardFactor = std::stod(resultBuffer);
+
+        submitPropGetRequest(URM_MAX_PLUGIN_COUNT, resultBuffer, "3");
+        UrmSettings::metaConfigs.mPluginCount = (uint32_t)std::stol(resultBuffer);
+
+        if(UrmSettings::metaConfigs.mDesiredThreadCount < 1) {
+            UrmSettings::metaConfigs.mDesiredThreadCount = 5; // Reset to default
+        }
+
+        if(UrmSettings::metaConfigs.mMaxScalingCapacity > 100) {
+            UrmSettings::metaConfigs.mMaxScalingCapacity = 100;
+        }
 
     } catch(const std::invalid_argument& e) {
         TYPELOGV(META_CONFIG_PARSE_FAILURE, e.what());
@@ -406,8 +424,8 @@ static ErrCode fetchPerAppConfigs() {
 
 // Initialize Request and Timer ThreadPools
 static ErrCode preAllocateWorkers() {
-    int32_t desiredThreadCapacity = UrmSettings::desiredThreadCount;
-    int32_t maxScalingCapacity = UrmSettings::maxScalingCapacity;
+    uint32_t desiredThreadCapacity = UrmSettings::metaConfigs.mDesiredThreadCount;
+    uint32_t maxScalingCapacity = UrmSettings::metaConfigs.mMaxScalingCapacity;
 
     try {
         RequestReceiver::mRequestsThreadPool = new ThreadPool(desiredThreadCapacity,
@@ -466,8 +484,9 @@ static void configureFocusedSlice() {
         {"cgroup.max.descendants", "10"},
     };
 
+    std::string cGroupPath = UrmSettings::focusedCgroup;
     for(size_t i = 0; i < sizeof(cgroupParam) / sizeof(cgroupParam[0]); i++) {
-        setCgroupParam(UrmSettings::focusedCgroup.c_str(), cgroupParam[i][0], cgroupParam[i][1]);
+        setCgroupParam(cGroupPath, cgroupParam[i][0], cgroupParam[i][1]);
     }
 }
 
@@ -580,7 +599,7 @@ static ErrCode init(void* arg) {
     // Initialize external features
     ExtFeaturesRegistry::getInstance()->initializeFeatures();
 
-    // Configure focused.slice parameters
+    // Configure urm.slice parameters
     configureFocusedSlice();
 
     // Create the Processor thread:
@@ -594,7 +613,7 @@ static ErrCode init(void* arg) {
     // Wait for the thread to initialize
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-     // Start the Pulse Monitor and Garbage Collector Daemon Threads
+    // Start the Pulse Monitor and Garbage Collector Daemon Threads
     if(RC_IS_NOTOK(startPulseMonitorDaemon())) {
         TYPELOGD(PULSE_MONITOR_INIT_FAILED);
         return RC_MODULE_INIT_FAILURE;

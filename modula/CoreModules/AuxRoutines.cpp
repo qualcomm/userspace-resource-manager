@@ -89,8 +89,8 @@ int8_t AuxRoutines::fileExists(const std::string& filePath) {
     return access(filePath.c_str(), F_OK) == 0;
 }
 
-int32_t AuxRoutines::createProcess() {
-    return fork();
+int8_t AuxRoutines::fileWritable(const std::string& filePath) {
+    return access(filePath.c_str(), W_OK) == 0;
 }
 
 std::string AuxRoutines::getMachineName() {
@@ -128,19 +128,42 @@ pid_t AuxRoutines::fetchPid(const std::string& process_name) {
     }
 
     closedir(proc_dir);
-    return -1; // Not found
+    return -1;
 }
 
 int8_t AuxRoutines::getProcName(pid_t pid, std::string& procName) {
-    std::string comm = "";
-    std::string commPath = COMM(pid);
-    std::ifstream commFile(commPath);
+    std::string cmdlinePath = "/proc/" + std::to_string(pid) + "/cmdline";
+    std::ifstream cmdlineFile(cmdlinePath);
+    
+    if(cmdlineFile.is_open()) {
+        std::string cmdline;
+        std::getline(cmdlineFile, cmdline, '\0');
+        
+        if(!cmdline.empty()) {
+            size_t lastSlash = cmdline.find_last_of('/');
+            if(lastSlash != std::string::npos) {
+                procName = cmdline.substr(lastSlash + 1);
+            } else {
+                procName = cmdline;
+            }
+            
+            size_t first = procName.find_first_not_of(" \t\n\r");
+            if(first != std::string::npos) {
+                size_t last = procName.find_last_not_of(" \t\n\r");
+                procName = procName.substr(first, (last - first + 1));
+            }
+            
+            return true;
+        }
+    }
 
-    std::string processName = "";
+    std::string commPath = "/proc/" + std::to_string(pid) + "/comm";
+    std::ifstream commFile(commPath);
+    
     if(commFile.is_open()) {
+        std::string processName;
         std::getline(commFile, processName);
 
-        // Trim
         size_t first = processName.find_first_not_of(" \t\n\r");
         if(first != std::string::npos) {
             size_t last = processName.find_last_not_of(" \t\n\r");
@@ -245,6 +268,11 @@ int64_t AuxRoutines::getCurrentTimeInMilliseconds() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 }
 
+void AuxRoutines::toLowerCase(std::string& str) {
+    std::transform(str.begin(), str.end(), str.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+}
+
 MinLRUCache::MinLRUCache(int32_t maxSize) {
     this->mMaxSize = maxSize;
     this->mDataSet.reserve(this->mMaxSize);
@@ -263,11 +291,4 @@ void MinLRUCache::insert(int64_t data) {
 
 int8_t MinLRUCache::isPresent(int64_t data) {
     return (this->mDataSet.find(data) != this->mDataSet.end());
-}
-
-std::string AuxRoutines::toLowerCase(const std::string& str) {
-    std::string result = str;
-    std::transform(result.begin(), result.end(), result.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
-    return result;
 }

@@ -6,6 +6,7 @@
 #include <cstdarg>
 
 #include "Logger.h"
+#include "Config.h"
 #include "ComponentRegistry.h"
 
 // Helper function from ContextualClassifier to format strings
@@ -36,11 +37,11 @@ static ErrCode init(void *arg = nullptr) {
     }
 
     // This should match the installed path of libContextualClassifier.so
-    const char *so_name = "/usr/lib/libContextualClassifier.so.1";
-    g_cc_handle = dlopen(so_name, RTLD_NOW);
+    std::string so_name = std::string(LIBDIR_PATH) + "/libContextualClassifier.so.1";
+    g_cc_handle = dlopen(so_name.c_str(), RTLD_NOW);
     if (!g_cc_handle) {
         LOGE(CLASSIFIER_TAG,
-             format_string("Failed to dlopen %s: %s", so_name, dlerror()));
+             format_string("Failed to dlopen %s: %s", so_name.c_str(), dlerror()));
         // Do not fail the entire URM; just disable classifier functionality.
         return RC_SUCCESS;
     }
@@ -51,7 +52,7 @@ static ErrCode init(void *arg = nullptr) {
     const char *err = dlerror();
     if (err != nullptr || !g_cc_init) {
         LOGE(CLASSIFIER_TAG,
-             format_string("Failed to resolve ccInit in %s: %s", so_name,
+             format_string("Failed to resolve ccInit in %s: %s", so_name.c_str(),
                            err ? err : "unknown"));
         dlclose(g_cc_handle);
         g_cc_handle = nullptr;
@@ -64,7 +65,7 @@ static ErrCode init(void *arg = nullptr) {
     err = dlerror();
     if (err != nullptr || !g_cc_term) {
         LOGE(CLASSIFIER_TAG,
-             format_string("Failed to resolve ccTerminate in %s: %s", so_name,
+             format_string("Failed to resolve ccTerminate in %s: %s", so_name.c_str(),
                            err ? err : "unknown"));
         dlclose(g_cc_handle);
         g_cc_handle = nullptr;

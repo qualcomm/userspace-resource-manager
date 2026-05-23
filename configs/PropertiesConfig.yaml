@@ -8,6 +8,12 @@ PropertyConfigs:
   - Name: resource_tuner.maximum.resources.per.request
     Value: "20"
 
+  - Name: resource_tuner.thread_pool.desired_capacity
+    Value: "5"
+  
+  - Name: resource_tuner.thread_pool.max_scaling_capacity
+    Value: "10"
+
   - Name: resource_tuner.pulse.duration
     Value: "23000"
 

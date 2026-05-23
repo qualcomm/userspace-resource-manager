@@ -30,17 +30,17 @@ public:
 
 	static void normalize_numbers_inplace(std::vector<std::string> &tokens);
 
-	static bool isDigitsOnly(const std::string &str);
+	static int8_t isDigitsOnly(const std::string &str);
 
-	static bool hasDigit(const std::string &str);
+	static int8_t hasDigit(const std::string &str);
 
-	static bool isAllSpecialChars(const std::string &token);
+	static int8_t isAllSpecialChars(const std::string &token);
 
 	static std::string removeDatesAndTimesFromToken(const std::string &input);
 
 	static std::string removePunctuation(const std::string &s);
 
-	static bool isSingleCharToken(const std::string &s);
+	static int8_t isSingleCharToken(const std::string &s);
 
 	static std::unordered_map<std::string, std::unordered_set<std::string>>
 	loadIgnoreMap(const std::string &filename,

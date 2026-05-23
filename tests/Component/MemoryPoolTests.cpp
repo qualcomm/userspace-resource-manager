@@ -6,6 +6,7 @@
 #include "URMTests.h"
 
 #define TEST_CLASS "COMPONENT"
+#define TEST_SUBCAT "MEMORY_POOL"
 
 // Test structure, used for allocation testing
 struct TestBuffer {

@@ -10,4 +10,5 @@ void registerWithResourceTuner() {
     URM_REGISTER_CONFIG(SIGNALS_CONFIG, "/etc/urm/tests/configs/SignalsConfig.yaml")
     URM_REGISTER_CONFIG(TARGET_CONFIG, "/etc/urm/tests/configs/TargetConfig.yaml")
     URM_REGISTER_CONFIG(INIT_CONFIG, "/etc/urm/tests/configs/InitConfig.yaml")
+    URM_REGISTER_CONFIG(APP_CONFIG, "/etc/urm/tests/configs/PerApp.yaml")
 }

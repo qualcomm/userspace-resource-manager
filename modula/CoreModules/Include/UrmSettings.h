@@ -16,6 +16,8 @@
 typedef struct {
     uint32_t mMaxConcurrentRequests;
     uint32_t mMaxResourcesPerRequest;
+    uint32_t mDesiredThreadCount;
+    uint32_t mMaxScalingCapacity;
     uint32_t mListeningPort;
     uint32_t mPulseDuration;
     uint32_t mClientGarbageCollectorDuration;
@@ -41,8 +43,6 @@ private:
     static int32_t serverOnlineStatus;
 
 public:
-    static const int32_t desiredThreadCount = 5;
-    static const int32_t maxScalingCapacity = 10;
 
     static const std::string mTargetConfDir;
 

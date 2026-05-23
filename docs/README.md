@@ -53,7 +53,8 @@
 - [6. Customizations & Extensions](#6-customizations--extensions)
   - [6.1. Extensions Interface](#61-extensions-interface)
     - [6.1.1. Registering Resource Callbacks](#611-registering-resource-callbacks)
-    - [6.1.2. Registering Custom Configs](#612-registering-custom-configs)
+    - [6.1.2. Fetching Target Information](#612-fetching-target-information)
+    - [6.1.3. Registering Custom Configs](#613-registering-custom-configs)
   - [6.2. Custom Configs](#62-custom-configs)
     - [6.2.1. Initialization Configs](#621-initialization-configs)
     - [6.2.2. Resource Configs](#622-resource-configs)
@@ -320,7 +321,7 @@ Logical IDs for cgroups. Configs of cgroups map in InitConfigs->CgroupsInfo sect
 |      1      |  "init.scope"    |
 |      2      |  "system.slice"  |
 |      3      |  "user.slice"    |
-|      4      |  "focused.slice" |
+|      4      |  "urm.slice" |
 
 **Mpam Groups Map**
 Logical IDs for MPAM groups. Configs of MPAM group map in InitConfigs->MpamGroupsInfo section
@@ -804,7 +805,7 @@ InitConfigs:
     - Name: "user.slice"
       Create: false
       ID: 3
-    - Name: "focused.slice/app.slice"
+    - Name: "urm.slice/focused.apps"
       Create: true
       ID: 4
 ```
@@ -1105,8 +1106,41 @@ void resetCustomCpuFreqCustom(void* res) {
 URM_REGISTER_RES_TEAR_CB(0x00010001, resetCustomCpuFreqCustom);
 ```
 
+### 6.1.2. Fetching Target Information
 
-### 6.1.2. Registering Custom Configs
+Plugins can fetch target information using the "GET_TARGET_INFO" helper utility provided by URM. The following information can be retrieved:
+- CPU Masks
+- Logical to Physical Mappings
+- Number of cores / clusters on the target
+
+```cpp
+// Utility to fetch target-specific information
+uint64_t GET_TARGET_INFO(int32_t option,
+                         int32_t numArgs,
+                         int32_t* args);
+```
+
+Usage:
+
+For example, to get a cpu mask (which can be used, for example, for IRQ affinity use cases):
+```cpp
+    int32_t args[2] = {0, 0};
+    uint64_t mask = GET_TARGET_INFO(GET_MASK, 2, args); // all cores in silver cluster
+```
+
+- The first parameter in the args array, in this case is the logical cluster ID.
+Here, we use the logical identifier for the silver cluster, using logical identifiers in the code makes it target-architecture independent, hence portable.
+The clusters logical id's are ordered according to the cluster capacities. Hence: 0 represents silver / little, 1 represents gold / big and 2 represents prime.
+
+- The second parameter in the args array, in this case is the number of cores in the cluster to be considered for mask creation. 0 represents all cores within the cluster, a non-zero positive value represents the exact number of cores to be considered.
+
+To simply get a mask corresponding to the highest capacity cluster on the target, for all cores, the GET_MAX_CLUSTER query can be used, as follows:
+```cpp
+    int32_t args[2] = {GET_MAX_CLUSTER, 0};
+    uint64_t mask = GET_TARGET_INFO(GET_MASK, 2, args); // all cores in the highest capacity cluster
+```
+
+### 6.1.3. Registering Custom Configs
 
 Custom config files either can be placed in /etc/urm/custom or Registers a custom configuration (URM_REGISTER_CONFIG) YAML file. This enables target chipset to provide their own config files, i.e. allowing them to provide their own custom resources for example.
 

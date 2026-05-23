@@ -227,8 +227,8 @@ public:
 };
 
 // Utility to fetch target-specific information
-uint64_t getTargetInfo(int32_t option,
-                       int32_t numArgs,
-                       int32_t* args);
+uint64_t GET_TARGET_INFO(int32_t option,
+                         int32_t numArgs,
+                         int32_t* args);
 
 #endif

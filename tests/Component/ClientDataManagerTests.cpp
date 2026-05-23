@@ -10,6 +10,7 @@
 #include "ClientDataManager.h"
 
 #define TEST_CLASS "COMPONENT"
+#define TEST_SUBCAT "CLIENT_DATA_MANAGER"
 
 static void Init() {
     static int8_t initDone = false;

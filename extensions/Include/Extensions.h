@@ -23,6 +23,8 @@ typedef struct {
     pid_t mPid;
     uint32_t mSigId;
     uint32_t mSigType;
+    int32_t mNumArgs;
+    int32_t* mArgs;
 } PostProcessCBData;
 
 /**

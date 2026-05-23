@@ -2,27 +2,27 @@ name: Build URM
 
 on:
   workflow_dispatch:
-  pull_request_target: # requiring access to base repo
+  pull_request:
     types: [opened, synchronize, reopened]
     branches:
       - main
-    # paths-ignore: #update if something has to be ignored.
 
 jobs:
   build:
     runs-on:
       group: GHA-CSEPerf-prd-SelfHosted-RG
       labels: [self-hosted, cseperf-prd-u2204-arm64-xlrg-od-ephem]
+
     env:
       URM_BINS_DIR: urm-bins                     # base dir name
       URM_INSTALL_PREFIX: ./urm-bins/            # used by CMake
       TAR_NAME: urm-bins.tar.gz                  # output tarball name
 
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout URM image repo
+        uses: actions/checkout@v5
         with:
           repository: qualcomm/urm-image
-          token: ${{ secrets.MY_PAT }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
