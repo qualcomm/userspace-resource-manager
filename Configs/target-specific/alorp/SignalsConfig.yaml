@@ -1,0 +1,159 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
+SignalConfigs:
+  # Multimedia: category 3
+  # Video decode
+  # Default decode
+  - SigId: "0x0001"
+    Category: "0x03"
+    SigType: 0
+    Name: "URM_SIG_VIDEO_DECODE"
+    Enable: true
+    TargetsEnabled: ["alorp"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0,1,2,3,4,5]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [3, 90]}
+      - {ResCode: "RES_CGRP_HIGH_MEM", Values: [3, 1048576]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [4, 0,1,2,3,4,5,6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [4, 150]}
+      - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
+      - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
+      - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [3321600]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [3801600]}
+
+  # Video decode
+  # Decode 5+ concurrent sessions
+  - SigId: "0x0001"
+    Category: "0x03"
+    SigType: 5
+    Name: "URM_SIG_VIDEO_DECODE"
+    Enable: true
+    TargetsEnabled: ["alorp"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0,1,2,3,4,5]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [3, 90]}
+      - {ResCode: "RES_CGRP_HIGH_MEM", Values: [3, 1048576]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [4, 0,1,2,3,4,5,6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [4, 150]}
+      - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
+      - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
+      - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [768000]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [1516800]}
+
+  # Video decode
+  # Decode 20+ concurrent sessions
+  - SigId: "0x0001"
+    Category: "0x03"
+    SigType: 20
+    Name: "URM_SIG_VIDEO_DECODE"
+    Enable: true
+    TargetsEnabled: ["alorp"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0,1,2,3,4,5]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [3, 90]}
+      - {ResCode: "RES_CGRP_HIGH_MEM", Values: [3, 1048576]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [4, 0,1,2,3,4,5,6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [4, 150]}
+      - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
+      - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
+      - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+
+  # Camera preview
+  # Default preview - 30fps
+  - SigId: "0x0002"
+    Category: "0x03"
+    Name: "URM_SIG_CAMERA_PREVIEW"
+    Enable: true
+    TargetsEnabled: ["alorp"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0,1,2,3,4,5]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [3, 90]}
+      - {ResCode: "RES_CGRP_HIGH_MEM", Values: [3, 1048576]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [4, 0,1,2,3,4,5,6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [4, 150]}
+      - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
+      - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
+      - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [940800]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [1900800]}
+
+  # Camera encode
+  # Default encode - 30fps
+  - SigId: "0x0003"
+    Category: "0x03"
+    Name: "URM_SIG_CAMERA_ENCODE"
+    Enable: true
+    TargetsEnabled: ["alorp"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0,1,2,3,4,5]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [3, 90]}
+      - {ResCode: "RES_CGRP_HIGH_MEM", Values: [3, 1048576]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [4, 0,1,2,3,4,5,6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [4, 150]}
+      - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
+      - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
+      - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [940800]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [1900800]}
+
+  # Camera encode multi-stream
+  # encode (0-12 streams)
+  - SigId: "0x0004"
+    Category: "0x03"
+    SigType: 0
+    Name: "URM_SIG_CAMERA_ENCODE_MULTI_STREAMS"
+    Enable: true
+    TargetsEnabled: ["alorp"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0,1,2,3,4,5]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [3, 90]}
+      - {ResCode: "RES_CGRP_HIGH_MEM", Values: [3, 1048576]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [4, 0,1,2,3,4,5,6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [4, 150]}
+      - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
+      - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
+      - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [940800]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [1900800]}
+
+  # Camera encode multi-stream
+  # encode (12+ streams)
+  - SigId: "0x0004"
+    Category: "0x03"
+    SigType: 13
+    Name: "URM_SIG_CAMERA_ENCODE_MULTI_STREAMS"
+    Enable: true
+    TargetsEnabled: ["alorp"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0,1,2,3,4,5]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [3, 90]}
+      - {ResCode: "RES_CGRP_HIGH_MEM", Values: [3, 1048576]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [4, 0,1,2,3,4,5,6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [4, 150]}
+      - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
+      - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
+      - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
