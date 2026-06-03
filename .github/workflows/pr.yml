@@ -50,7 +50,7 @@ jobs:
         run: |
           docker run --rm \
             -v "$PWD":/workspace \
-            -w /workspace \
+            -w /workspace/userspace-resource-manager \
             -e URM_BINS_DIR="${URM_BINS_DIR}" \
             -e URM_INSTALL_PREFIX="${URM_INSTALL_PREFIX}" \
             -e TAR_NAME="${TAR_NAME}" \
