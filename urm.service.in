@@ -1,10 +1,12 @@
 [Unit]
 Description=URM Service
+After=sysinit.target
+Before=multi-user.target
 
 [Service]
 Restart=on-failure
 ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/urm
-ExecStartPost=-/etc/urm/initscripts/post_boot/post_boot.sh
+ExecStartPre=-/etc/urm/initscripts/post_boot/post_boot.sh
 TimeoutStopSec=2
 Delegate=yes
 Slice=urm.slice
