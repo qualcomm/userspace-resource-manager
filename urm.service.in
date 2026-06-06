@@ -1,6 +1,6 @@
 [Unit]
 Description=URM Service
-After=sysinit.target
+DefaultDependencies=no
 Before=multi-user.target
 
 [Service]
@@ -12,4 +12,4 @@ Delegate=yes
 Slice=urm.slice
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=sysinit.target multi-user.target
