@@ -46,20 +46,56 @@ jobs:
           pr_repo: ${{ github.event.pull_request.head.repo.full_name }}
           base_ref: ${{ github.ref_name }}
 
-      - name: Build userspace-resource-manager in the URM container
+      - name: Debug + Build inside container
         run: |
+          echo "========== HOST DEBUG =========="
+          echo "PWD (host): $PWD"
+          echo "Listing root:"
+          ls -la
+          echo "Find CMakeLists.txt on host:"
+          find . -name CMakeLists.txt || true
+      
           docker run --rm \
             -v "$PWD":/workspace \
-            -w /workspace/userspace-resource-manager \
+            -w /workspace \
             -e URM_BINS_DIR="${URM_BINS_DIR}" \
             -e URM_INSTALL_PREFIX="${URM_INSTALL_PREFIX}" \
             -e TAR_NAME="${TAR_NAME}" \
             urm-image:ci bash -lc '
-              set -euo pipefail
+              echo "========== CONTAINER DEBUG =========="
+              echo "PWD (container): $(pwd)"
+      
+              echo "--- Environment ---"
+              env | sort
+      
+              echo "--- Workspace listing ---"
+              ls -la
+      
+              echo "--- Full tree (top 3 levels) ---"
+              find . -maxdepth 3 -type d
+      
+              echo "--- Searching for CMakeLists.txt ---"
+              find /workspace -name CMakeLists.txt || true
+      
+              echo "--- Checking expected paths ---"
+              ls -la /workspace/userspace-resource-manager || true
+      
+              echo "--- Build step ---"
               mkdir -p build
               cd build
-              cmake .. -DBUILD_TESTS=ON -DBUILD_CLASSIFIER=ON -DCMAKE_INSTALL_PREFIX="${URM_INSTALL_PREFIX}"
+      
+              echo "PWD before cmake: $(pwd)"
+              echo "Listing parent dir:"
+              ls -la ..
+      
+              echo "Running cmake"
+              cmake .. -DBUILD_TESTS=ON -DBUILD_CLASSIFIER=ON \
+                -DCMAKE_INSTALL_PREFIX="${URM_INSTALL_PREFIX}"
+      
+              echo "Running build"
               cmake --build .
+      
+              echo "Running install"
               make install
             '
 
