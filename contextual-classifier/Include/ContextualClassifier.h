@@ -47,7 +47,8 @@ private:
 
     NetLinkComm mNetLinkComm;
     Inference* mInference;
-    std::vector<int64_t> mCurrRestuneHandles;
+    ThreadPool* mClassifierPool;
+    uint64_t mCurInvalidateTag;
 
     // PID cache to check for duplicates
     MinLRUCache mClassifierPidCache;
@@ -110,5 +111,10 @@ public:
     ErrCode Init();
     ErrCode Terminate();
 };
+
+#define POPULATE_AND_ISSUE(args...) \
+    ContextualClassifier::getInstance()->fillSignal(args); \
+    uint64_t curInvTag = ContextualClassifier::getInstance()->getInvalidateTag();\
+    ClientGarbageCollector::getInstance()->batchHandleCleanup(curInvTag); \
 
 #endif // CONTEXTUAL_CLASSIFIER_H

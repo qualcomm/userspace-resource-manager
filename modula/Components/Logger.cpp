@@ -223,9 +223,9 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
             Logger::log(LOG_ERR, "RESTUNE_THREAD_POOL", funcName, buffer);
             break;
 
-        case CommonMessageTypes::THREAD_POOL_THREAD_TERMINATED:
+        case CommonMessageTypes::THREAD_POOL_THREAD_moduleTerminateD:
             vsnprintf(buffer, sizeof(buffer),
-                      "Thread Terminated with Error: %s", args);
+                      "Thread moduleTerminated with Error: %s", args);
 
             Logger::log(LOG_ERR, "RESTUNE_THREAD_POOL", funcName, buffer);
             break;
@@ -241,6 +241,11 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
             Logger::log(LOG_ERR, "RESTUNE_THREAD_POOL", funcName,
                         "ThreadPool is full, Task Submission Failed");
 
+            break;
+
+        case CommonMessageTypes::THREAD_POOL_ENQUEUE_FAILURE:
+            Logger::log(LOG_ERR, FILE_TAG, funcName,
+                        "Failed to enqueue the Request to the Thread Pool");
             break;
 
         case CommonMessageTypes::TIMER_START_FAILURE:
@@ -403,6 +408,13 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "Call to %s, Failed with Error: %s", args);
 
             Logger::log(LOG_ERR, "URM_SYSCALL_FAILURE", funcName, buffer);
+            break;
+
+        case CommonMessageTypes::FILE_OPEN_FAIL:
+            vsnprintf(buffer, sizeof(buffer),
+                      "Failed to open file: [%s], Error: %s", args);
+
+            Logger::log(LOG_ERR, FILE_TAG, funcName, buffer);
             break;
 
         case CommonMessageTypes::CORE_COUNT_EXTRACTION_FAILED:
@@ -746,6 +758,20 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
                       "Failed to establish connection with system bus, Error: %s", args);
 
             Logger::log(LOG_ERR, "RESTUNE_COCO_TABLE", funcName, std::string(buffer));
+            break;
+
+        case CommonMessageTypes::NOTIFY_CLASSIFICATION_START:
+            vsnprintf(buffer, sizeof(buffer),
+                      "Starting classification for PID: %d (%s)", args);
+
+            Logger::log(LOG_DEBUG, FILE_TAG, funcName, std::string(buffer));
+            break;
+
+        case CommonMessageTypes::MOV_TASK_CGRP_FAILURE:
+            vsnprintf(buffer, sizeof(buffer),
+                      "Failed to move per-app threads to cgroup, Error: %s", args);
+
+            Logger::log(LOG_ERR, FILE_TAG, funcName, std::string(buffer));
             break;
 
         default:
