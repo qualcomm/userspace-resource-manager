@@ -65,11 +65,11 @@ int8_t parseResources(const std::string& input,
 
 void sendTuneRequest(int64_t duration, int32_t priority, int32_t count, const std::string& resourceInfo) {
     std::vector<std::pair<uint32_t, std::pair<int32_t, std::vector<int32_t>>>> resourceVec;
-    if(count < 0)
-    {
+    if(count < 0) {
         std::cout<<"Invalid resouce count"<<std::endl;
         return;
     }
+
     if(parseResources(resourceInfo, resourceVec) == -1 || resourceVec.size() > static_cast<size_t>(count)) {
         std::cout<<"Failed to parse Resource List"<<std::endl;
         return;
@@ -110,6 +110,14 @@ void sendTuneRequest(int64_t duration, int32_t priority, int32_t count, const st
         }
     }
 
+    // Define Request Properties
+    int32_t properties = 0;
+    // Bound
+    priority = (priority < REQ_PRIORITY_HIGH) ? REQ_PRIORITY_HIGH : priority;
+    priority = (priority > REQ_PRIORITY_LOW) ? REQ_PRIORITY_LOW : priority;
+    properties = SET_REQUEST_PRIORITY(properties, REQ_PRIORITY_HIGH);
+
+    // Issue Request
     int64_t handle = tuneResources(duration, priority, resourceVec.size(), resourceList);
     if(handle == -1) {
         std::cout<<"Failed to send Tune Request"<<std::endl;

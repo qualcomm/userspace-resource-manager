@@ -171,3 +171,117 @@ SignalConfigs:
     Timeout: 10000
     Resources:
       - {ResCode: "0x00ff0004", ResInfo: "0x00000000", Values: [231]}
+
+  - SigId: "0x000c"
+    Category: "0x0d"
+    Name: TEST_SIGNAL_10
+    Enable: true
+    Permissions: ["third_party", "system"]
+    Timeout: 10000
+    ExtraAttrs:
+      - Fps: 60
+      - Height: 1080
+      - Width: 1920
+    Resources:
+      - {ResCode: "0x00ff0004", ResInfo: "0x00000000", Values: [231]}
+
+  - SigId: "0x000d"
+    Category: "0x0d"
+    Name: TEST_SIGNAL_11
+    Enable: true
+    Permissions: ["third_party", "system"]
+    Timeout: 8000
+    ExtraAttrs:
+      - Fps: 30
+      - Height: 720
+      - Width: 1280
+    Resources:
+      - {ResCode: "0x00ff0004", ResInfo: "0x00000000", Values: [115]}
+      - {ResCode: "0x00ff0000", ResInfo: "0x00000000", Values: [512]}
+
+  - SigId: "0x000e"
+    Category: "0x0d"
+    Name: TEST_SIGNAL_12
+    Enable: true
+    Permissions: ["third_party", "system"]
+    Timeout: 8000
+    Resources:
+      - {ResCode: "0x00ff0002", ResInfo: "0x00000000", Values: [115]}
+
+  - SigId: "0x000e"
+    Category: "0x0d"
+    Name: TEST_SIGNAL_12_WEF_1
+    Enable: true
+    Permissions: ["third_party", "system"]
+    Timeout: 8000
+    ExtraAttrs:
+      - Fps: 120
+      - Height: 2160
+      - Width: 3840
+    Resources:
+      - {ResCode: "0x00ff0000", ResInfo: "0x00000000", Values: [512]}
+
+  - SigId: "0x000e"
+    Category: "0x0d"
+    Name: TEST_SIGNAL_12_WEF_2
+    Enable: true
+    Permissions: ["third_party", "system"]
+    Timeout: 8000
+    ExtraAttrs:
+      - Fps: 30
+      - Height: 4320
+      - Width: 7680
+    Resources:
+      - {ResCode: "0x00ff0005", ResInfo: "0x00000101", Values: [874]}
+
+  - SigId: "0x000f"
+    Category: "0x0d"
+    Name: TEST_SIGNAL_13
+    Enable: true
+    Permissions: ["third_party", "system"]
+    Timeout: 12000
+    ExtraAttrs:
+      - Fps: 55
+      - Height: 6003
+      - Width: 7122
+    Resources:
+      - {ResCode: "0x00ff0009", ResInfo: "0x00000000", Values: [809]}
+
+  - SigId: "0x0010"
+    Category: "0x0d"
+    Name: TEST_SIGNAL_14
+    Enable: true
+    Permissions: ["third_party", "system"]
+    Timeout: 6000
+    ExtraAttrs:
+      - Fps: 40
+      - Height: 4200
+      - Width: 5800
+    Resources:
+      - {ResCode: "0x00ff0009", ResInfo: "0x00000002", Values: [445]}
+
+  - SigId: "0x0011"
+    Category: "0x0d"
+    Name: TEST_SIGNAL_15_A
+    Enable: true
+    Permissions: ["third_party", "system"]
+    Timeout: 8000
+    ExtraAttrs:
+      - Fps: 120
+      - Height: 2160
+      - Width: 3840
+    Resources:
+      - {ResCode: "0x00ff0000", ResInfo: "0x00000000", Values: [556]}
+
+  - SigId: "0x0011"
+    Category: "0x0d"
+    Name: TEST_SIGNAL_15_B
+    Enable: true
+    Permissions: ["third_party", "system"]
+    Timeout: 8000
+    ExtraAttrs:
+      - Fps: 30
+      - Height: 4320
+      - Width: 7680
+    Resources:
+      - {ResCode: "0x00ff0003", ResInfo: "0x00000000", Values: [971]}

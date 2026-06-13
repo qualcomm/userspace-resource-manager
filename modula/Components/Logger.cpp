@@ -428,7 +428,7 @@ void Logger::typeLog(CommonMessageTypes type, const std::string& funcName, ...) 
 
         case CommonMessageTypes::VERIFIER_INVALID_OPCODE:
             vsnprintf(buffer, sizeof(buffer),
-                      "Invalid Opcode [%u], Dropping Request.", args);
+                      "Invalid Opcode [0x%08x], Dropping Request.", args);
 
             Logger::log(LOG_ERR, "URM_REQUEST_VERIFIER", funcName, buffer);
             break;

@@ -1,34 +1,65 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
-#include <memory>
 #include <mutex>
+#include <memory>
 
-#include "UrmAPIs.h"
 #include "Utils.h"
+#include "UrmAPIs.h"
 #include "AuxRoutines.h"
 #include "SocketClient.h"
 
+#define FILE_TAG "URM_API_CLIENT"
 #define REQ_SEND_ERR(e) "Failed to send Request to Server, Error: " + std::string(e)
 #define CONN_SEND_FAIL "Failed to send Request to Server"
 #define CONN_INIT_FAIL "Failed to initialize Connection to resource-tuner Server"
 
-static std::shared_ptr<ClientEndpoint> conn(new SocketClient());
+class ClientMgr {
+public:
+    int8_t isUrmCli;
+    std::string mClientComm;
+    std::shared_ptr<ClientEndpoint> conn;
+
+    ClientMgr() {
+        this->isUrmCli = false;
+        this->mClientComm = "";
+        if(AuxRoutines::fetchComm(getpid(), this->mClientComm) == 0) {
+            if(this->mClientComm == "urmCli") {
+                this->isUrmCli = true;
+            }
+        }
+
+        if(conn == nullptr) {
+            try {
+                conn = std::shared_ptr<SocketClient> (new SocketClient());
+            } catch(const std::bad_alloc& e) {
+                LOGE(FILE_TAG, "Failed to establish connection with URM server");
+            }
+        }
+    }
+};
 
 // Byte Encoder
 static FlatBuffEncoder batch;
 static std::mutex apiLock;
+
+// Max cap of 20 Resources per Request
+// Note: The actual number eventually allowed might be lower if there are
+// a lot ofmulti-valued resources, as the entire request needs to be encoded
+// as a byte-buffer of size REQ_BUFFER_SIZE.
 static const int32_t maxResPerReq = 20;
 
+static ClientMgr urmClientInfo;
+
 static int8_t sendMsgHelper(char* buf) {
-    if(conn == nullptr || RC_IS_NOTOK(conn->initiateConnection())) {
-        LOGE("RESTUNE_CLIENT", CONN_INIT_FAIL);
+    if(urmClientInfo.conn == nullptr || RC_IS_NOTOK(urmClientInfo.conn->initiateConnection())) {
+        LOGE(FILE_TAG, CONN_INIT_FAIL);
         return -1;
     }
 
-    // Send the request to Resource Tuner Server
-    if(RC_IS_NOTOK(conn->sendMsg(buf, REQ_BUFFER_SIZE))) {
-        LOGE("RESTUNE_CLIENT", CONN_SEND_FAIL);
+    // Send the request to URM Server
+    if(RC_IS_NOTOK(urmClientInfo.conn->sendMsg(buf, REQ_BUFFER_SIZE))) {
+        LOGE(FILE_TAG, CONN_SEND_FAIL);
         return -1;
     }
 
@@ -38,7 +69,7 @@ static int8_t sendMsgHelper(char* buf) {
 static int64_t readHandleHelper() {
     // Get the handle
     char resultBuf[64] = {0};
-    if(RC_IS_NOTOK(conn->readMsg(resultBuf, sizeof(resultBuf)))) {
+    if(RC_IS_NOTOK(urmClientInfo.conn->readMsg(resultBuf, sizeof(resultBuf)))) {
         return -1;
     }
 
@@ -47,8 +78,22 @@ static int64_t readHandleHelper() {
     return handleReceived;
 }
 
+static int32_t getClientPid() {
+    if(urmClientInfo.isUrmCli) {
+        return (int32_t)getppid();
+    }
+    return (int32_t)getpid();
+}
+
+static int32_t getClientTid() {
+    if(urmClientInfo.isUrmCli) {
+        return (int32_t)getppid();
+    }
+    return (int32_t)gettid();
+}
+
 // - Construct a Request object and populate it with the API specified Params
-// - Initiate a connection to the Resource Tuner Server, and send the request to the server
+// - Initiate a connection to the URM Server, and send the request to the server
 // - Wait for the response from the server, and return the response to the caller (end-client).
 int64_t tuneResources(int64_t duration,
                       int32_t properties,
@@ -57,18 +102,18 @@ int64_t tuneResources(int64_t duration,
     // Only one client Thread can send a Request at any moment
     try {
         const std::lock_guard<std::mutex> lock(apiLock);
-        const ConnectionManager connMgr(conn);
+        const ConnectionManager connMgr(urmClientInfo.conn);
 
         // Preliminary Tests
         // These are some basic checks done at the Client end itself to detect
         // Potentially Malformed Reqeusts, to prevent wastage of Server-End Resources.
         if(resourceList == nullptr || numRes <= 0 || duration == 0 || duration < -1) {
-            LOGE("RESTUNE_CLIENT", "Invalid Request Params");
+            LOGE(FILE_TAG, "Invalid Request Params");
             return -1;
         }
 
         if(numRes > maxResPerReq) {
-            LOGE("RESTUNE_CLIENT", "Number of Resources in Request exceeds max limit.");
+            LOGE(FILE_TAG, "Number of Resources in Request exceeds max limit.");
             return -1;
         }
 
@@ -97,8 +142,8 @@ int64_t tuneResources(int64_t duration,
              .append<int64_t>(duration)
              .append<int32_t>(VALIDATE_GT(numRes, 0))
              .append<int32_t>(VALIDATE_GE(properties, 0))
-             .append<int32_t>((int32_t)getpid())
-             .append<int32_t>((int32_t)gettid());
+             .append<int32_t>(getClientPid())
+             .append<int32_t>(getClientTid());
 
         for(int32_t i = 0; i < numRes; i++) {
             SysResource resource = SafeDeref((resourceList + i));
@@ -120,25 +165,25 @@ int64_t tuneResources(int64_t duration,
         if(batch.isBufSane()) {
             if(sendMsgHelper(buf) == 0) return readHandleHelper();
         } else {
-            LOGE("RESTUNE_CLIENT", "Request Size exceeds max capacity");
+            LOGE(FILE_TAG, "Request Size exceeds max capacity");
         }
 
     } catch(const std::exception& e) {
-        LOGE("RESTUNE_CLIENT", REQ_SEND_ERR(e.what()));
+        LOGE(FILE_TAG, REQ_SEND_ERR(e.what()));
     }
 
     return -1;
 }
 
 // - Construct a Request object and populate it with the API specified Params
-// - Initiate a connection to the Resource Tuner Server, and send the request to the server
+// - Initiate a connection to the URM Server, and send the request to the server
 int8_t retuneResources(int64_t handle, int64_t duration) {
     try {
         const std::lock_guard<std::mutex> lock(apiLock);
-        const ConnectionManager connMgr(conn);
+        const ConnectionManager connMgr(urmClientInfo.conn);
 
-        if(handle <= 0  || duration == 0 || duration < -1) {
-            LOGE("RESTUNE_CLIENT", "Invalid Request Params");
+        if(handle <= 0 || duration == 0 || duration < -1) {
+            LOGE(FILE_TAG, "Invalid Request Params");
             return -1;
         }
 
@@ -150,31 +195,31 @@ int8_t retuneResources(int64_t handle, int64_t duration) {
              .append<int64_t>(duration)
              .append<int32_t>(0)
              .append<int32_t>(0)
-             .append<int32_t>((int32_t)getpid())
-             .append<int32_t>((int32_t)gettid());
+             .append<int32_t>(getClientPid())
+             .append<int32_t>(getClientTid());
 
         if(batch.isBufSane()) {
             if(sendMsgHelper(buf) == 0) return 0;
         } else {
-            LOGE("RESTUNE_CLIENT", "Malformed Request");
+            LOGE(FILE_TAG, "Malformed Request");
         }
 
     } catch(const std::exception& e) {
-        LOGE("RESTUNE_CLIENT", REQ_SEND_ERR(e.what()));
+        LOGE(FILE_TAG, REQ_SEND_ERR(e.what()));
     }
 
     return -1;
 }
 
 // - Construct a Request object and populate it with the API specified Params
-// - Initiate a connection to the Resource Tuner Server, and send the request to the server
+// - Initiate a connection to the URM Server, and send the request to the server
 int8_t untuneResources(int64_t handle) {
     try {
         const std::lock_guard<std::mutex> lock(apiLock);
-        const ConnectionManager connMgr(conn);
+        const ConnectionManager connMgr(urmClientInfo.conn);
 
         if(handle <= 0) {
-            LOGE("RESTUNE_CLIENT", "Invalid Request Params");
+            LOGE(FILE_TAG, "Invalid Request Params");
             return -1;
         }
 
@@ -186,62 +231,67 @@ int8_t untuneResources(int64_t handle) {
              .append<int64_t>(-1)
              .append<int32_t>(0)
              .append<int32_t>(0)
-             .append<int32_t>((int32_t)getpid())
-             .append<int32_t>((int32_t)gettid());
+             .append<int32_t>(getClientPid())
+             .append<int32_t>(getClientTid());
 
         if(batch.isBufSane()) {
             if(sendMsgHelper(buf) == 0) return 0;
         } else {
-            LOGE("RESTUNE_CLIENT", "Malformed Request");
+            LOGE(FILE_TAG, "Malformed Request");
         }
 
     } catch(const std::exception& e) {
-        LOGE("RESTUNE_CLIENT", REQ_SEND_ERR(e.what()));
+        LOGE(FILE_TAG, REQ_SEND_ERR(e.what()));
     }
 
     return -1;
 }
 
 // - Construct a Prop Get Request object and populate it with the Request Params
-// - Initiate a connection to the Resource Tuner Server, and send the request to the server
+// - Initiate a connection to the URM Server, and send the request to the server
 // - Wait for the response from the server, and return the response to the caller (end-client).
 int8_t getProp(const char* prop, char* buffer, size_t bufferSize, const char* defValue) {
     try {
         const std::lock_guard<std::mutex> lock(apiLock);
-        const ConnectionManager connMgr(conn);
+        const ConnectionManager connMgr(urmClientInfo.conn);
 
-        char buf[1024];
-        int8_t* ptr8 = (int8_t*)buf;
-        ASSIGN_AND_INCR(ptr8, MOD_RESTUNE);
-        ASSIGN_AND_INCR(ptr8, REQ_PROP_GET);
-
-        uint64_t* ptr64 = (uint64_t*)ptr8;
-        ASSIGN_AND_INCR(ptr64, bufferSize);
-
-        const char* charIterator = prop;
-        char* charPointer = (char*) ptr64;
-
-        while(*charIterator != '\0') {
-            ASSIGN_AND_INCR(charPointer, *charIterator);
-            charIterator++;
-        }
-
-        ASSIGN_AND_INCR(charPointer, '\0');
-
-        if(conn == nullptr || RC_IS_NOTOK(conn->initiateConnection())) {
-            LOGE("RESTUNE_CLIENT", CONN_INIT_FAIL);
+        if(prop == nullptr || buffer == nullptr) {
+            LOGE(FILE_TAG, "Invalid Request Params");
             return -1;
         }
 
-        if(RC_IS_NOTOK(conn->sendMsg(buf, sizeof(buf)))) {
-            LOGE("RESTUNE_CLIENT", CONN_SEND_FAIL);
+        char buf[REQ_BUFFER_SIZE] = {0};
+        batch.setBuf(buf);
+        batch.append<int8_t>(MOD_RESTUNE)
+             .append<int8_t>(REQ_PROP_GET)
+             .append<uint64_t>(bufferSize);
+
+        const char* charIterator = prop;
+        while(*charIterator != '\0') {
+            batch.append<uint8_t>(*charIterator);
+            charIterator++;
+        }
+
+        batch.append<uint8_t>('\0');
+        if(!batch.isBufSane()) {
+            LOGE(FILE_TAG, "Malformed Request");
+            return -1;
+        }
+
+        if(urmClientInfo.conn == nullptr || RC_IS_NOTOK(urmClientInfo.conn->initiateConnection())) {
+            LOGE(FILE_TAG, CONN_INIT_FAIL);
+            return -1;
+        }
+
+        if(RC_IS_NOTOK(urmClientInfo.conn->sendMsg(buf, sizeof(buf)))) {
+            LOGE(FILE_TAG, CONN_SEND_FAIL);
             return -1;
         }
 
         // read the response
         char resultBuf[bufferSize];
         memset(resultBuf, 0, sizeof(resultBuf));
-        if(RC_IS_NOTOK(conn->readMsg(resultBuf, sizeof(resultBuf)))) {
+        if(RC_IS_NOTOK(urmClientInfo.conn->readMsg(resultBuf, sizeof(resultBuf)))) {
             return -1;
         }
 
@@ -255,11 +305,11 @@ int8_t getProp(const char* prop, char* buffer, size_t bufferSize, const char* de
         return 0;
 
     } catch(const std::invalid_argument& e) {
-        LOGE("RESTUNE_CLIENT", REQ_SEND_ERR(e.what()));
+        LOGE(FILE_TAG, REQ_SEND_ERR(e.what()));
         return -1;
 
     } catch(const std::exception& e) {
-        LOGE("RESTUNE_CLIENT", REQ_SEND_ERR(e.what()));
+        LOGE(FILE_TAG, REQ_SEND_ERR(e.what()));
         return -1;
     }
 
@@ -267,7 +317,7 @@ int8_t getProp(const char* prop, char* buffer, size_t bufferSize, const char* de
 }
 
 // - Construct a Signal object and populate it with the Signal Request Params
-// - Initiate a connection to the Resource Tuner Server, and send the request to the server
+// - Initiate a connection to the URM Server, and send the request to the server
 // - Wait for the response from the server, and return the response to the caller (end-client).
 int64_t tuneSignal(uint32_t sigId,
                    uint32_t sigType,
@@ -279,167 +329,103 @@ int64_t tuneSignal(uint32_t sigId,
                    uint32_t* list) {
     try {
         const std::lock_guard<std::mutex> lock(apiLock);
-        const ConnectionManager connMgr(conn);
+        const ConnectionManager connMgr(urmClientInfo.conn);
 
-        if(duration < -1) {
-            LOGE("RESTUNE_CLIENT", "Invalid Request Params");
+        // Duration == 0 is a placeholder for default signal-config specified duration
+        if(duration < -1 || numArgs < 0 || (list != nullptr && numArgs == 0)) {
+            LOGE(FILE_TAG, "Invalid Request Params");
             return -1;
         }
 
-        char buf[1024];
-        int8_t* ptr8 = (int8_t*)buf;
-        ASSIGN_AND_INCR(ptr8, MOD_RESTUNE);
-        ASSIGN_AND_INCR(ptr8, REQ_SIGNAL_TUNING);
-
-        int32_t* ptr = (int32_t*)ptr8;
-        ASSIGN_AND_INCR(ptr, sigId);
-        ASSIGN_AND_INCR(ptr, sigType);
-
-        int64_t* ptr64 = (int64_t*)ptr;
-        ASSIGN_AND_INCR(ptr64, 0);
-        ASSIGN_AND_INCR(ptr64, duration);
+        char buf[REQ_BUFFER_SIZE] = {0};
+        batch.setBuf(buf);
+        batch.append<int8_t>(MOD_RESTUNE)
+             .append<int8_t>(REQ_SIGNAL_TUNING)
+             .append<uint32_t>(sigId)
+             .append<uint32_t>(sigType)
+             .append<int64_t>(0)
+             .append<int64_t>(duration);
 
         const char* charIterator = appName;
-        char* charPointer = (char*) ptr64;
-
         while(*charIterator != '\0') {
-            ASSIGN_AND_INCR(charPointer, *charIterator);
+            batch.append<uint8_t>(*charIterator);
             charIterator++;
         }
 
-        ASSIGN_AND_INCR(charPointer, '\0');
+        batch.append<uint8_t>('\0');
 
         charIterator = scenario;
-
         while(*charIterator != '\0') {
-            ASSIGN_AND_INCR(charPointer, *charIterator);
+            batch.append<uint8_t>(*charIterator);
             charIterator++;
         }
 
-        ASSIGN_AND_INCR(charPointer, '\0');
-
-        ptr = (int32_t*)charPointer;
-        ASSIGN_AND_INCR(ptr, VALIDATE_GE(numArgs, 0));
-        ASSIGN_AND_INCR(ptr, VALIDATE_GE(properties, 0));
-        ASSIGN_AND_INCR(ptr, (int32_t)getpid());
-        ASSIGN_AND_INCR(ptr, (int32_t)gettid());
+        batch.append<uint8_t>('\0');
+        batch.append<int32_t>(VALIDATE_GE(numArgs, 0))
+             .append<int32_t>(VALIDATE_GE(properties, 0))
+             .append<int32_t>(getClientPid())
+             .append<int32_t>(getClientTid());
 
         for(int32_t i = 0; i < numArgs; i++) {
-            uint32_t arg = list[i];
-            ASSIGN_AND_INCR(ptr, arg)
+            batch.append<uint32_t>(list[i]);
         }
 
-        if(conn == nullptr || RC_IS_NOTOK(conn->initiateConnection())) {
-            LOGE("RESTUNE_CLIENT", CONN_INIT_FAIL);
-            return -1;
+        if(batch.isBufSane()) {
+            if(sendMsgHelper(buf) == 0) return readHandleHelper();
+        } else {
+            LOGE(FILE_TAG, "Request Size exceeds max capacity");
         }
-
-        // Send the request to Resource Tuner Server
-        if(RC_IS_NOTOK(conn->sendMsg(buf, sizeof(buf)))) {
-            LOGE("RESTUNE_CLIENT", CONN_SEND_FAIL);
-            return -1;
-        }
-
-        // Get the handle
-        char resultBuf[64] = {0};
-        if(RC_IS_NOTOK(conn->readMsg(resultBuf, sizeof(resultBuf)))) {
-            return -1;
-        }
-
-        int64_t handleReceived = -1;
-        std::memcpy(&handleReceived, resultBuf, sizeof(handleReceived));
-
-        return handleReceived;
-
-    } catch(const std::invalid_argument& e) {
-        LOGE("RESTUNE_CLIENT", REQ_SEND_ERR(e.what()));
-        return -1;
 
     } catch(const std::exception& e) {
-        LOGE("RESTUNE_CLIENT", REQ_SEND_ERR(e.what()));
-        return -1;
+        LOGE(FILE_TAG, REQ_SEND_ERR(e.what()));
     }
 
     return -1;
 }
 
 // - Construct a Signal object and populate it with the Signal Request Params
-// - Initiate a connection to the Resource Tuner Server, and send the request to the server
+// - Initiate a connection to the URM Server, and send the request to the server
 int8_t untuneSignal(int64_t handle) {
     try {
         const std::lock_guard<std::mutex> lock(apiLock);
-        const ConnectionManager connMgr(conn);
+        const ConnectionManager connMgr(urmClientInfo.conn);
 
         if(handle <= 0) {
-            LOGE("RESTUNE_CLIENT", "Invalid Request Params");
+            LOGE(FILE_TAG, "Invalid Request Params");
             return -1;
         }
 
-        char buf[1024];
-        int8_t* ptr8 = (int8_t*)buf;
-        ASSIGN_AND_INCR(ptr8, MOD_RESTUNE);
-        ASSIGN_AND_INCR(ptr8, REQ_SIGNAL_UNTUNING);
+        char buf[REQ_BUFFER_SIZE] = {0};
+        batch.setBuf(buf);
+        batch.append<int8_t>(MOD_RESTUNE)
+             .append<int8_t>(REQ_SIGNAL_UNTUNING)
+             .append<uint32_t>(0)
+             .append<uint32_t>(0)
+             .append<int64_t>(handle)
+             .append<int64_t>(-1)
+             .append<uint8_t>('\0')
+             .append<uint8_t>('\0')
+             .append<int32_t>(0)
+             .append<int32_t>(0)
+             .append<int32_t>(getClientPid())
+             .append<int32_t>(getClientTid());
 
-        int32_t* ptr = (int32_t*)ptr8;
-        ASSIGN_AND_INCR(ptr, 0);
-        ASSIGN_AND_INCR(ptr, 0);
 
-        int64_t* ptr64 = (int64_t*)ptr;
-        ASSIGN_AND_INCR(ptr64, handle);
-        ASSIGN_AND_INCR(ptr64, -1);
-
-        const char* charIterator = "";
-        char* charPointer = (char*) ptr64;
-
-        while(*charIterator != '\0') {
-            ASSIGN_AND_INCR(charPointer, *charIterator);
-            charIterator++;
+        if(batch.isBufSane()) {
+            if(sendMsgHelper(buf) == 0) return 0;
+        } else {
+            LOGE(FILE_TAG, "Malformed Request");
         }
-
-        ASSIGN_AND_INCR(charPointer, '\0');
-
-        charIterator = "";
-
-        while(*charIterator != '\0') {
-            ASSIGN_AND_INCR(charPointer, *charIterator);
-            charIterator++;
-        }
-
-        ASSIGN_AND_INCR(charPointer, '\0');
-
-        ptr = (int32_t*)charPointer;
-        ASSIGN_AND_INCR(ptr, 0);
-        ASSIGN_AND_INCR(ptr, 0);
-        ASSIGN_AND_INCR(ptr, (int32_t)getpid());
-        ASSIGN_AND_INCR(ptr, (int32_t)gettid());
-
-        if(conn == nullptr || RC_IS_NOTOK(conn->initiateConnection())) {
-            LOGE("RESTUNE_CLIENT", CONN_INIT_FAIL);
-            return -1;
-        }
-
-        // Send the request to Resource Tuner Server
-        if(RC_IS_NOTOK(conn->sendMsg(buf, sizeof(buf)))) {
-            LOGE("RESTUNE_CLIENT", CONN_SEND_FAIL);
-            return -1;
-        }
-
-        return 0;
-
-    } catch(const std::invalid_argument& e) {
-        LOGE("RESTUNE_CLIENT", REQ_SEND_ERR(e.what()));
-        return -1;
 
     } catch(const std::exception& e) {
-        LOGE("RESTUNE_CLIENT", REQ_SEND_ERR(e.what()));
-        return -1;
+        LOGE(FILE_TAG, REQ_SEND_ERR(e.what()));
     }
 
     return -1;
 }
 
 // - Construct a Signal object and populate it with the Signal Request Params
-// - Initiate a connection to the Resource Tuner Server, and send the request to the server
+// - Initiate a connection to the URM Server, and send the request to the server
 int8_t relaySignal(uint32_t sigId,
                    uint32_t sigType,
                    int64_t duration,
@@ -450,76 +436,55 @@ int8_t relaySignal(uint32_t sigId,
                    uint32_t* list) {
     try {
         const std::lock_guard<std::mutex> lock(apiLock);
-        const ConnectionManager connMgr(conn);
+        const ConnectionManager connMgr(urmClientInfo.conn);
 
-        if(duration < -1) {
-            LOGE("RESTUNE_CLIENT", "Invalid Request Params");
+        // Duration == 0 is a placeholder for default signal-config specified duration
+        if(duration < -1 || numArgs < 0 || (list != nullptr && numArgs == 0)) {
+            LOGE(FILE_TAG, "Invalid Request Params");
             return -1;
         }
 
-        char buf[1024];
-        int8_t* ptr8 = (int8_t*)buf;
-        ASSIGN_AND_INCR(ptr8, MOD_RESTUNE);
-        ASSIGN_AND_INCR(ptr8, REQ_SIGNAL_RELAY);
-
-        int32_t* ptr = (int32_t*)ptr8;
-        ASSIGN_AND_INCR(ptr, sigId);
-        ASSIGN_AND_INCR(ptr, sigType);
-
-        int64_t* ptr64 = (int64_t*)ptr;
-        ASSIGN_AND_INCR(ptr64, 0);
-        ASSIGN_AND_INCR(ptr64, duration);
+        char buf[REQ_BUFFER_SIZE] = {0};
+        batch.setBuf(buf);
+        batch.append<int8_t>(MOD_RESTUNE)
+             .append<int8_t>(REQ_SIGNAL_RELAY)
+             .append<uint32_t>(sigId)
+             .append<uint32_t>(sigType)
+             .append<int64_t>(0)
+             .append<int64_t>(duration);
 
         const char* charIterator = appName;
-        char* charPointer = (char*) ptr64;
-
         while(*charIterator != '\0') {
-            ASSIGN_AND_INCR(charPointer, *charIterator);
+            batch.append<uint8_t>(*charIterator);
             charIterator++;
         }
 
-        ASSIGN_AND_INCR(charPointer, '\0');
+        batch.append<uint8_t>('\0');
 
         charIterator = scenario;
-
         while(*charIterator != '\0') {
-            ASSIGN_AND_INCR(charPointer, *charIterator);
+            batch.append<uint8_t>(*charIterator);
             charIterator++;
         }
 
-        ASSIGN_AND_INCR(charPointer, '\0');
-
-        ptr = (int32_t*)charPointer;
-        ASSIGN_AND_INCR(ptr, VALIDATE_GE(numArgs, 0));
-        ASSIGN_AND_INCR(ptr, VALIDATE_GE(properties, 0));
-        ASSIGN_AND_INCR(ptr, (int32_t)getpid());
-        ASSIGN_AND_INCR(ptr, (int32_t)gettid());
+        batch.append<uint8_t>('\0');
+        batch.append<int32_t>(VALIDATE_GE(numArgs, 0))
+             .append<int32_t>(VALIDATE_GE(properties, 0))
+             .append<int32_t>(getClientPid())
+             .append<int32_t>(getClientTid());
 
         for(int32_t i = 0; i < numArgs; i++) {
-            uint32_t arg = list[i];
-            ASSIGN_AND_INCR(ptr, arg)
+            batch.append<uint32_t>(list[i]);
         }
 
-        if(conn == nullptr || RC_IS_NOTOK(conn->initiateConnection())) {
-            LOGE("RESTUNE_CLIENT", CONN_INIT_FAIL);
-            return -1;
+        if(batch.isBufSane()) {
+            if(sendMsgHelper(buf) == 0) return 0;
+        } else {
+            LOGE(FILE_TAG, "Request Size exceeds max capacity");
         }
-
-        // Send the request to Resource Tuner Server
-        if(RC_IS_NOTOK(conn->sendMsg(buf, sizeof(buf)))) {
-            LOGE("RESTUNE_CLIENT", CONN_SEND_FAIL);
-            return -1;
-        }
-
-        return 0;
-
-    } catch(const std::invalid_argument& e) {
-        LOGE("RESTUNE_CLIENT", REQ_SEND_ERR(e.what()));
-        return -1;
 
     } catch(const std::exception& e) {
-        LOGE("RESTUNE_CLIENT", REQ_SEND_ERR(e.what()));
-        return -1;
+        LOGE(FILE_TAG, REQ_SEND_ERR(e.what()));
     }
 
     return -1;

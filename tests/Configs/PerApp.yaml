@@ -2,18 +2,17 @@
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 
 PerAppConfigs:
-  - App: "gst-launch-"
-    Threads:
-       - {"cam-server": "4"}
-       - {"gst-launch-": "4"}
-
   - App: "chrome"
     Threads:
        - {"chrome": "FOCUSED_CGROUP_IDENTIFIER"}
+       - {"cam_server": "FOCUSED_CGROUP_IDENTIFIER"}
     Configurations: ["0x80034aab"]
 
   - App: "gst-launch-1.0"
-    Configurations: ["0x000d000a"]
+    Configurations: ["0x000d000c"]
 
   - App: "vi"
-    Configurations: ["0x000d000a"]
+    Configurations: ["0x000d000c"]
+
+  - App: "vlc"
+    Configurations: ["0x000d000c"]

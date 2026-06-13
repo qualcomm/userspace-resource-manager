@@ -74,15 +74,6 @@ private:
     // Fetch signal configuration info
     uint32_t GetSignalIDForWorkload(int32_t contextType);
 
-    // Methods for tuning / untuning signals based on the workload
-    void ApplyActions(uint32_t sigId,
-                      uint32_t sigType,
-                      pid_t incomingPID,
-                      pid_t incomingTID,
-                      int32_t numArgs,
-                      int32_t* arg);
-    void RemoveActions(pid_t pid, int32_t tgid);
-
     // blacklisting mechanism
     void LoadIgnoredProcesses();
     int8_t shouldProcBeIgnored(int32_t evType, pid_t pid);

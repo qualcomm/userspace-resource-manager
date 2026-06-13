@@ -76,8 +76,10 @@ static ErrCode translateToPhysicalIDs(Resource* resource) {
             // Perform logical to physical mapping here, as part of which verification can happen
             // Replace mResInfo with the Physical values here:
             if(!performPhysicalMapping(coreValue, clusterValue)) {
-                TYPELOGV(VERIFIER_LOGICAL_TO_PHYSICAL_MAPPING_FAILED, resource->getResCode());
-                return RC_INVALID_VALUE;
+                if(rConf->mPolicy != Policy::PASS_THROUGH) {
+                    TYPELOGV(VERIFIER_LOGICAL_TO_PHYSICAL_MAPPING_FAILED, resource->getResCode());
+                    return RC_INVALID_VALUE;
+                }
             }
 
             resource->setCoreValue(coreValue);
@@ -95,10 +97,13 @@ static ErrCode translateToPhysicalIDs(Resource* resource) {
 
             // Perform logical to physical mapping here, as part of which verification can happen
             // Replace mResInfo with the Physical values here:
-            int32_t physicalClusterID = TargetRegistry::getInstance()->getPhysicalClusterId(clusterValue);
+            int32_t physicalClusterID =
+                TargetRegistry::getInstance()->getPhysicalClusterId(clusterValue);
             if(physicalClusterID == -1) {
-                TYPELOGV(VERIFIER_LOGICAL_TO_PHYSICAL_MAPPING_FAILED, resource->getResCode());
-                return RC_INVALID_VALUE;
+                if(rConf->mPolicy != Policy::PASS_THROUGH) {
+                    TYPELOGV(VERIFIER_LOGICAL_TO_PHYSICAL_MAPPING_FAILED, resource->getResCode());
+                    return RC_INVALID_VALUE;
+                }
             }
 
             resource->setClusterValue(physicalClusterID);

@@ -8,11 +8,11 @@
 #include <memory>
 #include <unordered_map>
 
-#include "UrmPlatformAL.h"
+#include "Utils.h"
+#include "Logger.h"
 #include "Resource.h"
 #include "Extensions.h"
-#include "Logger.h"
-#include "Utils.h"
+#include "UrmPlatformAL.h"
 
 /**
  * @struct ResourceApplyType

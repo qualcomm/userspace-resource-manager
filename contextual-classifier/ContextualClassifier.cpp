@@ -19,6 +19,7 @@
 #include "Extensions.h"
 #include "AuxRoutines.h"
 #include "UrmPlatformAL.h"
+#include "SignalInternal.h"
 #include "SignalRegistry.h"
 #include "RestuneInternal.h"
 #include "ContextualClassifier.h"
@@ -95,67 +96,6 @@ static ResIterable* createMovePidResource(int32_t cGroupdId, pid_t pid) {
 
     resIterable->mData = resource;
     return resIterable;
-}
-
-static Request* createTuneRequestFromSignal(uint32_t sigId,
-                                            uint32_t sigType,
-                                            pid_t incomingPID,
-                                            pid_t incomingTID,
-                                            int32_t numArgs,
-                                            int32_t* args) {
-    try {
-        std::shared_ptr<SignalRegistry> sigRegistry = SignalRegistry::getInstance();
-
-        // Check if a Signal with the given ID exists in the Registry
-        SignalInfo* signalInfo = sigRegistry->getSignalConfigById(sigId, sigType);
-
-        if(signalInfo == nullptr) return nullptr;
-
-        Request* request = MPLACED(Request);
-
-        int64_t handleGenerated = AuxRoutines::generateUniqueHandle();
-        request->setHandle(handleGenerated);
-
-        request->setRequestType(REQ_RESOURCE_TUNING);
-        request->setDuration(signalInfo->mTimeout);
-        request->setProperties(SYSTEM_HIGH);
-        request->setClientPID(incomingPID);
-        request->setClientTID(incomingTID);
-
-        std::vector<Resource*>* signalLocks = signalInfo->mSignalResources;
-
-        for(int32_t i = 0; i < (int32_t)signalLocks->size(); i++) {
-            if((*signalLocks)[i] == nullptr) {
-                continue;
-            }
-
-            // Copy
-            Resource* resource = MPLACEV(Resource, (*((*signalLocks)[i])));
-
-            // fill placeholders if any
-            int32_t listIndex = 0;
-            for(int32_t j = 0; j < resource->getValuesCount(); j++) {
-                if(resource->getValueAt(j) == -1) {
-                    if(args == nullptr) return nullptr;
-                    if(listIndex >= 0 && listIndex < numArgs) {
-                        resource->setValueAt(j, args[listIndex]);
-                        listIndex++;
-                    }
-                }
-            }
-
-            ResIterable* resIterable = MPLACED(ResIterable);
-            resIterable->mData = resource;
-            request->addResource(resIterable);
-        }
-
-        return request;
-
-    } catch(const std::bad_alloc& e) {
-        return nullptr;
-    }
-
-    return nullptr;
 }
 
 ContextualClassifier::~ContextualClassifier() {
@@ -242,8 +182,6 @@ void ContextualClassifier::ClassifierMain() {
             std::string comm;
             uint32_t sigId = URM_SIG_APP_OPEN;
             uint32_t sigType = DEFAULT_SIGNAL_TYPE;
-            int32_t numArgs = 0;
-            int32_t* args = nullptr;
             uint32_t ctxDetails = 0U;
 
             if(ev.pid != -1) {
@@ -292,19 +230,17 @@ void ContextualClassifier::ClassifierMain() {
                         .mPid = ev.pid,
                         .mSigId = sigId,
                         .mSigType = sigType,
-                        .mNumArgs = numArgs,
-                        .mArgs = args,
+                        .mNumArgs = 0,
+                        .mArgs = nullptr,
+                        .mHandleAcq = -1,
                     };
                     postCb((void*)&postProcessData);
 
-                    sigId = postProcessData.mSigId;
-                    sigType = postProcessData.mSigType;
-                    numArgs = postProcessData.mNumArgs;
-                    args = postProcessData.mArgs;
+                    // Record any Configurations made
+                    if(postProcessData.mHandleAcq != - 1) {
+                        this->mCurrRestuneHandles.push_back(postProcessData.mHandleAcq);
+                    }
                 }
-
-                // Apply actions, call tuneSignal
-                this->ApplyActions(sigId, sigType, ev.pid, ev.tgid, numArgs, args);
             }
         } else if(ev.type == CC_APP_CLOSE) {
             // No Action Needed, Pulse Monitor to take care of cleanup
@@ -405,35 +341,6 @@ int32_t ContextualClassifier::ClassifyProcess(pid_t processPid,
     return context;
 }
 
-void ContextualClassifier::ApplyActions(uint32_t sigId,
-                                        uint32_t sigType,
-                                        pid_t incomingPID,
-                                        pid_t incomingTID,
-                                        int32_t numArgs,
-                                        int32_t* args) {
-    Request* request =
-        createTuneRequestFromSignal(sigId, sigType, incomingPID, incomingTID, numArgs, args);
-    if(request != nullptr) {
-        if(request->getResourcesCount() > 0) {
-            // Record:
-            this->mCurrRestuneHandles.push_back(request->getHandle());
-
-            // fast path to Request Queue
-            submitResProvisionRequest(request, false);
-
-        } else {
-            Request::cleanUpRequest(request);
-        }
-    }
-}
-
-void ContextualClassifier::RemoveActions(pid_t processPid, pid_t processTgid) {
-	(void)processPid;
-    (void)processTgid;
-
-    return;
-}
-
 uint32_t ContextualClassifier::GetSignalIDForWorkload(int32_t contextType) {
     switch(contextType) {
         case CC_MULTIMEDIA:
@@ -491,13 +398,12 @@ void ContextualClassifier::LoadIgnoredProcesses() {
 }
 
 int8_t ContextualClassifier::shouldProcBeIgnored(int32_t evType, pid_t pid) {
-    // For context close, see if pid is in ignored list and remove it.
     if(evType == CC_APP_CLOSE) {
         return false;
     }
 
     std::string procName = "";
-    if(!AuxRoutines::getProcName(pid, procName)) {
+    if(AuxRoutines::fetchComm(pid, procName) != 0) {
         return true;
     }
 
@@ -574,36 +480,22 @@ void ContextualClassifier::MoveAppThreadsToCGroup(pid_t incomingPID,
 void ContextualClassifier::configureAppSignals(pid_t incomingPID,
                                                pid_t incomingTID,
                                                const std::string& comm) {
-    try {
-        // Configure any associated signal
-        AppConfig* appConfig = AppConfigs::getInstance()->getAppConfig(comm);
-        if(appConfig != nullptr && appConfig->mSignalCodes != nullptr) {
-            int32_t numSignals = appConfig->mNumSignals;
-            // Go over the list of proc names (comm) and get their pids
-            for(int32_t i = 0; i < numSignals; i++) {
-                Request* request = createTuneRequestFromSignal(
-                    appConfig->mSignalCodes[i],
-                    0,
-                    incomingPID,
-                    incomingTID,
-                    0,
-                    nullptr);
+    // Configure any associated signal
+    AppConfig* appConfig = AppConfigs::getInstance()->getAppConfig(comm);
+    if(appConfig != nullptr && appConfig->mSignalCodes != nullptr) {
+        // Go over the list of proc names (comm) and get their pids
+        for(int32_t i = 0; i < appConfig->mNumSignals; i++) {
+            int64_t handle = acquireSignal(
+                appConfig->mSignalCodes[i],
+                0,
+                incomingPID,
+                incomingTID
+            );
 
-                if(request != nullptr) {
-                    if(request->getResourcesCount() > 0) {
-                        // fast path to Request Queue
-                        this->mCurrRestuneHandles.push_back(request->getHandle());
-                        submitResProvisionRequest(request, false);
-
-                    } else {
-                        Request::cleanUpRequest(request);
-                    }
-                }
+            if(handle != -1) {
+                this->mCurrRestuneHandles.push_back(handle);
             }
         }
-    } catch(const std::exception& e) {
-        LOGE(CLASSIFIER_TAG,
-             "Failed to acquire per-app config signal, Error: " + std::string(e.what()));
     }
 }
 

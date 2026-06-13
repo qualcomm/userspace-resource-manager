@@ -64,6 +64,7 @@ install(TARGETS RestuneCore LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 set(HEADER_FILES "")
 list(APPEND HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/core/Include/ResourceRegistry.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/signals/Include/SignalInternal.h
   ${CMAKE_CURRENT_SOURCE_DIR}/core/Include/TargetRegistry.h
 )
 

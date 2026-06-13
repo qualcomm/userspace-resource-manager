@@ -54,9 +54,9 @@ static std::string getTimestamp() {
     try {                                                                           \
         parsedValue = (int32_t)std::stoi(value);                                    \
     } catch(const std::invalid_argument& ex) {                                      \
-        std::cerr<<"std::invalid_argument::what(): " << ex.what()<<std::endl;       \
+        std::cout<<"std::invalid_argument::what(): " << ex.what()<<std::endl;       \
     } catch(const std::out_of_range& ex) {                                          \
-        std::cerr<<"std::out_of_range::what(): " << ex.what()<<std::endl;           \
+        std::cout<<"std::out_of_range::what(): " << ex.what()<<std::endl;           \
     }                                                                               \
     parsedValue;                                                                    \
 });
@@ -71,29 +71,29 @@ static std::string getTimestamp() {
 
 #define C_ASSERT(cond)                                                                                                 \
     if(cond == false) {                                                                                                \
-        std::cerr<<"["<<getTimestamp()<<"] Assertion failed at line [" << __LINE__ << "]: "<<#cond<<std::endl;         \
-        std::cerr<<"["<<getTimestamp()<<"] Test: ["<<__func__<<"] Failed, Terminating Suite\n"<<std::endl;             \
+        std::cout<<"["<<getTimestamp()<<"] Assertion failed at line [" << __LINE__ << "]: "<<#cond<<std::endl;         \
+        std::cout<<"["<<getTimestamp()<<"] Test: ["<<__func__<<"] Failed, Terminating Suite\n"<<std::endl;             \
         exit(EXIT_FAILURE);                                                                                            \
     }                                                                                                                  \
 
 #define E_ASSERT(cond)                                                                                                                \
     if(cond == false) {                                                                                                               \
-        std::cerr<<"["<<getTimestamp()<<"] Assertion failed at line [" << __FILE__<<":"<<__LINE__ << "]: "<<#cond<<std::endl;         \
-        std::cerr<<"["<<getTimestamp()<<"] Test: ["<<__func__<<"] Failed\n"<<std::endl;                                               \
+        std::cout<<"["<<getTimestamp()<<"] Assertion failed at line [" << __FILE__<<":"<<__LINE__ << "]: "<<#cond<<std::endl;         \
+        std::cout<<"["<<getTimestamp()<<"] Test: ["<<__func__<<"] Failed\n"<<std::endl;                                               \
         throw std::runtime_error("Test Failed");                                                                                      \
     }                                                                                                                                 \
 
 #define C_ASSERT_NEAR(val1, val2, tol)                                                                      \
     if(std::fabs((val1) - (val2)) > (tol)) {                                                                \
-        std::cerr<<"["<<getTimestamp()<<"] Condition Check on line:["<<__LINE__<<"]  failed"<<std::endl;    \
-        std::cerr<<"["<<getTimestamp()<<"] Test: ["<<__func__<<"] Failed, Terminating Suite\n"<<std::endl;  \
+        std::cout<<"["<<getTimestamp()<<"] Condition Check on line:["<<__LINE__<<"]  failed"<<std::endl;    \
+        std::cout<<"["<<getTimestamp()<<"] Test: ["<<__func__<<"] Failed, Terminating Suite\n"<<std::endl;  \
         exit(EXIT_FAILURE);                                                                                 \
     }                                                                                                       \
 
 #define E_ASSERT_NEAR(val1, val2, tol)                                                                      \
     if(std::fabs((val1) - (val2)) > (tol)) {                                                                \
-        std::cerr<<"["<<getTimestamp()<<"] Condition Check on line:["<<__LINE__<<"]  failed"<<std::endl;    \
-        std::cerr<<"["<<getTimestamp()<<"] Test: ["<<__func__<<"] Failed, Terminating Suite\n"<<std::endl;  \
+        std::cout<<"["<<getTimestamp()<<"] Condition Check on line:["<<__LINE__<<"]  failed"<<std::endl;    \
+        std::cout<<"["<<getTimestamp()<<"] Test: ["<<__func__<<"] Failed, Terminating Suite\n"<<std::endl;  \
         throw std::runtime_error("Test Failed");                                                            \
     }                                                                                                       \
 

@@ -1,7 +1,15 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
+#include "Signal.h"
 #include "SignalInternal.h"
+#include "SignalRegistry.h"
+#include "RestuneInternal.h"
+#include "ResourceRegistry.h"
+#include "ExtFeaturesRegistry.h"
+#include "SignalExtFeatureMapper.h"
+
+#define CLASSIFIER_TAG "CLASSIFIER_FROM_SH"
 
 static int8_t getRequestPriority(int8_t clientPermissions, int8_t reqSpecifiedPriority) {
     if(clientPermissions == PERMISSION_SYSTEM) {
@@ -46,7 +54,7 @@ static int8_t VerifyIncomingRequest(Signal* signal) {
 
     // Check if a Signal with the given ID exists in the Registry
     SignalInfo* signalInfo =
-        sigRegistry->getSignalConfigById(signal->getSignalCode(), signal->getSignalType());
+        sigRegistry->getSignalConfigByIdAndType(signal->getSignalCode(), signal->getSignalType());
 
     // Basic sanity: Invalid ResCode
     if(signalInfo == nullptr) {
@@ -105,7 +113,7 @@ static Request* createResourceTuningRequest(Signal* signal) {
 
         // Check if a Signal with the given ID exists in the Registry
         SignalInfo* signalInfo =
-            sigRegistry->getSignalConfigById(signal->getSignalCode(), signal->getSignalType());
+            sigRegistry->getSignalConfigByIdAndType(signal->getSignalCode(), signal->getSignalType());
 
         if(signalInfo == nullptr) return nullptr;
 
@@ -131,7 +139,7 @@ static Request* createResourceTuningRequest(Signal* signal) {
 
             // fill placeholders if any
             for(int32_t j = 0; j < resource->getValuesCount(); j++) {
-                if(resource->getValueAt(j) == -1) {
+                if(resource->getValueAt(j) == NSIG_PLACEHOLDER) {
                     if(signal->getListArgs() == nullptr) return nullptr;
                     if(listIndex >= 0 && listIndex < signal->getNumArgs()) {
                         resource->setValueAt(j, signal->getListArgAt(listIndex));
@@ -315,4 +323,96 @@ ErrCode submitSignalRequest(void* msg) {
     }
 
     return RC_SUCCESS;
+}
+
+static Request* createTuneRequestFromSignal(uint32_t sigId,
+                                            uint32_t sigType,
+                                            pid_t incomingPID,
+                                            pid_t incomingTID,
+                                            int32_t numFilterArgs,
+                                            uint32_t* filterArgs,
+                                            int32_t numArgs,
+                                            uint32_t* args) {
+    try {
+        std::shared_ptr<SignalRegistry> sigRegistry = SignalRegistry::getInstance();
+
+        // Check if a Signal with the given ID exists in the Registry
+        SignalInfo* signalInfo =
+            sigRegistry->getSignalConfigByIdAndType(sigId, sigType, numFilterArgs, filterArgs);
+
+        if(signalInfo == nullptr) return nullptr;
+
+        // Create a Request
+        Request* request = MPLACED(Request);
+        request->setHandle(AuxRoutines::generateUniqueHandle());
+        request->setRequestType(REQ_RESOURCE_TUNING);
+        request->setDuration(signalInfo->mTimeout);
+        request->setProperties(SYSTEM_HIGH);
+        request->setClientPID(incomingPID);
+        request->setClientTID(incomingTID);
+
+        std::vector<Resource*>* signalLocks = signalInfo->mSignalResources;
+
+        for(int32_t i = 0; i < (int32_t)signalLocks->size(); i++) {
+            if((*signalLocks)[i] == nullptr) {
+                continue;
+            }
+
+            // Copy
+            Resource* resource = MPLACEV(Resource, (*((*signalLocks)[i])));
+
+            // fill placeholders if any
+            int32_t listIndex = 0;
+            for(int32_t j = 0; j < resource->getValuesCount(); j++) {
+                if(resource->getValueAt(j) == NSIG_PLACEHOLDER) {
+                    if(args == nullptr) return nullptr;
+                    if(listIndex >= 0 && listIndex < numArgs) {
+                        resource->setValueAt(j, args[listIndex]);
+                        listIndex++;
+                    }
+                }
+            }
+
+            // Add Resource to Request
+            ResIterable* resIterable = MPLACED(ResIterable);
+            resIterable->mData = resource;
+            request->addResource(resIterable);
+        }
+
+        return request;
+
+    } catch(const std::bad_alloc& e) {
+        return nullptr;
+    }
+
+    return nullptr;
+}
+
+int64_t acquireSignal(uint32_t sigId,
+                      uint32_t sigType,
+                      pid_t incomingPID,
+                      pid_t incomingTID,
+                      int32_t numFilterArgs,
+                      uint32_t* filterArgs,
+                      int32_t numArgs,
+                      uint32_t* args) {
+    int64_t handle = -1;
+    Request* request =
+        createTuneRequestFromSignal(sigId, sigType, incomingPID,
+                                    incomingTID, numFilterArgs,
+                                    filterArgs, numArgs, args);
+    if(request != nullptr) {
+        if(request->getResourcesCount() > 0) {
+            // Record:
+            handle = request->getHandle();
+
+            // fast path to Request Queue
+            submitResProvisionRequest(request, false);
+
+        } else {
+            Request::cleanUpRequest(request);
+        }
+    }
+
+    return handle;
 }

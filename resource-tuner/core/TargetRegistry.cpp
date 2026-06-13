@@ -1,8 +1,12 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause-Clear
+
 #include "TargetRegistry.h"
 #include "UrmSettings.h"
 #include "RestuneDBus.h"
+
+#define JOURNALD_CONF "/etc/systemd/journald.conf"
+#define JOURNALD_URM_CONF "/etc/urm/journald_modified_conf"
 
 // Create all the CGroups specified via InitConfig.yaml during the init phase.
 static ErrCode createCGroup(CGroupConfigInfo* cGroupConfig) {
@@ -249,7 +253,17 @@ void TargetRegistry::getClusterIdBasedMapping() {
 }
 
 std::shared_ptr<TargetRegistry> TargetRegistry::targetRegistryInstance = nullptr;
-TargetRegistry::TargetRegistry() {}
+TargetRegistry::TargetRegistry() {
+    // Check for older modifications to the journald conf
+    if(AuxRoutines::fileExists(JOURNALD_URM_CONF)) {
+        // Restore
+        std::ifstream src(JOURNALD_URM_CONF, std::ios::binary);
+        std::ofstream dst(JOURNALD_CONF, std::ios::binary);
+        dst << src.rdbuf();
+        AuxRoutines::deleteFile(JOURNALD_URM_CONF);
+        RestuneSDBus::getInstance()->restartService("systemd-journald.service");
+    }
+}
 
 void TargetRegistry::addClusterMapping(const std::string& logicalIDString, const std::string& physicalIDString) {
     try {
@@ -569,7 +583,11 @@ ErrCode TargetRegistry::addLogLimit(std::vector<std::string>& values) {
         return RC_SUCCESS;
     }
 
-    const std::string journaldConfFile = "/etc/systemd/journald.conf";
+    // Save the original content
+    std::ifstream src(JOURNALD_CONF, std::ios::binary);
+    std::ofstream dst(JOURNALD_URM_CONF, std::ios::binary);
+    dst << src.rdbuf();
+
     const std::unordered_map<std::string, std::string> configOptions = {
         {"RuntimeMaxUse", "20M"},
         {"RuntimeMaxFileSize", "128K"},
@@ -580,7 +598,7 @@ ErrCode TargetRegistry::addLogLimit(std::vector<std::string>& values) {
         {"ForwardToSyslog", "no"}
     };
 
-    std::ifstream confInStream(journaldConfFile);
+    std::ifstream confInStream(JOURNALD_CONF);
     if(!confInStream) {
         return RC_SUCCESS;
     }
@@ -629,7 +647,7 @@ ErrCode TargetRegistry::addLogLimit(std::vector<std::string>& values) {
         }
     }
 
-    std::ofstream confOutStream(journaldConfFile);
+    std::ofstream confOutStream(JOURNALD_CONF);
     confOutStream << newContent.str();
     confOutStream.close();
 

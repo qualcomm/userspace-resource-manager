@@ -10,7 +10,7 @@ PropertyConfigs:
 
   - Name: resource_tuner.thread_pool.desired_capacity
     Value: "5"
-  
+
   - Name: resource_tuner.thread_pool.max_scaling_capacity
     Value: "10"
 

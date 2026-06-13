@@ -1,16 +1,16 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
+#include "Utils.h"
+#include "URMTests.h"
 #include "ErrCodes.h"
 #include "TestUtils.h"
-#include "RestuneParser.h"
-#include "ResourceRegistry.h"
-#include "SignalRegistry.h"
 #include "Extensions.h"
-#include "Utils.h"
+#include "RestuneParser.h"
+#include "SignalRegistry.h"
 #include "RestuneInternal.h"
+#include "ResourceRegistry.h"
 #include "PropertiesRegistry.h"
-#include "URMTests.h"
 
 #define TEST_CLASS "COMPONENT"
 #define TEST_SUBCAT "0_URM_PARSERS"
@@ -83,7 +83,9 @@ URM_TEST(SignalParsingTests, {
     }
 
     {
-        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigById(CONSTRUCT_SIG_CODE(0x0d, 0x0000), 0);
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x0000), 0
+        );
 
         E_ASSERT((signalInfo != nullptr));
         E_ASSERT((signalInfo->mSignalID == 0));
@@ -112,7 +114,9 @@ URM_TEST(SignalParsingTests, {
     }
 
     {
-        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigById(CONSTRUCT_SIG_CODE(0x0d, 0x0001), 0);
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x0001), 0
+        );
 
         E_ASSERT((signalInfo != nullptr));
         E_ASSERT((signalInfo->mSignalID == 1));
@@ -147,12 +151,16 @@ URM_TEST(SignalParsingTests, {
     }
 
     {
-        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigById(CONSTRUCT_SIG_CODE(0x0d, 0x0003), 0);
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x0003), 0
+        );
         E_ASSERT((signalInfo == nullptr));
     }
 
     {
-        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigById(CONSTRUCT_SIG_CODE(0x0d, 0x0007), 0);
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x0007), 0
+        );
 
         E_ASSERT((signalInfo != nullptr));
         E_ASSERT((signalInfo->mSignalID == 0x0007));
@@ -172,23 +180,25 @@ URM_TEST(SignalParsingTests, {
         Resource* resource1 = signalInfo->mSignalResources->at(0);
         E_ASSERT((resource1->getResCode() == 0x000900aa));
         E_ASSERT((resource1->getValuesCount() == 3));
-        E_ASSERT((resource1->getValueAt(0) == -1));
-        E_ASSERT((resource1->getValueAt(1) == -1));
+        E_ASSERT((resource1->getValueAt(0) == NSIG_PLACEHOLDER));
+        E_ASSERT((resource1->getValueAt(1) == NSIG_PLACEHOLDER));
         E_ASSERT((resource1->getValueAt(2) == 68));
         E_ASSERT((resource1->getResInfo() == 0));
 
         Resource* resource2 = signalInfo->mSignalResources->at(1);
         E_ASSERT((resource2->getResCode() == 0x000900dc));
         E_ASSERT((resource2->getValuesCount() == 4));
-        E_ASSERT((resource2->getValueAt(0) == -1));
-        E_ASSERT((resource2->getValueAt(1) == -1));
+        E_ASSERT((resource2->getValueAt(0) == NSIG_PLACEHOLDER));
+        E_ASSERT((resource2->getValueAt(1) == NSIG_PLACEHOLDER));
         E_ASSERT((resource2->getValueAt(2) == 50));
         E_ASSERT((resource2->getValueAt(3) == 512));
         E_ASSERT((resource2->getResInfo() == 0));
     }
 
     {
-        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigById(CONSTRUCT_SIG_CODE(0x0d, 0x000b), 27);
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x000b), 27
+        );
 
         E_ASSERT((signalInfo != nullptr));
         E_ASSERT((signalInfo->mSignalID == 0x000b));
@@ -212,6 +222,175 @@ URM_TEST(SignalParsingTests, {
         E_ASSERT((resource1->getValuesCount() == 1));
         E_ASSERT((resource1->getValueAt(0) == 231));
         E_ASSERT((resource1->getResInfo() == 0));
+
+        // Signals without ExtraAttrs must default to 0 for all indices
+        E_ASSERT((signalInfo->mHasExtraAttrs == false));
+        E_ASSERT((signalInfo->mExtraAttrs[SIGNAL_EXTRA_ATTR_FPS] == 0));
+        E_ASSERT((signalInfo->mExtraAttrs[SIGNAL_EXTRA_ATTR_HEIGHT] == 0));
+        E_ASSERT((signalInfo->mExtraAttrs[SIGNAL_EXTRA_ATTR_WIDTH] == 0));
+    }
+
+    {
+        uint32_t* extraAttrs = new uint32_t[SIGNAL_EXTRA_ATTRS_COUNT];
+        extraAttrs[0] = 60;
+        extraAttrs[1] = 1080;
+        extraAttrs[2] = 1920;
+
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x000c), 0, SIGNAL_EXTRA_ATTRS_COUNT, extraAttrs
+        );
+
+        E_ASSERT((signalInfo != nullptr));
+        E_ASSERT((signalInfo->mSignalID == 0x000c));
+        E_ASSERT((signalInfo->mSignalCategory == 0x0d));
+        E_ASSERT((strcmp((const char*)signalInfo->mSignalName.data(), "TEST_SIGNAL_10") == 0));
+        E_ASSERT((signalInfo->mTimeout == 10000));
+
+        E_ASSERT((signalInfo->mPermissions != nullptr));
+        E_ASSERT((signalInfo->mSignalResources != nullptr));
+
+        E_ASSERT((signalInfo->mPermissions->size() == 2));
+        E_ASSERT((signalInfo->mSignalResources->size() == 1));
+
+        E_ASSERT((signalInfo->mPermissions->at(0) == PERMISSION_THIRD_PARTY));
+        E_ASSERT((signalInfo->mPermissions->at(1) == PERMISSION_SYSTEM));
+
+        Resource* resource1 = signalInfo->mSignalResources->at(0);
+        E_ASSERT((resource1->getResCode() == 0x00ff0004));
+        E_ASSERT((resource1->getValuesCount() == 1));
+        E_ASSERT((resource1->getValueAt(0) == 231));
+        E_ASSERT((resource1->getResInfo() == 0));
+
+        // Verify ExtraAttrs are parsed correctly into the array
+        E_ASSERT((signalInfo->mHasExtraAttrs == true));
+        E_ASSERT((signalInfo->mExtraAttrs[SIGNAL_EXTRA_ATTR_FPS] == 60));
+        E_ASSERT((signalInfo->mExtraAttrs[SIGNAL_EXTRA_ATTR_HEIGHT] == 1080));
+        E_ASSERT((signalInfo->mExtraAttrs[SIGNAL_EXTRA_ATTR_WIDTH] == 1920));
+    }
+
+    {
+        uint32_t* extraAttrs = new uint32_t[SIGNAL_EXTRA_ATTRS_COUNT];
+        extraAttrs[0] = 30;
+        extraAttrs[1] = 720;
+        extraAttrs[2] = 1280;
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x000d), 0, SIGNAL_EXTRA_ATTRS_COUNT, extraAttrs
+        );
+
+        E_ASSERT((signalInfo != nullptr));
+        E_ASSERT((signalInfo->mSignalID == 0x000d));
+        E_ASSERT((signalInfo->mSignalCategory == 0x0d));
+        E_ASSERT((strcmp((const char*)signalInfo->mSignalName.data(), "TEST_SIGNAL_11") == 0));
+        E_ASSERT((signalInfo->mTimeout == 8000));
+
+        E_ASSERT((signalInfo->mPermissions != nullptr));
+        E_ASSERT((signalInfo->mSignalResources != nullptr));
+
+        E_ASSERT((signalInfo->mPermissions->size() == 2));
+        E_ASSERT((signalInfo->mSignalResources->size() == 2));
+
+        E_ASSERT((signalInfo->mPermissions->at(0) == PERMISSION_THIRD_PARTY));
+        E_ASSERT((signalInfo->mPermissions->at(1) == PERMISSION_SYSTEM));
+
+        Resource* resource1 = signalInfo->mSignalResources->at(0);
+        E_ASSERT((resource1->getResCode() == 0x00ff0004));
+        E_ASSERT((resource1->getValuesCount() == 1));
+        E_ASSERT((resource1->getValueAt(0) == 115));
+        E_ASSERT((resource1->getResInfo() == 0));
+
+        Resource* resource2 = signalInfo->mSignalResources->at(1);
+        E_ASSERT((resource2->getResCode() == 0x00ff0000));
+        E_ASSERT((resource2->getValuesCount() == 1));
+        E_ASSERT((resource2->getValueAt(0) == 512));
+        E_ASSERT((resource2->getResInfo() == 0));
+
+        E_ASSERT((signalInfo->mHasExtraAttrs == true));
+        E_ASSERT((signalInfo->mExtraAttrs[SIGNAL_EXTRA_ATTR_FPS] == 30));
+        E_ASSERT((signalInfo->mExtraAttrs[SIGNAL_EXTRA_ATTR_HEIGHT] == 720));
+        E_ASSERT((signalInfo->mExtraAttrs[SIGNAL_EXTRA_ATTR_WIDTH] == 1280));
+    }
+
+    {
+        // Three Versions of the same Signal, where two of them have extra features
+        // All Signals should co-exist
+        SignalInfo* signalInfo1 = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x000e), 0
+        );
+        E_ASSERT((signalInfo1 != nullptr));
+        E_ASSERT((signalInfo1->mSignalID == 0x000e));
+        E_ASSERT((signalInfo1->mSignalCategory == 0x0d));
+        E_ASSERT((strcmp((const char*)signalInfo1->mSignalName.data(), "TEST_SIGNAL_12") == 0));
+
+        E_ASSERT((signalInfo1->mPermissions != nullptr));
+        E_ASSERT((signalInfo1->mSignalResources != nullptr));
+
+        E_ASSERT((signalInfo1->mPermissions->size() == 2));
+        E_ASSERT((signalInfo1->mSignalResources->size() == 1));
+
+        E_ASSERT((signalInfo1->mPermissions->at(0) == PERMISSION_THIRD_PARTY));
+        E_ASSERT((signalInfo1->mPermissions->at(1) == PERMISSION_SYSTEM));
+
+        Resource* resource = signalInfo1->mSignalResources->at(0);
+        E_ASSERT((resource->getResCode() == 0x00ff0002));
+        E_ASSERT((resource->getValuesCount() == 1));
+        E_ASSERT((resource->getValueAt(0) == 115));
+        E_ASSERT((resource->getResInfo() == 0));
+
+        // Signal With-Features #1
+        uint32_t* extraAttrs = new uint32_t[SIGNAL_EXTRA_ATTRS_COUNT];
+        extraAttrs[0] = 120;
+        extraAttrs[1] = 2160;
+        extraAttrs[2] = 3840;
+        SignalInfo* signalInfo2 = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x000e), 0, SIGNAL_EXTRA_ATTRS_COUNT, extraAttrs
+        );
+        E_ASSERT((signalInfo2 != nullptr));
+        E_ASSERT((signalInfo2->mSignalID == 0x000e));
+        E_ASSERT((signalInfo2->mSignalCategory == 0x0d));
+        E_ASSERT((strcmp((const char*)signalInfo2->mSignalName.data(), "TEST_SIGNAL_12_WEF_1") == 0));
+
+        E_ASSERT((signalInfo2->mPermissions != nullptr));
+        E_ASSERT((signalInfo2->mSignalResources != nullptr));
+
+        E_ASSERT((signalInfo2->mPermissions->size() == 2));
+        E_ASSERT((signalInfo2->mSignalResources->size() == 1));
+
+        E_ASSERT((signalInfo2->mPermissions->at(0) == PERMISSION_THIRD_PARTY));
+        E_ASSERT((signalInfo2->mPermissions->at(1) == PERMISSION_SYSTEM));
+
+        resource = signalInfo2->mSignalResources->at(0);
+        E_ASSERT((resource->getResCode() == 0x00ff0000));
+        E_ASSERT((resource->getValuesCount() == 1));
+        E_ASSERT((resource->getValueAt(0) == 512));
+        E_ASSERT((resource->getResInfo() == 0));
+
+        // Signal With-Features #2
+        uint32_t* extraAttrs2 = new uint32_t[SIGNAL_EXTRA_ATTRS_COUNT];
+        extraAttrs[0] = 30;
+        extraAttrs[1] = 4320;
+        extraAttrs[2] = 7680;
+        SignalInfo* signalInfo3 = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x000e), 0, SIGNAL_EXTRA_ATTRS_COUNT, extraAttrs2
+        );
+        E_ASSERT((signalInfo3 != nullptr));
+        E_ASSERT((signalInfo3->mSignalID == 0x000e));
+        E_ASSERT((signalInfo3->mSignalCategory == 0x0d));
+        E_ASSERT((strcmp((const char*)signalInfo3->mSignalName.data(), "TEST_SIGNAL_12_WEF_2") == 0));
+
+        E_ASSERT((signalInfo3->mPermissions != nullptr));
+        E_ASSERT((signalInfo3->mSignalResources != nullptr));
+
+        E_ASSERT((signalInfo3->mPermissions->size() == 2));
+        E_ASSERT((signalInfo3->mSignalResources->size() == 1));
+
+        E_ASSERT((signalInfo3->mPermissions->at(0) == PERMISSION_THIRD_PARTY));
+        E_ASSERT((signalInfo3->mPermissions->at(1) == PERMISSION_SYSTEM));
+
+        resource = signalInfo3->mSignalResources->at(0);
+        E_ASSERT((resource->getResCode() == 0x00ff0005));
+        E_ASSERT((resource->getValuesCount() == 1));
+        E_ASSERT((resource->getValueAt(0) == 874));
+        E_ASSERT((resource->getResInfo() == 0x00000101));
     }
 })
 
@@ -550,7 +729,9 @@ URM_TEST(SignalParsingTestsAddOn, {
     }
 
     {
-        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigById(CONSTRUCT_SIG_CODE(0xde, 0xaadd), 0);
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0xde, 0xaadd), 0
+        );
 
         E_ASSERT((signalInfo != nullptr));
         E_ASSERT((signalInfo->mSignalID == 0xaadd));
@@ -578,7 +759,9 @@ URM_TEST(SignalParsingTestsAddOn, {
     }
 
     {
-        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigById(CONSTRUCT_SIG_CODE(0x0d, 0x0007), 0);
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x0007), 0
+        );
 
         E_ASSERT((signalInfo != nullptr));
         E_ASSERT((signalInfo->mSignalID == 0x0007));
@@ -598,23 +781,25 @@ URM_TEST(SignalParsingTestsAddOn, {
         Resource* resource1 = signalInfo->mSignalResources->at(0);
         E_ASSERT((resource1->getResCode() == 0x000900aa));
         E_ASSERT((resource1->getValuesCount() == 3));
-        E_ASSERT((resource1->getValueAt(0) == -1));
-        E_ASSERT((resource1->getValueAt(1) == -1));
+        E_ASSERT((resource1->getValueAt(0) == NSIG_PLACEHOLDER));
+        E_ASSERT((resource1->getValueAt(1) == NSIG_PLACEHOLDER));
         E_ASSERT((resource1->getValueAt(2) == 68));
         E_ASSERT((resource1->getResInfo() == 0));
 
         Resource* resource2 = signalInfo->mSignalResources->at(1);
         E_ASSERT((resource2->getResCode() == 0x000900dc));
         E_ASSERT((resource2->getValuesCount() == 4));
-        E_ASSERT((resource2->getValueAt(0) == -1));
-        E_ASSERT((resource2->getValueAt(1) == -1));
+        E_ASSERT((resource2->getValueAt(0) == NSIG_PLACEHOLDER));
+        E_ASSERT((resource2->getValueAt(1) == NSIG_PLACEHOLDER));
         E_ASSERT((resource2->getValueAt(2) == 50));
         E_ASSERT((resource2->getValueAt(3) == 512));
         E_ASSERT((resource2->getResInfo() == 0));
     }
 
     {
-        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigById(CONSTRUCT_SIG_CODE(0x1e, 0x00ab), 0);
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x1e, 0x00ab), 0
+        );
 
         E_ASSERT((signalInfo != nullptr));
         E_ASSERT((signalInfo->mSignalID == 0x00ab));
@@ -649,12 +834,16 @@ URM_TEST(SignalParsingTestsAddOn, {
     }
 
     {
-        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigById(CONSTRUCT_SIG_CODE(0x08, 0x0000), 0);
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x08, 0x0000), 0
+        );
         E_ASSERT((signalInfo == nullptr));
     }
 
     {
-        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigById(CONSTRUCT_SIG_CODE(0xce, 0xffcf), 0);
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0xce, 0xffcf), 0
+        );
 
         E_ASSERT((signalInfo != nullptr));
         E_ASSERT((signalInfo->mSignalID == 0xffcf));
@@ -686,6 +875,49 @@ URM_TEST(SignalParsingTestsAddOn, {
         E_ASSERT((resource2->getValueAt(2)  == 965));
         E_ASSERT((resource2->getResInfo() == 0));
     }
+
+    {
+        // Verify that a signal with extra features can be overridden
+        uint32_t* extraAttrs = new uint32_t[SIGNAL_EXTRA_ATTRS_COUNT];
+        extraAttrs[0] = 55;
+        extraAttrs[1] = 6003;
+        extraAttrs[2] = 7122;
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x000f), 0, SIGNAL_EXTRA_ATTRS_COUNT, extraAttrs
+        );
+
+        E_ASSERT((signalInfo != nullptr));
+        E_ASSERT((signalInfo->mSignalID == 0x000f));
+        E_ASSERT((signalInfo->mSignalCategory == 0x0d));
+        E_ASSERT((strcmp((const char*)signalInfo->mSignalName.data(), "TEST_SIGNAL_13_OVERRIDE") == 0));
+        E_ASSERT((signalInfo->mTimeout == 12000));
+
+        E_ASSERT((signalInfo->mPermissions != nullptr));
+        E_ASSERT((signalInfo->mSignalResources != nullptr));
+
+        E_ASSERT((signalInfo->mPermissions->size() == 2));
+        E_ASSERT((signalInfo->mSignalResources->size() == 2));
+
+        E_ASSERT((signalInfo->mPermissions->at(0) == PERMISSION_THIRD_PARTY));
+        E_ASSERT((signalInfo->mPermissions->at(1) == PERMISSION_SYSTEM));
+
+        Resource* resource1 = signalInfo->mSignalResources->at(0);
+        E_ASSERT((resource1->getResCode() == 0x00ff000a));
+        E_ASSERT((resource1->getValuesCount() == 1));
+        E_ASSERT((resource1->getValueAt(0) == 654));
+        E_ASSERT((resource1->getResInfo() == 0x00000102));
+
+        Resource* resource2 = signalInfo->mSignalResources->at(1);
+        E_ASSERT((resource2->getResCode() == 0x00ff000b));
+        E_ASSERT((resource2->getValuesCount() == 1));
+        E_ASSERT((resource2->getValueAt(0) == 120));
+        E_ASSERT((resource2->getResInfo() == 0));
+
+        E_ASSERT((signalInfo->mHasExtraAttrs == true));
+        E_ASSERT((signalInfo->mExtraAttrs[SIGNAL_EXTRA_ATTR_FPS] == 55));
+        E_ASSERT((signalInfo->mExtraAttrs[SIGNAL_EXTRA_ATTR_HEIGHT] == 6003));
+        E_ASSERT((signalInfo->mExtraAttrs[SIGNAL_EXTRA_ATTR_WIDTH] == 7122));
+    }
 })
 
 URM_TEST(AppConfigParserTests, {
@@ -699,15 +931,34 @@ URM_TEST(AppConfigParserTests, {
     E_ASSERT((parsingStatus == RC_SUCCESS));
 
     {
-        AppConfig* appConfigInfo = AppConfigs::getInstance()->getAppConfig("gst-launch-");
+        AppConfig* appConfigInfo = AppConfigs::getInstance()->getAppConfig("chrome");
+        E_ASSERT((appConfigInfo != nullptr));
 
-        E_ASSERT((appConfigInfo->mAppName == "gst-launch-"));
+        E_ASSERT((appConfigInfo->mAppName == "chrome"));
         E_ASSERT((appConfigInfo->mNumThreads == 2));
 
         E_ASSERT((appConfigInfo->mThreadNameList != nullptr));
         E_ASSERT((appConfigInfo->mCGroupIds != nullptr));
 
-        E_ASSERT((appConfigInfo->mNumSignals == 0));
-        E_ASSERT((appConfigInfo->mSignalCodes == nullptr));
+        E_ASSERT((appConfigInfo->mNumSignals == 1));
+        E_ASSERT((appConfigInfo->mSignalCodes != nullptr));
+
+        E_ASSERT((appConfigInfo->mSignalCodes[0] == 0x80034aab));
+    }
+
+    {
+        AppConfig* appConfigInfo = AppConfigs::getInstance()->getAppConfig("vlc");
+        E_ASSERT((appConfigInfo != nullptr));
+
+        E_ASSERT((appConfigInfo->mAppName == "vlc"));
+        E_ASSERT((appConfigInfo->mNumThreads == 0));
+
+        E_ASSERT((appConfigInfo->mThreadNameList == nullptr));
+        E_ASSERT((appConfigInfo->mCGroupIds == nullptr));
+
+        E_ASSERT((appConfigInfo->mNumSignals == 1));
+        E_ASSERT((appConfigInfo->mSignalCodes != nullptr));
+
+        E_ASSERT((appConfigInfo->mSignalCodes[0] == 0x000d000c));
     }
 })

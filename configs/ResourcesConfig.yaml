@@ -142,6 +142,16 @@ ResourceConfigs:
     Policy: "lower_is_better"
     ApplyType: "cluster"
 
+  - ResType: "0x04"
+    ResID: "0x0003"
+    Name: "RES_CPU_ONLINE_PER_CORE"
+    Path: "/sys/devices/system/cpu/cpu%d/online"
+    Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "instant_apply"
+    ApplyType: "core"
+
   - ResType: "0x05"
     ResID: "0x0000"
     Name: "RES_DEVFREQ_GPU_MAX"
@@ -331,16 +341,6 @@ ResourceConfigs:
     ResID: "0x000f"
     Name: "RES_CGRP_IO_WEIGHT"
     Path: "/sys/fs/cgroup/%s/io.weight"
-    Supported: true
-    Permissions: "system"
-    Modes: ["display_on"]
-    Policy: "instant_apply"
-    ApplyType: "cgroup"
-
-  - ResType: "0x09"
-    ResID: "0x0010"
-    Name: "RES_CGRP_BFQ_IO_WEIGHT"
-    Path: "/sys/fs/cgroup/%s/io.bfq.weight"
     Supported: true
     Permissions: "system"
     Modes: ["display_on"]

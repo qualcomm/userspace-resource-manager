@@ -54,3 +54,17 @@ SignalConfigs:
     Resources:
     - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [2300]} # big cluster
     - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "CLUSTER_LITTLE_CORE_1", Values: [900, 3]} # second core of little cluster
+
+  - SigId: "0x000f"
+    Category: "0x0d"
+    Name: TEST_SIGNAL_13_OVERRIDE
+    Enable: true
+    Permissions: ["third_party", "system"]
+    Timeout: 12000
+    ExtraAttrs:
+      - Fps: 55
+      - Height: 6003
+      - Width: 7122
+    Resources:
+      - {ResCode: "0x00ff000a", ResInfo: "0x00000102", Values: [654]}
+      - {ResCode: "0x00ff000b", ResInfo: "0x00000000", Values: [120]}
