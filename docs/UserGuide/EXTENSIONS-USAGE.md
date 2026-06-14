@@ -75,7 +75,39 @@ static void limitCpuTime(void* context) {
 URM_REGISTER_RES_APPLIER_CB(0x00090005, limitCpuTime);
 ```
 
-# 3. Custom Configs
+# 3. Post-Processing Callbacks
+
+Post-processing callbacks allow extension plugins to react to signal events after URM has processed them. Register a callback using `URM_REGISTER_POST_PROCESS_CB`. URM invokes the callback when a signal matching the registered identifier is acquired, passing a `PostProcessCBData*` as the argument.
+
+**`PostProcessCBData` struct** (declared in `extensions/Include/Extensions.h`):
+
+```cpp
+typedef struct {
+    pid_t    mPid;        // PID of the client that issued the signal request
+    uint32_t mSigId;      // Signal ID
+    uint32_t mSigType;    // Signal type/variant
+    int32_t  mNumArgs;    // Number of arguments in mArgs
+    uint32_t* mArgs;      // Caller-supplied argument list (unsigned 32-bit values)
+    int64_t  mHandleAcq;  // Handle of the resource tuning request acquired by URM for this signal
+} PostProcessCBData;
+```
+
+The `mHandleAcq` field carries the handle returned by the internal `acquireSignal` call, allowing the callback to track or release the associated resource tuning request.
+
+**Usage Example**
+
+```cpp
+void onVideoDecodeSignal(void* data) {
+    PostProcessCBData* cbData = static_cast<PostProcessCBData*>(data);
+    if(cbData == nullptr) return;
+    // cbData->mHandleAcq holds the resource tuning handle acquired for this signal
+    // cbData->mArgs[0..mNumArgs-1] hold the caller-supplied arguments (uint32_t)
+}
+
+URM_REGISTER_POST_PROCESS_CB("com.example.player", onVideoDecodeSignal);
+```
+
+# 4. Custom Configs
 Resource Tuner allows users to provide their own Config files for different entities like: Resources, Signals, Properties etc. In order for these custom config files to be read and parsed they can either be placed in /etc/urm/custom/ or if the user wants even more flexibility in terms of location, they can specify the location of the Config file, using the Extensions Interface's URM_REGISTER_CONFIG macro.
 
 For example:
