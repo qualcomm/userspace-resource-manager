@@ -34,7 +34,7 @@ PropertyConfigs:
 
   - Name: urm.logging.level
     # Possible values: DEBUG, INFO, WARN, ERROR.
-    Value: "WARN" # Anything and everything level DEBUG and above.
+    Value: "WARN" # Anything and everything level WARN and above.
 
     # Only log messages of the exact severity as specified in "urm.logging.level"
   - Name: urm.logging.level.exact
