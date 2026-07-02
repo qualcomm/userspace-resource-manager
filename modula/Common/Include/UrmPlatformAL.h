@@ -251,21 +251,6 @@ static inline uint32_t getResCodeFromString(const char* strCode, int8_t* found) 
     return 0;
 }
 
-//Predefined Resource Types
-enum {
-	CPU_LPM    = 0x00,
-	CACHE_MGMT = 0x01,
-	CPU_SCHED  = 0x02,
-	CPU_FREQ   = 0x03,
-	GPU_OPP    = 0x04,
-	NPU_OPP    = 0x06,
-	MEMORY_QOS = 0x07,
-	MPAM_QOS   = 0x08,
-	CGRP_OPS   = 0x09,
-	STORAGE_IO = 0x0a,
-	CUSTOM     = 0x80
-};
-
 // Predefined Signal Categories
 enum {
     URM_SIG_CAT_TEST       = 0x01,

@@ -94,7 +94,42 @@ int8_t AuxRoutines::fileWritable(const std::string& filePath) {
 }
 
 std::string AuxRoutines::getMachineName() {
-    return AuxRoutines::readFromFile(UrmSettings::mDeviceNamePath);
+    std::string name = AuxRoutines::readFromFile(UrmSettings::mDeviceNamePath);
+    int8_t uniqueName = std::all_of(name.begin(), name.end(), [] (char ch) {
+        return std::isalnum(static_cast<unsigned char>(ch));
+    });
+
+    if(uniqueName) {
+        return name;
+    }
+
+    std::ifstream file("/proc/device-tree/compatible", std::ios::binary);
+
+    std::vector<char> tokens(
+        (std::istreambuf_iterator<char>(file)),
+        std::istreambuf_iterator<char>());
+
+    for(size_t pos = 0; pos < tokens.size();) {
+        std::string token(&tokens[pos]);
+
+        size_t comma = token.find(',');
+        if (comma != std::string::npos) {
+            name = token.substr(comma + 1);
+
+            std::string filePath = "";
+            filePath.append(UrmSettings::mTargetConfDir);
+            filePath.append(name);
+
+            if(AuxRoutines::fileExists(filePath)) {
+                uniqueName = true;
+                break;
+            }    
+        }
+
+        pos += token.size() + 1;
+    }
+
+    return uniqueName ? name : "";
 }
 
 // Helper to check if a string contains only digits
