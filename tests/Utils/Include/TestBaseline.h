@@ -18,7 +18,7 @@
 #define NUM_CLUSERS "NumClusters"
 #define NUM_CORES "NumCores"
 
-const static std::string baselineYamlFilePath = "/etc/urm/tests/configs/Baseline.yaml";
+const static std::string baselineYamlFilePath = "/usr/share/urm/tests/configs/Baseline.yaml";
 
 typedef struct {
     int32_t mLogicalID;

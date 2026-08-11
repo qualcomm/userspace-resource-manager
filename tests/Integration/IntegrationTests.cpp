@@ -210,7 +210,7 @@ URM_TEST(TestNullOrInvalidRequestVerification3, {
  * Cross-Reference id: [D]
  */
 URM_TEST(TestClientPriorityAcquisitionVerification, {
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_min_freq.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/scaling_min_freq.txt";
     int32_t testResourceOriginalValue = 107;
 
     std::string value;
@@ -253,7 +253,7 @@ URM_TEST(TestClientPriorityAcquisitionVerification, {
  */
 URM_TEST(TestInvalidResourceTuning, {
     // Create a list of 2 Resources, where only one of them is valid
-    std::string validResourceName = "/etc/urm/tests/nodes/scaling_min_freq.txt";
+    std::string validResourceName = "/var/lib/urm/tests/nodes/scaling_min_freq.txt";
     int32_t validResourceOriginalValue = 107;
 
     std::string value;
@@ -299,7 +299,7 @@ URM_TEST(TestInvalidResourceTuning, {
  * Cross-Reference id: [F]
  */
 URM_TEST(TestOutOfBoundsResourceTuning, {
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_min_freq.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/scaling_min_freq.txt";
     int32_t testResourceOriginalValue = 107;
 
     std::string value;
@@ -341,7 +341,7 @@ URM_TEST(TestOutOfBoundsResourceTuning, {
  * Cross-Reference id: [G]
  */
 URM_TEST(ResourceLogicalToPhysicalTranslationVerification1, {
-    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource2.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/target_test_resource2.txt";
     int32_t testResourceOriginalValue = 333;
 
     std::string value;
@@ -387,7 +387,7 @@ URM_TEST(ResourceLogicalToPhysicalTranslationVerification1, {
  * Cross-Reference id: [G]
  */
 URM_TEST(ResourceLogicalToPhysicalTranslationVerification2, {
-    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource2.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/target_test_resource2.txt";
     int32_t testResourceOriginalValue = 333;
 
     std::string value;
@@ -440,7 +440,7 @@ URM_TEST(ResourceLogicalToPhysicalTranslationVerification3, {
         SKIP
     }
 
-    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource2.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/target_test_resource2.txt";
     int32_t testResourceOriginalValue = 333;
 
     std::string value;
@@ -493,7 +493,7 @@ URM_TEST(ResourceLogicalToPhysicalTranslationVerification3, {
  * Cross-Reference id: [G]
  */
 URM_TEST(ResourceLogicalToPhysicalTranslationVerification4, {
-    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource2.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/target_test_resource2.txt";
     int32_t testResourceOriginalValue = 333;
 
     std::string value;
@@ -537,7 +537,7 @@ URM_TEST(ResourceLogicalToPhysicalTranslationVerification4, {
  * Cross-Reference id: [H]
  */
 URM_TEST(TestUnSupportedResourceTuningVerification, {
-    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource4.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/target_test_resource4.txt";
     int32_t testResourceOriginalValue = 516;
 
     std::string value;
@@ -575,7 +575,7 @@ URM_TEST(TestUnSupportedResourceTuningVerification, {
  *  Cross-Reference id: [I]
  */
 URM_TEST(ResourceOperationModeVerification, {
-    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource3.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/target_test_resource3.txt";
     int32_t testResourceOriginalValue = 4400;
 
     std::string value;
@@ -617,7 +617,7 @@ URM_TEST(ResourceOperationModeVerification, {
  * Cross-Reference id: [J]
  */
 URM_TEST(ClientPermissionsVerification, {
-    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource1.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/target_test_resource1.txt";
     int32_t testResourceOriginalValue = 240;
 
     std::string value;
@@ -706,7 +706,7 @@ URM_TEST(SignalNullOrInvalidRequestVerification, {
  * Cross-Reference id: [C]
  */
 URM_TEST(SignalClientPermissionChecksVerification, {
-    std::string testResourceName = "/etc/urm/tests/nodes/sched_util_clamp_max.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/sched_util_clamp_max.txt";
     int32_t testResourceOriginalValue = 684;
 
     std::string value;
@@ -746,7 +746,7 @@ URM_TEST(SignalClientPermissionChecksVerification, {
  * Cross-Reference id: [D]
  */
 URM_TEST(SignalOutOfBoundsResourceTuning, {
-    std::string testResourceName = "/etc/urm/tests/nodes/sched_util_clamp_min.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/sched_util_clamp_min.txt";
     int32_t testResourceOriginalValue = 300;
 
     std::string value;
@@ -788,7 +788,7 @@ URM_TEST(SignalOutOfBoundsResourceTuning, {
  * Cross-Reference id: [E]
  */
 URM_TEST(SignalTargetCompatabilityVerificationChecks, {
-    std::string testResourceName = "/etc/urm/tests/nodes/sched_util_clamp_min.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/sched_util_clamp_min.txt";
     int32_t testResourceOriginalValue = 300;
 
     std::string value;
@@ -825,7 +825,7 @@ URM_TEST(SignalTargetCompatabilityVerificationChecks, {
  * Cross-Reference id: [F]
  */
 URM_TEST(SignalNonSupportedSignalProvisioningVerification, {
-    std::string testResourceName = "/etc/urm/tests/nodes/sched_util_clamp_min.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/sched_util_clamp_min.txt";
     int32_t testResourceOriginalValue = 300;
 
     std::string value;
@@ -896,7 +896,7 @@ URM_TEST(SignalNonSupportedSignalProvisioningVerification, {
  * Cross-Reference id: [A]
  */
 URM_TEST(SingleClientTuneRequest, {
-    std::string testResourceName = "/etc/urm/tests/nodes/sched_util_clamp_min.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/sched_util_clamp_min.txt";
     int32_t testResourceOriginalValue = 300;
 
     // Check the original value for the Resource
@@ -943,9 +943,9 @@ URM_TEST(SingleClientTuneRequest, {
  */
 URM_TEST(SingleClientTuneRequestMultipleResources, {
     // Check the original value for each of the Resource
-    std::string testResourceName1 = "/etc/urm/tests/nodes/scaling_max_freq.txt";
-    std::string testResourceName2 = "/etc/urm/tests/nodes/scaling_min_freq.txt";
-    std::string testResourceName3 = "/etc/urm/tests/nodes/sched_util_clamp_max.txt";
+    std::string testResourceName1 = "/var/lib/urm/tests/nodes/scaling_max_freq.txt";
+    std::string testResourceName2 = "/var/lib/urm/tests/nodes/scaling_min_freq.txt";
+    std::string testResourceName3 = "/var/lib/urm/tests/nodes/sched_util_clamp_max.txt";
 
     int32_t testResourceOriginalValue1 = 114;
     int32_t testResourceOriginalValue2 = 107;
@@ -1042,7 +1042,7 @@ URM_TEST(SingleClientTuneRequestMultipleResources, {
  */
 URM_TEST(TestMultipleClientsHigherIsBetterPolicy1, {
     // Check the original value for the Resource
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_max_freq.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/scaling_max_freq.txt";
     int32_t testResourceOriginalValue = 114;
 
     std::string value = AuxRoutines::readFromFile(testResourceName);
@@ -1116,7 +1116,7 @@ URM_TEST(TestMultipleClientsHigherIsBetterPolicy1, {
  */
 URM_TEST(TestMultipleClientsHigherIsBetterPolicy2, {
     // Check the original value for the Resource
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_max_freq.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/scaling_max_freq.txt";
     int32_t testResourceOriginalValue = 114;
 
     std::string value;
@@ -1200,7 +1200,7 @@ URM_TEST(TestMultipleClientsHigherIsBetterPolicy2, {
  */
 URM_TEST(TestMultipleClientsLowerIsBetterPolicy, {
     // Check the original value for the Resource
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_min_freq.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/scaling_min_freq.txt";
     int32_t testResourceOriginalValue = 107;
 
     std::string value;
@@ -1328,7 +1328,7 @@ URM_TEST(TestMultipleClientsLowerIsBetterPolicy, {
  * Cross-Reference id: ['E']
  */
 URM_TEST(TestMultipleClientsLazyApplyPolicy, {
-    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource5.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/target_test_resource5.txt";
     int32_t testResourceOriginalValue = 17;
 
     std::string value;
@@ -1409,7 +1409,7 @@ URM_TEST(TestMultipleClientsLazyApplyPolicy, {
  */
 URM_TEST(TestSimplePassThroughApplication, {
     // Check the original value for the Resource
-    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource1.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/target_test_resource1.txt";
     int32_t testResourceOriginalValue = 240;
 
     std::string value;
@@ -1459,7 +1459,7 @@ URM_TEST(TestSimplePassThroughApplication, {
  */
 URM_TEST(TestSimplePassThroughConcurrentApplication, {
     // Check the original value for the Resource
-    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource1.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/target_test_resource1.txt";
     int32_t testResourceOriginalValue = 240;
 
     std::string value;
@@ -1532,9 +1532,9 @@ URM_TEST(TestSimplePassThroughConcurrentApplication, {
  */
 URM_TEST(TestMultipleClientsTuneRequestDifferentResources, {
     // Check the original value for the Resource
-    std::string testResourceName1 = "/etc/urm/tests/nodes/scaling_min_freq.txt";
-    std::string testResourceName2 = "/etc/urm/tests/nodes/scaling_max_freq.txt";
-    std::string testResourceName3 = "/etc/urm/tests/nodes/sched_util_clamp_max.txt";
+    std::string testResourceName1 = "/var/lib/urm/tests/nodes/scaling_min_freq.txt";
+    std::string testResourceName2 = "/var/lib/urm/tests/nodes/scaling_max_freq.txt";
+    std::string testResourceName3 = "/var/lib/urm/tests/nodes/sched_util_clamp_max.txt";
 
     int32_t testResourceOriginalValue1 = 107;
     int32_t testResourceOriginalValue2 = 114;
@@ -1652,7 +1652,7 @@ URM_TEST(TestMultipleClientsTuneRequestDifferentResources, {
  * Cross-Reference id: ['S1']
  */
 URM_TEST(SingleClientSequentialRequests, {
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_max_freq.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/scaling_max_freq.txt";
     int32_t testResourceOriginalValue = 114;
     int64_t handle;
 
@@ -1711,7 +1711,7 @@ URM_TEST(SingleClientSequentialRequests, {
  * Cross-Reference id: ['S2']
  */
 URM_TEST(MultipleClientTIDsConcurrentRequests, {
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_max_freq.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/scaling_max_freq.txt";
     int32_t testResourceOriginalValue = 114;
     int64_t handle;
 
@@ -1785,7 +1785,7 @@ URM_TEST(MultipleClientTIDsConcurrentRequests, {
  * Cross-Reference id: ['U1']
  */
 URM_TEST(TestInfiniteDurationTuneRequestAndValidUntuning, {
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_min_freq.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/scaling_min_freq.txt";
     int32_t testResourceOriginalValue = 107;
     int64_t handle;
 
@@ -1843,7 +1843,7 @@ URM_TEST(TestInfiniteDurationTuneRequestAndValidUntuning, {
  * Cross-Reference id: ['U2']
  */
 URM_TEST(TestInfiniteDurationTuneRequestAndInValidUntuning, {
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_min_freq.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/scaling_min_freq.txt";
     int32_t testResourceOriginalValue = 107;
     int64_t handle;
 
@@ -1920,7 +1920,7 @@ URM_TEST(TestInfiniteDurationTuneRequestAndInValidUntuning, {
  * Cross-Reference id: ['H']
  */
 URM_TEST(TestPriorityBasedResourceAcquisition1, {
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_min_freq.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/scaling_min_freq.txt";
     int32_t testResourceOriginalValue = 107;
     int64_t handle;
 
@@ -1988,7 +1988,7 @@ URM_TEST(TestPriorityBasedResourceAcquisition1, {
  * Cross-Reference id: ['H']
  */
 URM_TEST(TestPriorityBasedResourceAcquisition2, {
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_min_freq.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/scaling_min_freq.txt";
     int32_t testResourceOriginalValue = 107;
     int64_t handle;
 
@@ -2064,7 +2064,7 @@ URM_TEST(TestPriorityBasedResourceAcquisition2, {
  * Cross-Reference id: ['H']
  */
 URM_TEST(TestPriorityBasedResourceAcquisition3, {
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_max_freq.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/scaling_max_freq.txt";
     int32_t testResourceOriginalValue = 114;
     int64_t handle;
 
@@ -2133,7 +2133,7 @@ URM_TEST(TestPriorityBasedResourceAcquisition3, {
  * Cross-Reference id: ['R1']
  */
 URM_TEST(TestRequestValidRetuning, {
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_max_freq.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/scaling_max_freq.txt";
     int32_t testResourceOriginalValue = 114;
     int64_t handle;
 
@@ -2197,7 +2197,7 @@ URM_TEST(TestRequestValidRetuning, {
  * Cross-Reference id: ['R2']
  */
 URM_TEST(TestRequestInvalidRetuning1, {
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_max_freq.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/scaling_max_freq.txt";
     int32_t testResourceOriginalValue = 114;
     int64_t handle;
 
@@ -2260,7 +2260,7 @@ URM_TEST(TestRequestInvalidRetuning1, {
  * Cross-Reference id: ['R3']
  */
 URM_TEST(TestRequestInvalidRetuning2, {
-    std::string testResourceName = "/etc/urm/tests/nodes/sched_util_clamp_min.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/sched_util_clamp_min.txt";
     int32_t testResourceOriginalValue = 300;
 
     std::string value;
@@ -2319,7 +2319,7 @@ URM_TEST(TestClusterTypeResourceTuneRequest1, {
         SKIP
     }
 
-    std::string nodePath = "/etc/urm/tests/nodes/cluster_type_resource_%d_cluster_id.txt";
+    std::string nodePath = "/var/lib/urm/tests/nodes/cluster_type_resource_%d_cluster_id.txt";
 
     char path[128];
     snprintf(path, sizeof(path), nodePath.c_str(), physicalClusterID);
@@ -2368,7 +2368,7 @@ URM_TEST(TestClusterTypeResourceTuneRequest2, {
         SKIP
     }
 
-    std::string nodePath = "/etc/urm/tests/nodes/cluster_type_resource_%d_cluster_id.txt";
+    std::string nodePath = "/var/lib/urm/tests/nodes/cluster_type_resource_%d_cluster_id.txt";
 
     char path[128];
     snprintf(path, sizeof(path), nodePath.c_str(), physicalClusterID);
@@ -2975,7 +2975,7 @@ URM_TEST(TestWriteTo_scaling_min_freq_Node2, {
 URM_TEST(TestConcurrentWriteTo_scaling_min_freq_Node3, {
     // Apply a value to scaling_min_freq for the Gold Cluster
     // i.e. logical cluster id = 1
-    std::string testResourceName = "/etc/urm/tests/nodes/scaling_min_freq.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/scaling_min_freq.txt";
 
     std::string originalValueString = AuxRoutines::readFromFile(testResourceName);
     int32_t originalValue = C_STOI(originalValueString);
@@ -3478,7 +3478,7 @@ URM_TEST(TestWriteTo_pm_qos_resume_latency_us2, {
  * Cross-Reference id: [A]
  */
 URM_TEST(TestSingleClientTuneSignal1, {
-    std::string testResourceName = "/etc/urm/tests/nodes/sched_util_clamp_min.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/sched_util_clamp_min.txt";
     int32_t testResourceOriginalValue = 300;
 
     std::string value;
@@ -3519,9 +3519,9 @@ URM_TEST(TestSingleClientTuneSignal1, {
  * Cross-Reference id: [A]
  */
 URM_TEST(TestSingleClientTuneSignal2, {
-    std::string testResourceName1 = "/etc/urm/tests/nodes/sched_util_clamp_min.txt";
-    std::string testResourceName2 = "/etc/urm/tests/nodes/sched_util_clamp_max.txt";
-    std::string testResourceName3 = "/etc/urm/tests/nodes/scaling_max_freq.txt";
+    std::string testResourceName1 = "/var/lib/urm/tests/nodes/sched_util_clamp_min.txt";
+    std::string testResourceName2 = "/var/lib/urm/tests/nodes/sched_util_clamp_max.txt";
+    std::string testResourceName3 = "/var/lib/urm/tests/nodes/scaling_max_freq.txt";
 
     int32_t originalValues[] = {300, 684, 114};
 
@@ -3582,7 +3582,7 @@ URM_TEST(TestSingleClientTuneSignal2, {
 })
 
 URM_TEST(TestSignalUntuning, {
-    std::string testResourceName = "/etc/urm/tests/nodes/sched_util_clamp_min.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/sched_util_clamp_min.txt";
     int32_t testResourceOriginalValue = 300;
 
     std::string value;
@@ -3694,29 +3694,29 @@ URM_TEST(TestMultiResourceSignal, {
         SKIP
     }
 
-    std::string clusResource = "/etc/urm/tests/nodes/cluster_type_resource_%d_cluster_id.txt";
+    std::string clusResource = "/var/lib/urm/tests/nodes/cluster_type_resource_%d_cluster_id.txt";
     int32_t physicalClusterID0 = baseline.getExpectedPhysicalCluster(0);
     int32_t physicalClusterID1 = baseline.getExpectedPhysicalCluster(1);
     int32_t physicalClusterID2 = baseline.getExpectedPhysicalCluster(2);
 
     std::vector<ResourceHolder> tunedResources = {
         {
-            .name = "/etc/urm/tests/nodes/sched_util_clamp_min.txt",
+            .name = "/var/lib/urm/tests/nodes/sched_util_clamp_min.txt",
             .expectedValue = 668,
             .originalValue = -1,
         },
         {
-            .name = "/etc/urm/tests/nodes/sched_util_clamp_max.txt",
+            .name = "/var/lib/urm/tests/nodes/sched_util_clamp_max.txt",
             .expectedValue = 897,
             .originalValue = -1,
         },
         {
-            .name = "/etc/urm/tests/nodes/target_test_resource1.txt",
+            .name = "/var/lib/urm/tests/nodes/target_test_resource1.txt",
             .expectedValue = 231,
             .originalValue = -1
         },
         {
-            .name = "/etc/urm/tests/nodes/scaling_max_freq.txt",
+            .name = "/var/lib/urm/tests/nodes/scaling_max_freq.txt",
             .expectedValue = 1533,
             .originalValue = -1
         },
@@ -3736,7 +3736,7 @@ URM_TEST(TestMultiResourceSignal, {
             .originalValue = -1
         },
         {
-            .name = "/etc/urm/tests/nodes/target_test_resource4.txt",
+            .name = "/var/lib/urm/tests/nodes/target_test_resource4.txt",
             .expectedValue = 41128,
             .originalValue = -1
         },

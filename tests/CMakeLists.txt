@@ -1,16 +1,20 @@
 if(BUILD_TESTS)
     # Install Test Configs
+    # These are read-only test fixtures, not configuration an administrator is
+    # expected to edit, so they belong under datadir rather than sysconfdir.
     file(GLOB testConfigs "${CMAKE_CURRENT_SOURCE_DIR}/Configs/*.yaml")
     install(
         FILES ${testConfigs}
-        DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/urm/tests/configs/
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/urm/tests/configs/
         PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
     )
 
     # Install Custom Resource Nodes
+    # These stand in for sysfs nodes and are written to while the tests run, so
+    # they are variable state and belong under /var/lib.
     install(
         DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Configs/ResourceSysFsNodes/
-        DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/urm/tests/nodes
+        DESTINATION ${CMAKE_INSTALL_LOCALSTATEDIR}/lib/urm/tests/nodes
         FILES_MATCHING
         PATTERN "*.txt"
         PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ

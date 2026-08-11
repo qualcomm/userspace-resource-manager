@@ -31,7 +31,7 @@ URM_TEST(TestGstreamerPerAppConfigValidated, {
     // Wait for service to settle
     std::this_thread::sleep_for(std::chrono::milliseconds(1800));
 
-    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource1.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/target_test_resource1.txt";
     int32_t testResourceOriginalValue = 240;
 
     std::string value;
@@ -114,7 +114,7 @@ URM_TEST(TestViPerAppConfigValidated, {
     // Wait for service to settle
     std::this_thread::sleep_for(std::chrono::milliseconds(1800));
 
-    std::string testResourceName = "/etc/urm/tests/nodes/target_test_resource1.txt";
+    std::string testResourceName = "/var/lib/urm/tests/nodes/target_test_resource1.txt";
     int32_t testResourceOriginalValue = 240;
 
     std::string value;

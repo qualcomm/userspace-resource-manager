@@ -53,7 +53,7 @@ ResourceConfigs:
   - ResType: "0xff"
     ResID: "0x000d"
     Name: "TEST_RESOURCE_11"
-    Path: "/etc/urm/tests/nodes/target_test_resource4.txt"
+    Path: "/var/lib/urm/tests/nodes/target_test_resource4.txt"
     Supported: true
     HighThreshold: 900
     LowThreshold: 300
@@ -66,7 +66,7 @@ ResourceConfigs:
   - ResType: "0xff"
     ResID: "0x000e"
     Name: "TEST_RESOURCE_12"
-    Path: "/etc/urm/tests/nodes/target_test_resource4.txt"
+    Path: "/var/lib/urm/tests/nodes/target_test_resource4.txt"
     Supported: true
     HighThreshold: 900
     LowThreshold: 300
@@ -79,7 +79,7 @@ ResourceConfigs:
   - ResType: "0xff"
     ResID: "0x000f"
     Name: "TEST_RESOURCE_13"
-    Path: "/etc/urm/tests/nodes/target_test_resource5.txt"
+    Path: "/var/lib/urm/tests/nodes/target_test_resource5.txt"
     Supported: true
     HighThreshold: 20
     LowThreshold: 0

@@ -40,27 +40,27 @@ static void Init() {
 
 URM_TEST(TestExtensionIntfModifiedResourceConfigPath, {
     Init();
-    E_ASSERT((Extensions::getResourceConfigFilePath() == "/etc/urm/tests/configs/ResourcesConfig.yaml"));
+    E_ASSERT((Extensions::getResourceConfigFilePath() == "/usr/share/urm/tests/configs/ResourcesConfig.yaml"));
 })
 
 URM_TEST(TestExtensionIntfModifiedPropertiesConfigPath, {
     Init();
-    E_ASSERT((Extensions::getPropertiesConfigFilePath() == "/etc/urm/tests/configs/PropertiesConfig.yaml"));
+    E_ASSERT((Extensions::getPropertiesConfigFilePath() == "/usr/share/urm/tests/configs/PropertiesConfig.yaml"));
 })
 
 URM_TEST(TestExtensionIntfModifiedSignalConfigPath, {
     Init();
-    E_ASSERT((Extensions::getSignalsConfigFilePath() == "/etc/urm/tests/configs/SignalsConfig.yaml"));
+    E_ASSERT((Extensions::getSignalsConfigFilePath() == "/usr/share/urm/tests/configs/SignalsConfig.yaml"));
 })
 
 URM_TEST(TestExtensionIntfModifiedTargetConfigPath, {
     Init();
-    E_ASSERT((Extensions::getTargetConfigFilePath() == "/etc/urm/tests/configs/TargetConfig.yaml"));
+    E_ASSERT((Extensions::getTargetConfigFilePath() == "/usr/share/urm/tests/configs/TargetConfig.yaml"));
 })
 
 URM_TEST(TestExtensionIntfModifiedInitConfigPath, {
     Init();
-    E_ASSERT((Extensions::getInitConfigFilePath() == "/etc/urm/tests/configs/InitConfig.yaml"));
+    E_ASSERT((Extensions::getInitConfigFilePath() == "/usr/share/urm/tests/configs/InitConfig.yaml"));
 })
 
 URM_TEST(TestExtensionIntfCustomResourceApplier1, {
