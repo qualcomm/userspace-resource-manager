@@ -8,6 +8,8 @@
 #ifndef SIGNAL_INTERNAL_H
 #define SIGNAL_INTERNAL_H
 
+#include <sys/types.h>
+
 #include "ErrCodes.h"
 
 /**

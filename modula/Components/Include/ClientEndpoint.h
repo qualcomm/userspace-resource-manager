@@ -4,6 +4,9 @@
 #ifndef CLIENT_ENDPOINT_H
 #define CLIENT_ENDPOINT_H
 
+#include <cstdint>
+#include <cstddef>
+
 /**
  * @brief ClientEndpoint
  * @details Defines the Client Side Interface, which any Communication Medium
