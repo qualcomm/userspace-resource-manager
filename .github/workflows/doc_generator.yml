@@ -5,13 +5,20 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   deploy-docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # required to push generated docs to the gh-pages branch
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v3
+        with:
+          persist-credentials: false
 
       - name: Install Doxygen
         run: sudo apt-get update && sudo apt-get install -y doxygen

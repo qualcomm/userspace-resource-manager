@@ -41,54 +41,60 @@ runs:
       id: sync-data
       shell: bash
       env:
+        MODE: ${{ inputs.mode }}
+        S3_BUCKET: ${{ inputs.s3_bucket }}
+        LOCAL_FILE: ${{ inputs.local_file }}
+        DOWNLOAD_FILE: ${{ inputs.download_file }}
+        DOWNLOAD_LOCATION: ${{ inputs.download_location }}
         UPLOAD_LOCATION: ${{ inputs.upload_location }}
+        WORKSPACE: ${{ github.workspace }}
       run: |
         echo "::group::$(printf '__________ %-100s' 'Process' | tr ' ' _)"
-        case "${{ inputs.mode }}" in
+        case "$MODE" in
           multi-upload)
             echo "Uploading files to S3 bucket..."
             first_line=true
             # Start the JSON object
-            echo "{" > ${{ github.workspace }}/presigned_urls.json
+            echo "{" > "$WORKSPACE/presigned_urls.json"
             while IFS= read -r file; do
               if [ -f "$file" ]; then
                 echo "Uploading $file..."
-                aws s3 cp "$file" s3://${{ inputs.s3_bucket }}/${{ env.UPLOAD_LOCATION }}/
-                echo "Uploaded $file to s3://${{ inputs.s3_bucket }}/${{ env.UPLOAD_LOCATION }}"
+                aws s3 cp "$file" "s3://$S3_BUCKET/$UPLOAD_LOCATION/"
+                echo "Uploaded $file to s3://$S3_BUCKET/$UPLOAD_LOCATION"
                 echo "Creating Pre-signed URL for $file..."
                 filename=$(basename "$file")
-                presigned_url=$(aws s3 presign s3://${{ inputs.s3_bucket }}/${{ env.UPLOAD_LOCATION }}/$filename --expires-in 259200)
+                presigned_url=$(aws s3 presign "s3://$S3_BUCKET/$UPLOAD_LOCATION/$filename" --expires-in 259200)
                 if [ "$first_line" = true ]; then
                   first_line=false
                 else
-                  echo "," >> ${{ github.workspace }}/presigned_urls.json
+                  echo "," >> "$WORKSPACE/presigned_urls.json"
                 fi
                 # Append the pre-signed URL to the file
-                echo " \"${file}\": \"${presigned_url}\"" >> ${{ github.workspace }}/presigned_urls.json
+                echo " \"${file}\": \"${presigned_url}\"" >> "$WORKSPACE/presigned_urls.json"
                 echo "Pre-signed URL for $file: $presigned_url"
               else
                 echo "Warning: $file does not exist or is not a regular file."
               fi
-            done < "${{ inputs.local_file }}"
+            done < "$LOCAL_FILE"
             # Close the JSON object
-            echo "}" >> ${{ github.workspace }}/presigned_urls.json
+            echo "}" >> "$WORKSPACE/presigned_urls.json"
             ;;
           single-upload)
             echo "Uploading single file to S3 bucket..."
-            aws s3 cp "${{ inputs.local_file }}" s3://${{ inputs.s3_bucket }}/${{ env.UPLOAD_LOCATION }}/
-            echo "Uploaded ${{ inputs.local_file }} to s3://${{ inputs.s3_bucket }}/${{ env.UPLOAD_LOCATION }}"
-            echo "Creating Pre-signed URL for ${{ inputs.local_file }}..."
-            presigned_url=$(aws s3 presign s3://${{ inputs.s3_bucket }}/${{ env.UPLOAD_LOCATION }}/${{ inputs.local_file }} --expires-in 259200)
+            aws s3 cp "$LOCAL_FILE" "s3://$S3_BUCKET/$UPLOAD_LOCATION/"
+            echo "Uploaded $LOCAL_FILE to s3://$S3_BUCKET/$UPLOAD_LOCATION"
+            echo "Creating Pre-signed URL for $LOCAL_FILE..."
+            presigned_url=$(aws s3 presign "s3://$S3_BUCKET/$UPLOAD_LOCATION/$LOCAL_FILE" --expires-in 259200)
             echo "presigned_url=${presigned_url}" >> "$GITHUB_OUTPUT"
             ;;
           download)
             #Download The required file from s3
             echo "Downloading files from S3 bucket..."
-            location=${{ inputs.download_location }}
+            location="$DOWNLOAD_LOCATION"
             download_dir=$(realpath "$location")
-            echo "Downloading ${{ inputs.download_file }} at ==> ${download_dir}"
-            aws s3 cp s3://${{ inputs.s3_bucket }}/${{ inputs.download_file }} "$download_dir"
-            echo "Downloaded ${{ inputs.download_file }} to $download_dir"
+            echo "Downloading $DOWNLOAD_FILE at ==> ${download_dir}"
+            aws s3 cp "s3://$S3_BUCKET/$DOWNLOAD_FILE" "$download_dir"
+            echo "Downloaded $DOWNLOAD_FILE to $download_dir"
             ;;
           *)
             echo "Invalid mode. Use 'upload' or 'download'."
