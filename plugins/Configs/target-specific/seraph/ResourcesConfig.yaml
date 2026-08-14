@@ -74,9 +74,11 @@ ResourceConfigs:
     Policy: "instant_apply"
     ApplyType: "global"
 
+  ## MPCTLV3_LLCC_DDR_BW_IO_PERCENT -- legacy mp-ctl opcode 0x43020000
+  # (Major 0x8a / Minor 0x05)
   - ResType: "0x8a"
     ResID: "0x0005"
-    Name: "RES_DDR_BWMON_IO_PCT"
+    Name: "MPCTLV3_LLCC_DDR_BW_IO_PERCENT"
     Path: "/sys/devices/system/cpu/bus_dcvs/DDR/*.qcom,bwmon-ddr/io_percent"
     Supported: true
     Permissions: "third_party"
@@ -104,6 +106,7 @@ ResourceConfigs:
     Policy: "instant_apply"
     ApplyType: "global"
 
+  ## legacy mp-ctl opcode 0x41008000
   - ResType: "0x8a"
     ResID: "0x0008"
     Name: "RES_CPU_CORE_CTL"
@@ -154,6 +157,8 @@ ResourceConfigs:
     Policy: "pass_through"
     ApplyType: "cluster"
 
+#  ## MPCTLV3_MAX_FREQ_CLUSTER_LITTLE_CORE_0 -- legacy mp-ctl opcode 0x40804000
+#  ## MPCTLV3_MAX_FREQ_CLUSTER_BIG_CORE_0 -- legacy mp-ctl opcode 0x40804100
   - ResType: "0x8a"
     ResID: "0x000d"
     Name: "RES_MSM_PERF_CPU_MAX_FREQ"
@@ -164,6 +169,8 @@ ResourceConfigs:
     Policy: "pass_through"
     ApplyType: "cluster"
 
+#  ## MPCTLV3_MIN_FREQ_CLUSTER_LITTLE_CORE_0 -- legacy mp-ctl opcode 0x40800100
+#  ## MPCTLV3_MIN_FREQ_CLUSTER_BIG_CORE_0 -- legacy mp-ctl opcode 0x40800000
   - ResType: "0x8a"
     ResID: "0x000e"
     Name: "RES_MSM_PERF_CPU_MIN_FREQ"
@@ -185,9 +192,30 @@ ResourceConfigs:
     ApplyType: "global"
 
   - ResType: "0x8a"
+    ResID: "0x0013"
+    Name: "RES_WALT_GROUP_UPMIGRATE"
+    Path: "/proc/sys/walt/sched_group_upmigrate"
+    Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "instant_apply"
+    ApplyType: "global"
+
+  # KEEP
+  - ResType: "0x8a"
     ResID: "0x0010"
     Name: "RES_WALT_DOWNMIGRATE"
     Path: "/proc/sys/walt/sched_downmigrate"
+    Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "instant_apply"
+    ApplyType: "global"
+
+  - ResType: "0x8a"
+    ResID: "0x0012"
+    Name: "RES_WALT_GROUP_DOWNMIGRATE"
+    Path: "/proc/sys/walt/sched_group_downmigrate"
     Supported: true
     Permissions: "third_party"
     Modes: ["display_on", "doze"]
@@ -199,6 +227,216 @@ ResourceConfigs:
     Name: "RES_LLCC_BWMON_MAX_FREQ"
     Path: "/sys/devices/system/cpu/bus_dcvs/LLCC/*.qcom,bwmon-llcc/max_freq"
     Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "instant_apply"
+    ApplyType: "global"
+
+  ## MPCTLV3_LLCC_DDR_BW_MIN_FREQ_V2 -- legacy mp-ctl opcode 0x4303C000
+  # (Major 0xC / Minor 0xF)
+  - ResType: "0x0c"
+    ResID: "0x000f"
+    Name: "RES_MPCTLV3_LLCC_DDR_BW_MIN_FREQ_V2"
+    Path: "/sys/devices/system/cpu/bus_dcvs/DDR/*qcom,bwmon-ddr/min_freq"
+    Supported: true
+    LowThreshold: 0
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "higher_is_better"
+    ApplyType: "global"
+
+  ## MPCTLV3_LLCC_DDR_BW_SAMPLE_MS -- legacy mp-ctl opcode 0x43034000
+  # (Major 0xC / Minor 0xD)
+  - ResType: "0x0c"
+    ResID: "0x000d"
+    Name: "MPCTLV3_LLCC_DDR_BW_SAMPLE_MS"
+    Path: "/sys/devices/system/cpu/bus_dcvs/DDR/*qcom,bwmon-ddr/sample_ms"
+    Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "higher_is_better"
+    ApplyType: "global"
+
+  ## MPCTLV3_LLCC_DDR_BW_HYST_OPT -- legacy mp-ctl opcode 0x43024000
+  # (Major 0xC / Minor 0x3)
+  - ResType: "0x0c"
+    ResID: "0x0003"
+    Name: "MPCTLV3_LLCC_DDR_BW_HYST_OPT"
+    Path: "/sys/devices/system/cpu/bus_dcvs/DDR/*.qcom,bwmon-ddr/hyst_length"
+    Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "higher_is_better"
+    ApplyType: "global"
+
+  ## MPCTLV3_LLCC_DDR_BW_AB_SCALE -- legacy mp-ctl opcode 0x43048000
+  # (Major 0xC / Minor 0x12)
+  - ResType: "0x0c"
+    ResID: "0x0012"
+    Name: "RES_LLCC_DDR_BWMON_AB_SCALE_V2"
+    Path: "/sys/devices/system/cpu/bus_dcvs/DDR/*qcom,bwmon-ddr/ab_scale"
+    Supported: true
+    LowThreshold: 0
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "instant_apply"
+    ApplyType: "global"
+
+  ## MPCTLV3_TOGGLE_POWER_COLLAPSE -- legacy mp-ctl opcode 0x40400000
+  # (Major 0x1 / Minor 0x0)
+  - ResType: "0x01"
+    ResID: "0x0000"
+    Name: "RES_PM_QOS_CPU_DMA_LATENCY"
+    Path: "/dev/cpu_dma_latency"
+    Supported: true
+    LowThreshold: 0
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "lower_is_better"
+    ApplyType: "global"
+
+  ## MPCTLV3_SCHED_BOOST -- legacy mp-ctl opcode 0x40C00000
+  # (Major 0x3 / Minor 0x0)
+  # NOTE: legacy path "/proc/sys/kernel/sched_boost" does not exist on this target;
+  # resolved to the on-device walt path below.
+  - ResType: "0x03"
+    ResID: "0x0000"
+    Name: "RES_SCHED_BOOST_V2"
+    Path: "/proc/sys/walt/sched_boost"
+    Supported: true
+    LowThreshold: 0
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "instant_apply"
+    ApplyType: "global"
+
+  ## MPCTLV3_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG -- legacy mp-ctl opcode 0x41440000
+  # (Major 0x5 / Minor 0x10)
+  - ResType: "0x05"
+    ResID: "0x0010"
+    Name: "RES_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG"
+    Path: "/sys/devices/system/cpu/cpu0/cpufreq/walt/hispeed_load"
+    Supported: true
+    LowThreshold: 0
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "instant_apply"
+    ApplyType: "global"
+
+  ## MPCTLV3_SCHEDUTIL_PREDICTIVE_LOAD_CLUSTER_BIG -- legacy mp-ctl opcode 0x41444000
+    ## MPCTLV3_SCHEDUTIL_PREDICTIVE_LOAD_CLUSTER_LITTLE -- legacy mp-ctl opcode 0x41444100
+  # (Major 0x5 / Minor 0x11)
+  - ResType: "0x05"
+    ResID: "0x0011"
+    Name: "RES_SCHEDUTIL_PL_CLUSTER_BIG"
+    Path: "/sys/devices/system/cpu/cpu0/cpufreq/walt/pl"
+    Supported: true
+    LowThreshold: 0
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "instant_apply"
+    ApplyType: "global"
+
+  ## MPCTLV3_CPUBW_HWMON_IO_PERCENT -- legacy mp-ctl opcode 0x41808000
+  # (Major 0x6 / Minor 0x2)
+  - ResType: "0x06"
+    ResID: "0x0002"
+    Name: "RES_CPUBW_HWMON_IO_PCT"
+    Path: "/sys/class/devfreq/soc:qcom,cpubw/bw_hwmon/io_percent"
+    Supported: false
+    LowThreshold: 0
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "instant_apply"
+    ApplyType: "global"
+
+  ## MPCTLV3_CPUBW_HWMON_HYST_OPT -- legacy mp-ctl opcode 0x4180C000
+  # (Major 0x6 / Minor 0x3) -- SPECIAL_NODE; requires a custom applier callback
+  # (URM_REGISTER_RES_APPLIER_CB) that writes the same value to hyst_length,
+  # hist_memory, and hyst_trigger_count under
+  # /sys/class/devfreq/soc:qcom,cpubw/bw_hwmon/
+  - ResType: "0x06"
+    ResID: "0x0003"
+    Name: "RES_CPUBW_HWMON_HYST_OPT"
+    Path: "/sys/class/devfreq/soc:qcom,cpubw/bw_hwmon/hyst_length"
+    Supported: false
+    LowThreshold: 0
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "pass_through"
+    ApplyType: "global"
+
+  ## MPCTLV3_CPU_LLCC_BW_IO_PERCENT -- legacy mp-ctl opcode 0x41834000
+  # (Major 0x6 / Minor 0xD)
+  - ResType: "0x06"
+    ResID: "0x000d"
+    Name: "MPCTLV3_CPU_LLCC_BW_IO_PERCENT"
+    Path: "/sys/devices/system/cpu/bus_dcvs/LLCC/*qcom,bwmon-llcc/io_percent"
+    Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "higher_is_better"
+    ApplyType: "global"
+
+  ## MPCTLV3_CPU_LLCC_BW_HYST_OPT -- legacy mp-ctl opcode 0x41838000
+  # (Major 0x6 / Minor 0xE)
+  - ResType: "0x06"
+    ResID: "0x000e"
+    Name: "MPCTLV3_CPU_LLCC_BW_HYST_OPT"
+    Path: "/sys/devices/system/cpu/bus_dcvs/LLCC/*qcom,bwmon-llcc/hyst_length"
+    Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "higher_is_better"
+    ApplyType: "global"
+
+  ## MPCTLV3_CPUBW_HWMON_SAMPLE_MS -- legacy mp-ctl opcode 0x41820000
+  # (Major 0x6 / Minor 0x8)
+  - ResType: "0x06"
+    ResID: "0x0008"
+    Name: "RES_CPUBW_HWMON_SAMPLE_MS"
+    Path: "/sys/class/devfreq/soc:qcom,cpubw/bw_hwmon/sample_ms"
+    Supported: false
+    LowThreshold: 0
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "instant_apply"
+    ApplyType: "global"
+
+  ## MPCTLV3_CPU_LLCC_BW_SAMPLE_MS -- legacy mp-ctl opcode 0x4183C000
+  # (Major 0x6 / Minor 0xF)
+  - ResType: "0x06"
+    ResID: "0x000f"
+    Name: "MPCTLV3_CPU_LLCC_BW_SAMPLE_MS"
+    Path: "/sys/devices/system/cpu/bus_dcvs/LLCC/*qcom,bwmon-llcc/sample_ms"
+    Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "higher_is_better"
+    ApplyType: "global"
+
+  ## MPCTLV3_CPU_LLCC_BW_MAX_FREQ_V2 -- legacy mp-ctl opcode 0x41848000
+  # (Major 0x6 / Minor 0x12)
+  - ResType: "0x06"
+    ResID: "0x0012"
+    Name: "MPCTLV3_CPU_LLCC_BW_MAX_FREQ_V2"
+    Path: "/sys/devices/system/cpu/bus_dcvs/LLCC/*qcom,bwmon-llcc/max_freq"
+    Supported: true
+    Permissions: "third_party"
+    Modes: ["display_on", "doze"]
+    Policy: "higher_is_better"
+    ApplyType: "global"
+
+  ## MPCTLV3_POWER_WAKELOCK -- legacy mp-ctl opcode 0x42C44000
+  # (Major 0xB / Minor 0x11)
+  # NOTE: opcode 0x42C44000 appears twice in the source mapping; only one node
+  # is defined here -- the second occurrence is identical and is therefore merged.
+  - ResType: "0x0b"
+    ResID: "0x0011"
+    Name: "RES_POWER_WAKELOCK_INPUT_BOOST_MS"
+    Path: "/proc/sys/walt/input_boost/input_boost_ms"
+    Supported: true
+    LowThreshold: 0
     Permissions: "third_party"
     Modes: ["display_on", "doze"]
     Policy: "instant_apply"
