@@ -177,7 +177,7 @@ SignalConfigs:
   - SigId: "0x1330"
     Category: "0xea"
     SigType: 0
-    Name: "URM_SIG_PERFLOCK_Preview"
+    Name: "URM_SIG_CAMERA_Preview"
     Enable: true
     Permissions: ["third_party", "system"]
     Timeout: -1
@@ -209,7 +209,7 @@ SignalConfigs:
   - SigId: "0x1331"
     Category: "0xea"
     SigType: 0
-    Name: "URM_SIG_PERFLOCK_VideoEncode"
+    Name: "URM_SIG_CAMERA_VideoEncode"
     Enable: true
     Permissions: ["third_party", "system"]
     Timeout: -1
@@ -249,7 +249,7 @@ SignalConfigs:
   - SigId: "0x1332"
     Category: "0xea"
     SigType: 0
-    Name: "URM_SIG_PERFLOCK_VideoEncode60FPS"
+    Name: "URM_SIG_CAMERA_VideoEncode60FPS"
     Enable: true
     Permissions: ["third_party", "system"]
     Timeout: -1
@@ -292,7 +292,7 @@ SignalConfigs:
   - SigId: "0x1333"
     Category: "0xea"
     SigType: 0
-    Name: "URM_SIG_PERFLOCK_VideoEncodeHFR"
+    Name: "URM_SIG_CAMERA_VideoEncodeHFR"
     Enable: true
     Permissions: ["third_party", "system"]
     Timeout: -1
@@ -317,7 +317,7 @@ SignalConfigs:
   - SigId: "0x1334"
     Category: "0xea"
     SigType: 0
-    Name: "URM_SIG_PERFLOCK_VideoEncodeHFR480FPS"
+    Name: "URM_SIG_CAMERA_VideoEncodeHFR480FPS"
     Enable: true
     Permissions: ["third_party", "system"]
     Timeout: -1
@@ -343,7 +343,7 @@ SignalConfigs:
   - SigId: "0x1337"
     Category: "0xea"
     SigType: 0
-    Name: "URM_SIG_PERFLOCK_OpenCamera"
+    Name: "URM_SIG_CAMERA_OpenCamera"
     Enable: true
     Permissions: ["third_party", "system"]
     Timeout: -1
@@ -368,7 +368,7 @@ SignalConfigs:
   - SigId: "0x1338"
     Category: "0xea"
     SigType: 0
-    Name: "URM_SIG_PERFLOCK_CloseCamera"
+    Name: "URM_SIG_CAMERA_CloseCamera"
     Enable: true
     Permissions: ["third_party", "system"]
     Timeout: -1
@@ -376,8 +376,8 @@ SignalConfigs:
       - {ResCode: "0x00010000", Values: [1]}          # 0x40400000 RES_PM_QOS_CPU_DMA_LATENCY (ALL_CPUS_PWR_CLPS_DIS)
       - {ResCode: "0x00030000", Values: [1]}          # 0x40C00000 RES_SCHED_BOOST_V2 (SCHED_BOOST)
       - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [2035000]}  # 0x40804000 RES_MSM_PERF_CPU_MAX_FREQ (cluster1=2035MHz)
-      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [2035000]}  # 0x40800000 RES_MSM_PERF_CPU_MIN_FREQ (cluster1=2035MHz)
-      - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [1997000]}     # 0x40804100 RES_MSM_PERF_CPU_MAX_FREQ (cluster0=1997MHz)
+      - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [2035000]}  # 0x40800000 RES_MSM_PERF_CPU_MIN_FREQ (cluster1=2035MHz)
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [1997000]}     # 0x40804100 RES_MSM_PERF_CPU_MAX_FREQ (cluster0=1997MHz)
       - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [1997000]}     # 0x40800100 RES_MSM_PERF_CPU_MIN_FREQ (cluster0=1997MHz)
       - {ResCode: "0x000c000f", Values: [1555000]}    # 0x4303C000 RES_MPCTLV3_LLCC_DDR_BW_MIN_FREQ_V2
 
@@ -388,7 +388,7 @@ SignalConfigs:
   - SigId: "0x1339"
     Category: "0xea"
     SigType: 0
-    Name: "URM_SIG_PERFLOCK_SnapshotCapture"
+    Name: "URM_SIG_CAMERA_SnapshotCapture"
     Enable: true
     Permissions: ["third_party", "system"]
     Timeout: -1
@@ -412,7 +412,7 @@ SignalConfigs:
   - SigId: "0x1406"
     Category: "0xea"
     SigType: 0
-    Name: "URM_SIG_PERFLOCK_VideoEncode3k"
+    Name: "URM_SIG_CAMERA_VideoEncode3k"
     Enable: true
     Permissions: ["third_party", "system"]
     Timeout: -1
@@ -435,7 +435,7 @@ SignalConfigs:
   - SigId: "0x1407"
     Category: "0xea"
     SigType: 0
-    Name: "URM_SIG_PERFLOCK_WakeLock"
+    Name: "URM_SIG_CAMERA_WakeLock"
     Enable: true
     Permissions: ["third_party", "system"]
     Timeout: -1
@@ -448,7 +448,7 @@ SignalConfigs:
   - SigId: "0x1200"
     Category: "0xea"
     SigType: 0
-    Name: "URM_SIG_PERFLOCK_AUDIO_Preview"
+    Name: "URM_SIG_AUDIO_Preview"
     Enable: true
     Permissions: ["third_party", "system"]
     Timeout: -1
