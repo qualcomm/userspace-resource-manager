@@ -110,52 +110,56 @@ ResourceConfigs:
   - ResType: "0x8a"
     ResID: "0x0008"
     Name: "RES_CPU_CORE_CTL"
-    Path: "/sys/devices/system/cpu/cpu%d/core_ctl/enable"
+    Path: "/sys/devices/system/cpu/cpu0/core_ctl/enable"
     Supported: true
     Permissions: "third_party"
     Modes: ["display_on", "doze"]
     Policy: "instant_apply"
-    ApplyType: "core"
+    ApplyType: "global"
 
-  - ResType: "0x8a"
-    ResID: "0x0009"
-    Name: "RES_CPU_WALT_HISPEED_FREQ"
-    Path: "/sys/devices/system/cpu/cpu%d/cpufreq/walt/hispeed_freq"
-    Supported: true
-    Permissions: "third_party"
-    Modes: ["display_on", "doze"]
-    Policy: "instant_apply"
-    ApplyType: "core"
+## Node no exist in seraph - Comment this
+#  - ResType: "0x8a"
+#    ResID: "0x0009"
+#    Name: "RES_CPU_WALT_HISPEED_FREQ"
+#    Path: "/sys/devices/system/cpu/cpu%d/cpufreq/walt/hispeed_freq"
+#    Supported: true
+#    Permissions: "third_party"
+#    Modes: ["display_on", "doze"]
+#    Policy: "instant_apply"
+#    ApplyType: "core"
 
-  - ResType: "0x8a"
-    ResID: "0x000a"
-    Name: "RES_CPU_WALT_HISPEED_LOAD"
-    Path: "/sys/devices/system/cpu/cpu%d/cpufreq/walt/hispeed_load"
-    Supported: true
-    Permissions: "third_party"
-    Modes: ["display_on", "doze"]
-    Policy: "instant_apply"
-    ApplyType: "core"
+## Node no exist in seraph - Comment this
+#  - ResType: "0x8a"
+#    ResID: "0x000a"
+#    Name: "RES_CPU_WALT_HISPEED_LOAD"
+#    Path: "/sys/devices/system/cpu/cpu%d/cpufreq/walt/hispeed_load"
+#    Supported: true
+#    Permissions: "third_party"
+#    Modes: ["display_on", "doze"]
+#    Policy: "instant_apply"
+#    ApplyType: "core"
 
-  - ResType: "0x8a"
-    ResID: "0x000b"
-    Name: "RES_CPU_WALT_PL"
-    Path: "/sys/devices/system/cpu/cpu%d/cpufreq/walt/pl"
-    Supported: true
-    Permissions: "third_party"
-    Modes: ["display_on", "doze"]
-    Policy: "instant_apply"
-    ApplyType: "core"
+## Node no exist in seraph - Comment this
+#  - ResType: "0x8a"
+#    ResID: "0x000b"
+#    Name: "RES_CPU_WALT_PL"
+#    Path: "/sys/devices/system/cpu/cpu%d/cpufreq/walt/pl"
+#    Supported: true
+#    Permissions: "third_party"
+#    Modes: ["display_on", "doze"]
+#    Policy: "instant_apply"
+#    ApplyType: "core"
 
-  - ResType: "0x8a"
-    ResID: "0x000c"
-    Name: "RES_WALT_CGRP_UP_DOWN"
-    Path: "/proc/sys/walt/cluster%d/sched_other_cgroup_updownmigrate"
-    Supported: true
-    Permissions: "third_party"
-    Modes: ["display_on", "doze"]
-    Policy: "pass_through"
-    ApplyType: "cluster"
+## Node no exist in seraph - Comment this
+#  - ResType: "0x8a"
+#    ResID: "0x000c"
+#    Name: "RES_WALT_CGRP_UP_DOWN"
+#    Path: "/proc/sys/walt/cluster%d/sched_other_cgroup_updownmigrate"
+#    Supported: true
+#    Permissions: "third_party"
+#    Modes: ["display_on", "doze"]
+#    Policy: "pass_through"
+#    ApplyType: "cluster"
 
 #  ## MPCTLV3_MAX_FREQ_CLUSTER_LITTLE_CORE_0 -- legacy mp-ctl opcode 0x40804000
 #  ## MPCTLV3_MAX_FREQ_CLUSTER_BIG_CORE_0 -- legacy mp-ctl opcode 0x40804100
@@ -181,15 +185,16 @@ ResourceConfigs:
     Policy: "pass_through"
     ApplyType: "cluster"
 
-  - ResType: "0x8a"
-    ResID: "0x000f"
-    Name: "RES_WALT_UPMIGRATE"
-    Path: "/proc/sys/walt/sched_upmigrate"
-    Supported: true
-    Permissions: "third_party"
-    Modes: ["display_on", "doze"]
-    Policy: "instant_apply"
-    ApplyType: "global"
+## Node no exist in seraph - Comment this
+#  - ResType: "0x8a"
+#    ResID: "0x000f"
+#    Name: "RES_WALT_UPMIGRATE"
+#    Path: "/proc/sys/walt/sched_upmigrate"
+#    Supported: true
+#    Permissions: "third_party"
+#    Modes: ["display_on", "doze"]
+#    Policy: "instant_apply"
+#    ApplyType: "global"
 
   - ResType: "0x8a"
     ResID: "0x0013"
@@ -201,16 +206,16 @@ ResourceConfigs:
     Policy: "instant_apply"
     ApplyType: "global"
 
-  # KEEP
-  - ResType: "0x8a"
-    ResID: "0x0010"
-    Name: "RES_WALT_DOWNMIGRATE"
-    Path: "/proc/sys/walt/sched_downmigrate"
-    Supported: true
-    Permissions: "third_party"
-    Modes: ["display_on", "doze"]
-    Policy: "instant_apply"
-    ApplyType: "global"
+## Node no exist in seraph - Comment this
+#  - ResType: "0x8a"
+#    ResID: "0x0010"
+#    Name: "RES_WALT_DOWNMIGRATE"
+#    Path: "/proc/sys/walt/sched_downmigrate"
+#    Supported: true
+#    Permissions: "third_party"
+#    Modes: ["display_on", "doze"]
+#    Policy: "instant_apply"
+#    ApplyType: "global"
 
   - ResType: "0x8a"
     ResID: "0x0012"
@@ -310,32 +315,34 @@ ResourceConfigs:
     Policy: "instant_apply"
     ApplyType: "global"
 
-  ## MPCTLV3_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG -- legacy mp-ctl opcode 0x41440000
-  # (Major 0x5 / Minor 0x10)
-  - ResType: "0x05"
-    ResID: "0x0010"
-    Name: "RES_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG"
-    Path: "/sys/devices/system/cpu/cpu0/cpufreq/walt/hispeed_load"
-    Supported: true
-    LowThreshold: 0
-    Permissions: "third_party"
-    Modes: ["display_on", "doze"]
-    Policy: "instant_apply"
-    ApplyType: "global"
+## Node no exist in seraph - Comment this
+#  ## MPCTLV3_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG -- legacy mp-ctl opcode 0x41440000
+#  # (Major 0x5 / Minor 0x10)
+#  - ResType: "0x05"
+#    ResID: "0x0010"
+#    Name: "RES_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG"
+#    Path: "/sys/devices/system/cpu/cpu0/cpufreq/walt/hispeed_load"
+#    Supported: true
+#    LowThreshold: 0
+#    Permissions: "third_party"
+#    Modes: ["display_on", "doze"]
+#    Policy: "instant_apply"
+#    ApplyType: "global"
 
-  ## MPCTLV3_SCHEDUTIL_PREDICTIVE_LOAD_CLUSTER_BIG -- legacy mp-ctl opcode 0x41444000
-    ## MPCTLV3_SCHEDUTIL_PREDICTIVE_LOAD_CLUSTER_LITTLE -- legacy mp-ctl opcode 0x41444100
-  # (Major 0x5 / Minor 0x11)
-  - ResType: "0x05"
-    ResID: "0x0011"
-    Name: "RES_SCHEDUTIL_PL_CLUSTER_BIG"
-    Path: "/sys/devices/system/cpu/cpu0/cpufreq/walt/pl"
-    Supported: true
-    LowThreshold: 0
-    Permissions: "third_party"
-    Modes: ["display_on", "doze"]
-    Policy: "instant_apply"
-    ApplyType: "global"
+## Node no exist in seraph - Comment this
+#  ## MPCTLV3_SCHEDUTIL_PREDICTIVE_LOAD_CLUSTER_BIG -- legacy mp-ctl opcode 0x41444000
+#    ## MPCTLV3_SCHEDUTIL_PREDICTIVE_LOAD_CLUSTER_LITTLE -- legacy mp-ctl opcode 0x41444100
+#  # (Major 0x5 / Minor 0x11)
+#  - ResType: "0x05"
+#    ResID: "0x0011"
+#    Name: "RES_SCHEDUTIL_PL_CLUSTER_BIG"
+#    Path: "/sys/devices/system/cpu/cpu0/cpufreq/walt/pl"
+#    Supported: true
+#    LowThreshold: 0
+#    Permissions: "third_party"
+#    Modes: ["display_on", "doze"]
+#    Policy: "instant_apply"
+#    ApplyType: "global"
 
   ## MPCTLV3_CPUBW_HWMON_IO_PERCENT -- legacy mp-ctl opcode 0x41808000
   # (Major 0x6 / Minor 0x2)

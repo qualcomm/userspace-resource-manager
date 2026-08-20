@@ -189,9 +189,9 @@ SignalConfigs:
       - {ResCode: "0x000c000d", Values: [33]}      # 0x43034000 MPCTLV3_LLCC_DDR_BW_SAMPLE_MS
       - {ResCode: "0x008a0005", Values: [100]}     # 0x43020000 MPCTLV3_LLCC_DDR_BW_IO_PERCENT
       - {ResCode: "0x000c0003", Values: [0]}       # 0x43024000 MPCTLV3_LLCC_DDR_BW_HYST_OPT
-      - {ResCode: "0x00050011", Values: [0]}       # 0x41444000 RES_SCHEDUTIL_PL_CLUSTER_BIG
-      - {ResCode: "0x00050010", Values: [99]}      # 0x41440000 RES_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG
       - {ResCode: "0x000c0012", Values: [50]}      # 0x43048000 RES_LLCC_DDR_BWMON_AB_SCALE_V2
+#      - {ResCode: "0x00050011", Values: [0]}       # 0x41444000 RES_SCHEDUTIL_PL_CLUSTER_BIG
+#      - {ResCode: "0x00050010", Values: [99]}      # 0x41440000 RES_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG
 
   # Id: 0x00001331
   # camera 30fps
@@ -222,9 +222,9 @@ SignalConfigs:
       - {ResCode: "0x008a0005", Values: [100]}     # 0x43020000 MPCTLV3_LLCC_DDR_BW_IO_PERCENT
       - {ResCode: "0x000c0003", Values: [0]}       # 0x43024000 MPCTLV3_LLCC_DDR_BW_HYST_OPT
       - {ResCode: "0x000c000f", Values: [1555000]} # 0x4303C000 RES_MPCTLV3_LLCC_DDR_BW_MIN_FREQ_V2
-      - {ResCode: "0x00050011", Values: [0]}       # 0x41444000 RES_SCHEDUTIL_PL_CLUSTER_BIG
-      - {ResCode: "0x00050010", Values: [99]}      # 0x41440000 RES_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG
       - {ResCode: "0x000c0012", Values: [50]}      # 0x43048000 RES_LLCC_DDR_BWMON_AB_SCALE_V2
+#      - {ResCode: "0x00050011", Values: [0]}       # 0x41444000 RES_SCHEDUTIL_PL_CLUSTER_BIG
+#      - {ResCode: "0x00050010", Values: [99]}      # 0x41440000 RES_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG
 
   # Id: 0x00001332
   # camera 60fps
@@ -265,12 +265,12 @@ SignalConfigs:
       - {ResCode: "0x000c000f", Values: [1555000]}    # 0x4303C000 RES_MPCTLV3_LLCC_DDR_BW_MIN_FREQ_V2
       - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [1996800]} # 0x40804000 RES_MSM_PERF_CPU_MAX_FREQ (cluster0=FMAX)
       - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [1479000]} # 0x40800000 RES_MSM_PERF_CPU_MIN_FREQ (cluster0=1497MHz)
-      - {ResCode: "0x00050011", Values: [0]}          # 0x41444100 RES_SCHEDUTIL_PL_CLUSTER_LITTL # 0x41444000 RES_SCHEDUTIL_PL_CLUSTER_BIG
-      - {ResCode: "0x00050010", Values: [99]}         # 0x41440000 RES_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG
-      - {ResCode: "0x008a0010", Values: [30]}         # 0x40CE0200 RES_SCHED_DOWN_MIGRATE (DOWNMIGRATE 30) 
-      - {ResCode: "0x008a000f", Values: [35]}         # 0x40CE0000 RES_SCHED_UP_MIGRATE (UPMIGRATE 35)
+      - {ResCode: "0x008a0012", Values: [30]}         # 0x40CE0200 RES_SCHED_DOWN_MIGRATE (DOWNMIGRATE 30)
+      - {ResCode: "0x008a0013", Values: [35]}         # 0x40CE0000 RES_SCHED_UP_MIGRATE (UPMIGRATE 35)
       - {ResCode: "0x008a0008", ResInfo: "0x00000000", Values: [0]}       # 0x41008000 RES_CPU_CORE_CTL cluster 0
       - {ResCode: "0x000c0012", Values: [50]}         # 0x43048000 RES_LLCC_DDR_BWMON_AB_SCALE_V2
+#      - {ResCode: "0x00050011", Values: [0]}          # 0x41444100 RES_SCHEDUTIL_PL_CLUSTER_LITTL # 0x41444000 RES_SCHEDUTIL_PL_CLUSTER_BIG
+#      - {ResCode: "0x00050010", Values: [99]}         # 0x41440000 RES_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG
 
   # Id: 0x00001333
   # camera HFR
@@ -306,11 +306,11 @@ SignalConfigs:
       - {ResCode: "0x000c0003", Values: [0]}          # 0x43024000 MPCTLV3_LLCC_DDR_BW_HYST_OPT
       - {ResCode: "0x000c000f", Values: [1555000]}    # 0x4303C000 RES_MPCTLV3_LLCC_DDR_BW_MIN_FREQ_V2
       - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [1094000]} # 0x40804100 RES_MSM_PERF_CPU_MAX_FREQ (L CPU cluster1=1094MHz)
-      - {ResCode: "0x00050011", Values: [0]}          # 0x41444100 RES_SCHEDUTIL_PL_CLUSTER_LITTLE # 0x41444000 RES_SCHEDUTIL_PL_CLUSTER_BIG
-      - {ResCode: "0x00050010", Values: [99]}         # 0x41440000 RES_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG
-      - {ResCode: "0x008a0010", Values: [30]}         # 0x40CE0200 RES_SCHED_DOWN_MIGRATE (DOWNMIGRATE 30) 
-      - {ResCode: "0x008a000f", Values: [35]}         # 0x40CE0000 RES_SCHED_UP_MIGRATE (UPMIGRATE 35)
-      - {ResCode: "0x008a0008", ResInfo: "0x00000000", Values: [0]}       # 0x41008000 RES_CPU_CORE_CTL cluster
+      - {ResCode: "0x008a0012", Values: [30]}         # 0x40CE0200 RES_SCHED_DOWN_MIGRATE (DOWNMIGRATE 30)
+      - {ResCode: "0x008a0013", Values: [35]}         # 0x40CE0000 RES_SCHED_UP_MIGRATE (UPMIGRATE 35)
+      - {ResCode: "0x008a0008", ResInfo: "0x00000000", Values: [0]}       # 0x41008000 RES_CPU_CORE_CTL cluster 0
+#      - {ResCode: "0x00050011", Values: [0]}          # 0x41444100 RES_SCHEDUTIL_PL_CLUSTER_LITTLE # 0x41444000 RES_SCHEDUTIL_PL_CLUSTER_BIG
+#      - {ResCode: "0x00050010", Values: [99]}         # 0x41440000 RES_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG
 
   # Id: 0x00001334
   # video encode HFR 480fps
@@ -325,8 +325,8 @@ SignalConfigs:
       - {ResCode: "0x00010000", Values: [1]}          # 0x40400000 RES_PM_QOS_CPU_DMA_LATENCY (ALL_CPUS_PWR_CLPS_DIS)
       - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [1036000]} # 0x40800100 RES_MSM_PERF_CPU_MIN_FREQ (cluster1=1036MHz)
       - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [1228000]} # 0x40800000 RES_MSM_PERF_CPU_MIN_FREQ (cluster0=1228MHz)
-      - {ResCode: "0x008a0010", Values: [20]}         # 0x40CE0200 RES_SCHED_DOWN_MIGRATE (DOWNMIGRATE 20) 
-      - {ResCode: "0x008a000f", Values: [30]}         # 0x40CE0000 RES_SCHED_UP_MIGRATE (UPMIGRATE 30)
+      - {ResCode: "0x008a0012", Values: [20]}         # 0x40CE0200 RES_SCHED_DOWN_MIGRATE (DOWNMIGRATE 20)
+      - {ResCode: "0x008a0013", Values: [30]}         # 0x40CE0000 RES_SCHED_UP_MIGRATE (UPMIGRATE 30)
       - {ResCode: "0x00060008", Values: [10]}         # 0x41820000 RES_CPUBW_HWMON_SAMPLE_MS
       - {ResCode: "0x00060002", Values: [80]}         # 0x41808000 RES_CPUBW_HWMON_IO_PCT
       - {ResCode: "0x00060003", Values: [0]}          # 0x4180C000 RES_CPUBW_HWMON_HYST_OPT
@@ -425,9 +425,9 @@ SignalConfigs:
       - {ResCode: "0x008a0005", Values: [100]}     # 0x43020000 MPCTLV3_LLCC_DDR_BW_IO_PERCENT
       - {ResCode: "0x000c0003", Values: [0]}       # 0x43024000 MPCTLV3_LLCC_DDR_BW_HYST_OPT
       - {ResCode: "0x000c000f", Values: [1555000]} # 0x4303C000 RES_MPCTLV3_LLCC_DDR_BW_MIN_FREQ_V2
-      - {ResCode: "0x00050011", Values: [0]}       # 0x41444000 RES_SCHEDUTIL_PL_CLUSTER_BIG
-      - {ResCode: "0x00050010", Values: [99]}      # 0x41440000 RES_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG
       - {ResCode: "0x000c0012", Values: [50]}      # 0x43048000 RES_LLCC_DDR_BWMON_AB_SCALE_V2
+#      - {ResCode: "0x00050011", Values: [0]}       # 0x41444000 RES_SCHEDUTIL_PL_CLUSTER_BIG
+#      - {ResCode: "0x00050010", Values: [99]}      # 0x41440000 RES_SCHEDUTIL_HISPEED_LOAD_CLUSTER_BIG
 
   # Id: 0x00001407
   # camera wakelock
