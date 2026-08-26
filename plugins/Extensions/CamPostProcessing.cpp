@@ -304,6 +304,11 @@ int32_t PostProcessingBlock::fetchUsecaseDetails(int32_t pid,
         }
     }
 
+    // No camera source detected — not a camera/live workload, skip signaling.
+    if (srcElement == 0) {
+        return -1;
+    }
+
     // Extract frame rate once; used by encoder and preview paths.
     *extraArgs = new uint32_t[SIGNAL_EXTRA_ATTRS_COUNT];
     (*extraArgs)[SIGNAL_EXTRA_ATTR_FPS] = extractFrameRate(buf, frameRatePrefix);
