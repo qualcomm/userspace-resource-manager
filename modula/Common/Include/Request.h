@@ -23,7 +23,8 @@
 class Request : public Message {
 private:
     Timer* mTimer; //!< Timer associated with the request.
-    DLManager* mResourceList;
+    DLManager* mResourceList; //!< DLL to store the Resources to be configured.
+    uint64_t mSource;
 
 public:
     Request();
@@ -32,10 +33,12 @@ public:
     int32_t getResourcesCount();
     Timer* getTimer();
     DLManager* getResDlMgr();
+    uint64_t getSource();
 
     void addResource(ResIterable* resIterable);
     void setTimer(Timer* timer);
     void unsetTimer();
+    void setSource(uint64_t source);
     void clearResources();
 
     ErrCode deserialize(char* buf);

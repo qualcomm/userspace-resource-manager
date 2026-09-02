@@ -125,6 +125,11 @@ static Request* createResourceTuningRequest(Signal* signal) {
         request->setProperties(signal->getProperties());
         request->setClientPID(signal->getClientPID());
         request->setClientTID(signal->getClientTID());
+        request->setSource(
+            CONSTRUCT_SIG_CODE(
+                signal->getSignalCode(),
+                signal->getSignalType())
+            );
 
         std::vector<Resource*>* signalLocks = signalInfo->mSignalResources;
 

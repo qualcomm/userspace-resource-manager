@@ -6,6 +6,7 @@
 Request::Request() {
     this->mTimer = nullptr;
     this->mResourceList = nullptr;
+    this->mSource = 0;
 }
 
 int32_t Request::getResourcesCount() {
@@ -22,6 +23,10 @@ Timer* Request::getTimer() {
 
 DLManager* Request::getResDlMgr() {
     return this->mResourceList;
+}
+
+uint64_t Request::getSource() {
+    return this->mSource;
 }
 
 void Request::addResource(ResIterable* resIterable) {
@@ -45,6 +50,10 @@ void Request::setTimer(Timer* timer) {
 
 void Request::unsetTimer() {
     this->mTimer = nullptr;
+}
+
+void Request::setSource(uint64_t source) {
+    this->mSource = source;
 }
 
 void Request::clearResources() {

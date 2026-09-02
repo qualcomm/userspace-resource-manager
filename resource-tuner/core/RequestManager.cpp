@@ -84,8 +84,11 @@ int8_t RequestManager::requestMatch(Request* request) {
     int32_t clientTID = request->getClientTID();
 
     // Get the list of Requests for this client
+    std::shared_ptr<ClientDataManager> clientDataManager =
+            ClientDataManager::getInstance();
+
     std::unordered_set<int64_t>* clientHandles =
-        ClientDataManager::getInstance()->getRequestsByClientID(clientTID);
+        clientDataManager->getRequestsByClientID(clientTID);
 
     if(clientHandles == nullptr || clientHandles->size() == 0) {
         return false;
@@ -94,22 +97,47 @@ int8_t RequestManager::requestMatch(Request* request) {
     // If it is, we can use multiple threads from the pool for faster checking
 
     for(int64_t handle: *clientHandles) {
-        Request* targetRequest = this->mActiveRequests[handle].first;
+        int8_t requestProcessingStatus = this->getRequestProcessingStatus(handle);
+        if(requestProcessingStatus == REQ_NOT_FOUND) {
+            continue;
+        }
+
+        int8_t clientPermission =
+            clientDataManager->getClientLevelByID(request->getClientPID());
+
+        if(clientPermission == PERMISSION_SYSTEM) {
+            // For system processes, only check for requests
+            // which haven't been completed or cancelled
+            if((requestProcessingStatus & REQ_CANCELLED) ||
+               (requestProcessingStatus & REQ_COMPLETED)) {
+                continue;
+            }
+        }
+
+        auto it = this->mActiveRequests.find(handle);
+        if(it == this->mActiveRequests.end()) continue;
+        Request* targetRequest = it->second.first;
         if(targetRequest == nullptr) {
+            continue;
+        }
+
+        if(request->getSource() != targetRequest->getSource()) {
             continue;
         }
 
         // Check that the Number of Resources in the requests are the same
         if(request->getResourcesCount() != targetRequest->getResourcesCount()) {
-            return false;
+            continue;
         }
 
-        if(!request->getResDlMgr()->matchAgainst(targetRequest->getResDlMgr(), resourceCmpPolicy)) {
-            return false;
+        if(!request->getResDlMgr()->matchAgainst(
+            targetRequest->getResDlMgr(), resourceCmpPolicy)) {
+            continue;
         }
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 int8_t RequestManager::verifyHandle(int64_t handle) {
