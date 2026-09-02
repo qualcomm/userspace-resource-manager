@@ -60,7 +60,7 @@ const std::string UrmSettings::focusedCgroup =
                                     "urm.slice/focused.apps";
 
 const std::string UrmSettings::mPersistenceFile =
-                                    "/var/lib/urm/resource_original_values.txt";
+                                    "/run/urm/resource_original_values.txt";
 
 int32_t UrmSettings::isServerOnline() {
     return serverOnlineStatus;

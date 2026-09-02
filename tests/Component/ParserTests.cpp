@@ -30,7 +30,7 @@ URM_TEST(ResourceParsingTests, {
         E_ASSERT((resourceConfigInfo->mResourceResType == 0xff));
         E_ASSERT((resourceConfigInfo->mResourceResID == 0));
         E_ASSERT((strcmp((const char*)resourceConfigInfo->mResourceName.data(), "TEST_RESOURCE_1") == 0));
-        E_ASSERT((strcmp((const char*)resourceConfigInfo->mResourcePath.data(), "/var/lib/urm/tests/nodes/sched_util_clamp_min.txt") == 0));
+        E_ASSERT((strcmp((const char*)resourceConfigInfo->mResourcePath.data(), "/run/urm/tests/nodes/sched_util_clamp_min.txt") == 0));
         E_ASSERT((resourceConfigInfo->mHighThreshold == 1024));
         E_ASSERT((resourceConfigInfo->mLowThreshold == 0));
         E_ASSERT((resourceConfigInfo->mPolicy == HIGHER_BETTER));
@@ -46,7 +46,7 @@ URM_TEST(ResourceParsingTests, {
         E_ASSERT((resourceConfigInfo->mResourceResType == 0xff));
         E_ASSERT((resourceConfigInfo->mResourceResID == 1));
         E_ASSERT((strcmp((const char*)resourceConfigInfo->mResourceName.data(), "TEST_RESOURCE_2") == 0));
-        E_ASSERT((strcmp((const char*)resourceConfigInfo->mResourcePath.data(), "/var/lib/urm/tests/nodes/sched_util_clamp_max.txt") == 0));
+        E_ASSERT((strcmp((const char*)resourceConfigInfo->mResourcePath.data(), "/run/urm/tests/nodes/sched_util_clamp_max.txt") == 0));
         E_ASSERT((resourceConfigInfo->mHighThreshold == 1024));
         E_ASSERT((resourceConfigInfo->mLowThreshold == 512));
         E_ASSERT((resourceConfigInfo->mPolicy == HIGHER_BETTER));
@@ -62,7 +62,7 @@ URM_TEST(ResourceParsingTests, {
         E_ASSERT((resourceConfigInfo->mResourceResType == 0xff));
         E_ASSERT((resourceConfigInfo->mResourceResID == 5));
         E_ASSERT((strcmp((const char*)resourceConfigInfo->mResourceName.data(), "TEST_RESOURCE_6") == 0));
-        E_ASSERT((strcmp((const char*)resourceConfigInfo->mResourcePath.data(), "/var/lib/urm/tests/nodes/target_test_resource2.txt") == 0));
+        E_ASSERT((strcmp((const char*)resourceConfigInfo->mResourcePath.data(), "/run/urm/tests/nodes/target_test_resource2.txt") == 0));
         E_ASSERT((resourceConfigInfo->mHighThreshold == 6500));
         E_ASSERT((resourceConfigInfo->mLowThreshold == 50));
         E_ASSERT((resourceConfigInfo->mPolicy == HIGHER_BETTER));
