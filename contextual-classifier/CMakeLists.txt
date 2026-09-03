@@ -71,13 +71,13 @@ if(FLORET_FOUND)
     install(TARGETS ml_inference_lib DESTINATION ${CMAKE_INSTALL_LIBDIR})
     install(
         FILES ${CMAKE_SOURCE_DIR}/contextual-classifier/Artifacts/floret_model_supervised.bin
-        DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/urm/classifier
+        DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/urm/classifier	
     )
 endif()
 
 install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Configs/
-  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/urm/classifier/
+  DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/urm/classifier/
   FILES_MATCHING
   PATTERN "*.txt"
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ

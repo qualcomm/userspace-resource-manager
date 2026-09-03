@@ -12,7 +12,7 @@ install(TARGETS UrmPlugin DESTINATION ${CMAKE_INSTALL_LIBDIR}/urm/)
 file(GLOB pluginConfigs "${CMAKE_CURRENT_SOURCE_DIR}/Configs/*.yaml")
 install(
     FILES ${pluginConfigs}
-    DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/urm/target
+    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/urm/target
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
 )
 
@@ -20,7 +20,7 @@ install(
 file(GLOB targetConfigs "${CMAKE_CURRENT_SOURCE_DIR}/Configs/target-specific/*")
 install(
     DIRECTORY ${targetConfigs}
-    DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/urm/target
+    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/urm/target
 )
 
 # Install post_boot scripts to /usr/libexec/urm/initscripts/post_boot/
