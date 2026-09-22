@@ -112,9 +112,9 @@ SignalConfigs:
       - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
       - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
       - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
-      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [1200000]}
-      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [1200000]}
-      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_PLUS_ALL_CORES", Values: [1200000]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [1881600]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [2054400]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_PLUS_ALL_CORES", Values: [2208000]}
 
   # camera encode multi-stream
   # encode (0-12 streams)
