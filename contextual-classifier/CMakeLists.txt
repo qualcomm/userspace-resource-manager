@@ -31,12 +31,10 @@ set(FLORET_INCLUDE_DIRS "")
 
 if(ENABLE_FLORET)
     # Use pkg-config to find floret
-    pkg_check_modules(PC_FLORET QUIET floret)
-    if(PC_FLORET_FOUND)
-        set(FLORET_FOUND TRUE)
-        set(FLORET_LIBRARIES ${PC_FLORET_LIBRARIES})
-        set(FLORET_INCLUDE_DIRS ${PC_FLORET_INCLUDE_DIRS})
-    endif()
+    pkg_check_modules(PC_FLORET REQUIRED floret)
+    set(FLORET_FOUND TRUE)
+    set(FLORET_LIBRARIES ${PC_FLORET_LIBRARIES})
+    set(FLORET_INCLUDE_DIRS ${PC_FLORET_INCLUDE_DIRS})
 endif()
 
 if(FLORET_FOUND)
