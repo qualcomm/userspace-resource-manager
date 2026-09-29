@@ -87,6 +87,10 @@ private:
     int8_t checkClientPriority(const std::string& procName);
     int8_t shouldProcBeIgnored(int32_t evType, pid_t pid);
 
+    // Returns true if the process lives inside a container cgroup scope
+    // (e.g. docker-<CID>.scope), indicating it should not be moved by URM.
+    int8_t isContainerProcess(pid_t pid);
+
     // Transparently get the classification object, without expecting the client
     // to be aware of the underlying model / implementation.
     Inference* GetInferenceObject();

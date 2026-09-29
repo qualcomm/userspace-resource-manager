@@ -471,9 +471,41 @@ void ContextualClassifier::loadStaticProcData() {
     LOGI(CLASSIFIER_TAG, "Successfully loaded static proc data");
 }
 
+int8_t ContextualClassifier::isContainerProcess(pid_t pid) {
+    // Check if the process lives inside a container cgroup scope by reading
+    // /proc/<pid>/cgroup. A Docker container init process has a path like:
+    //   0::/system.slice/docker-<CID>.scope
+    // Moving it out of this scope causes systemd to remove the now-empty scope,
+    // which breaks subsequent docker exec calls with:
+    //   "can't open cgroup: .../docker-<CID>.scope: No such file or directory"
+
+    // TODO: extend to Kubernetes container runtimes when needed:
+    //   - containerd (k8s default runtime): cgroup path contains "containerd-<CID>.scope"
+    //   - CRI-O (OpenShift / k8s alternative): cgroup path contains "crio-<CID>.scope"
+
+    std::ifstream cgroupFile("/proc/" + std::to_string(pid) + "/cgroup");
+    if(cgroupFile.is_open()) {
+        std::string line;
+        while(std::getline(cgroupFile, line)) {
+            if(line.find("docker-") != std::string::npos &&
+               line.find(".scope")  != std::string::npos) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 int8_t ContextualClassifier::shouldProcBeIgnored(int32_t evType, pid_t pid) {
     if(evType == CC_APP_CLOSE) {
         return false;
+    }
+
+    // Skip Docker container init processes to avoid breaking docker exec.
+    if(this->isContainerProcess(pid)) {
+        LOGI(CLASSIFIER_TAG,
+             "Ignoring Docker container process PID: " + std::to_string(pid));
+        return true;
     }
 
     std::string procName = "";
