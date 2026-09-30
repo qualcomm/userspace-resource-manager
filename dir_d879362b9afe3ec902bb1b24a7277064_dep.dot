@@ -1,0 +1,12 @@
+digraph "docs/Examples/Extensions"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  compound=true
+  subgraph clusterdir_90ff44073fa2418d4588bcc48a3ef69e {
+    graph [ bgcolor="#edf0f7", pencolor="grey50", label="Examples", fontname=Helvetica,fontsize=10 style="filled,dashed", URL="dir_90ff44073fa2418d4588bcc48a3ef69e.html",tooltip=""]
+  dir_d879362b9afe3ec902bb1b24a7277064 [label="Extensions", fillcolor="#edf0f7", color="grey25", style="filled,bold", URL="dir_d879362b9afe3ec902bb1b24a7277064.html",tooltip=""];
+  }
+}
