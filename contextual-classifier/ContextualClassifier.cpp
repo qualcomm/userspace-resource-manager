@@ -13,6 +13,7 @@
 #include <pthread.h>
 
 #include "Utils.h"
+#include "Config.h"
 #include "Logger.h"
 #include "Request.h"
 #include "Inference.h"
@@ -24,7 +25,6 @@
 #include "RestuneInternal.h"
 #include "ContextualClassifier.h"
 #include "ClientGarbageCollector.h"
-#include "Config.h"
 
 #define CLASSIFIER_TAG "CONTEXTUAL_CLASSIFIER"
 #define CLASSIFIER_CONFIGS_DIR URM_CLASSIFIER_DIR
@@ -537,6 +537,11 @@ void ContextualClassifier::MoveAppThreadsToCGroup(pid_t incomingPID,
                                                   const std::string& comm,
                                                   int32_t cgroupIdentifier) {
     try {
+        AppConfig* appConfig = AppConfigs::getInstance()->getAppConfig(comm);
+        if(appConfig == nullptr || appConfig->isMovementAllowed == false) {
+            return;
+        }
+
         int64_t handleGenerated = -1;
         // Issue a tune request for the new pid (and any associated app-config pids)
         Request* request = MPLACED(Request);
@@ -554,17 +559,16 @@ void ContextualClassifier::MoveAppThreadsToCGroup(pid_t incomingPID,
         ResIterable* resIter = createMovePidResource(cgroupIdentifier, incomingPID);
         request->addResource(resIter);
 
-        AppConfig* appConfig = AppConfigs::getInstance()->getAppConfig(comm);
-        if(appConfig != nullptr && appConfig->mThreadNameList != nullptr) {
+        if(appConfig->mThreadNameList != nullptr) {
             int32_t numThreads = appConfig->mNumThreads;
             // Go over the list of proc names (comm) and get their pids
             for(int32_t i = 0; i < numThreads; i++) {
                 std::string targetComm = appConfig->mThreadNameList[i];
                 pid_t targetPID = AuxRoutines::fetchPid(targetComm);
-                if(targetPID != -1 && targetPID != incomingPID) {
+                if(targetPID != -1) {
                     // Get the CGroup
-                    int32_t currCGroupID = appConfig->mCGroupIds[i];
-                    request->addResource(createMovePidResource(currCGroupID, targetPID));
+                    int32_t targetCgrpId = appConfig->mCGroupIds[i];
+                    request->addResource(createMovePidResource(targetCgrpId, targetPID));
                 }
             }
         }

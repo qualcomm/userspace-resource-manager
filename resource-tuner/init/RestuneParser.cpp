@@ -1103,6 +1103,13 @@ ErrCode RestuneParser::parsePerAppConfigYamlNode(const std::string& filePath) {
                             return RC_YAML_INVALID_SYNTAX;
                         }
                     }
+                } else if(topKey == APP_CONFIGS_ALLOW_MOVEMENT) {
+                    if(RC_IS_OK(rc)) {
+                        rc = appConfigBuider->setMovementType(value);
+                        if(RC_IS_NOTOK(rc)) {
+                            return RC_YAML_INVALID_SYNTAX;
+                        }
+                    }
                 } else if(topKey == APP_CONFIGS_THREAD_LIST || topKey == APP_CONFIGS_CONFIGURATION_LIST) {
                     itemArray.push_back(value);
                 }
