@@ -11,3 +11,5 @@ echo 4 > /proc/sys/kernel/printk
 # Disable periodic kcompactd wakeups. We do not use THP, so having many
 # huge pages is not as necessary.
 echo 0 > /proc/sys/vm/compaction_proactiveness
+
+echo 1 > /sys/devices/system/cpu/cpufreq/boost
