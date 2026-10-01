@@ -50,6 +50,12 @@ jobs:
           pr_repo: ${{ github.event.pull_request.head.repo.full_name }}
           base_ref: ${{ github.ref_name }}
 
+      - name: Debug checkout
+        run: |
+          pwd
+          ls -la
+          find . -maxdepth 3 -name CMakeLists.txt
+
       - name: Build userspace-resource-manager in the URM container
         run: |
           docker run --rm \
