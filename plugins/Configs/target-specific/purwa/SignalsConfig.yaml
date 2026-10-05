@@ -163,3 +163,39 @@ SignalConfigs:
       - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
       - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
       - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+
+  # camera open tunings
+  # CPU cluster 0 Min Freq 3244800, Max Freq 3244800
+  # CPU cluster 1 Min Freq 3244800, Max Freq 3244800
+  - SigId: "0x1337"
+    Category: "0xea"
+    Name: "CAMERA_OPEN"
+    Enable: true
+    TargetsEnabled: ["purwa-iot-evk", "purwa-iot-som", "x1p42100"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 0,1,2,3]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [4, 0,1,2,3]}
+      - {ResCode: "0x00040000", ResInfo: "0x00000000", Values: [3244800]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000000", Values: [3244800]}
+      - {ResCode: "0x00040000", ResInfo: "0x00000100", Values: [3244800]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000100", Values: [3244800]}
+
+  # camera close tunings
+  # CPU cluster 0 Min Freq 3244800, Max Freq 3244800
+  # CPU cluster 1 Min Freq 3244800, Max Freq 3244800
+  - SigId: "0x1338"
+    Category: "0xea"
+    Name: "CAMERA_CLOSE"
+    Enable: true
+    TargetsEnabled: ["purwa-iot-evk", "purwa-iot-som", "x1p42100"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 0,1,2,3]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [4, 0,1,2,3]}
+      - {ResCode: "0x00040000", ResInfo: "0x00000000", Values: [3244800]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000000", Values: [3244800]}
+      - {ResCode: "0x00040000", ResInfo: "0x00000100", Values: [3244800]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000100", Values: [3244800]}
