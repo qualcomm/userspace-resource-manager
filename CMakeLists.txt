@@ -5,7 +5,7 @@ set(CMAKE_STANDARD_REQUIRED True)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_compile_options(-Wall -Wextra)
 
-project("URM" VERSION 0.4.9)
+project("URM" VERSION 0.4.12)
 
 include(GNUInstallDirs)
 find_package(PkgConfig REQUIRED)
