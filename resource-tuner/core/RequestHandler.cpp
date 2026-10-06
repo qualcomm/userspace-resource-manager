@@ -146,6 +146,7 @@ static int8_t VerifyIncomingRequest(Request* req) {
         TYPELOGV(VERIFIER_INVALID_DEVICE_MODE, req->getHandle());
         return false;
     }
+
     int8_t clientPermissions =
         ClientDataManager::getInstance()->getClientLevelByID(req->getClientPID());
     // If the client permissions could not be determined, reject this request.
@@ -167,10 +168,13 @@ static int8_t VerifyIncomingRequest(Request* req) {
     if(allowedPriority == -1) return false;
     req->setPriority(allowedPriority);
 
+    // No Resources Part of the Request, skip.
     if(req->getResDlMgr() == nullptr) {
         return false;
     }
 
+    // Perform Resource Level Verification
+    int32_t forwardCount = 0;
     DL_ITERATE(req->getResDlMgr()) {
         if(iter == nullptr) {
             return false;
@@ -189,7 +193,8 @@ static int8_t VerifyIncomingRequest(Request* req) {
         // Basic sanity: Invalid ResCode
         if(resourceConfig == nullptr) {
             TYPELOGV(VERIFIER_INVALID_OPCODE, resource->getResCode());
-            return false;
+            resource->setResAction(RES_SKIP);
+            continue;
         }
 
         if(resource->getValuesCount() == 1) {
@@ -201,7 +206,8 @@ static int8_t VerifyIncomingRequest(Request* req) {
             if((lowThreshold != -1 && highThreshold != -1) &&
                 (configValue < lowThreshold || configValue > highThreshold)) {
                 TYPELOGV(VERIFIER_VALUE_OUT_OF_BOUNDS, configValue, resource->getResCode());
-                return false;
+                resource->setResAction(RES_SKIP);
+                continue;
             }
         } else {
             // No Range Check Verification mechanism is provided for Multi-Valued Resources
@@ -212,18 +218,22 @@ static int8_t VerifyIncomingRequest(Request* req) {
         // Check for Client permissions
         if(resourceConfig->mPermissions == PERMISSION_SYSTEM && clientPermissions == PERMISSION_THIRD_PARTY) {
             TYPELOGV(VERIFIER_NOT_SUFFICIENT_PERMISSION, resource->getResCode());
-            return false;
+            resource->setResAction(RES_SKIP);
+            continue;
         }
 
         // Check if logical to physical mapping is needed for the resource, if needed
         // try to perform the translation.
         if(RC_IS_NOTOK(translateToPhysicalIDs(resource))) {
             // Translation needed but could not be performed, reject the request
-            return false;
+            resource->setResAction(RES_SKIP);
+            continue;
         }
+        forwardCount++;
     }
 
-    return true;
+    // If all Resources are skipped, drop the Request
+    return (forwardCount > 0);
 }
 
 static int8_t addToRequestManager(Request* request) {

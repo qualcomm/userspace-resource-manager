@@ -236,6 +236,13 @@ int32_t CocoTable::getCocoTableSecondaryIndex(Resource* resource, int8_t priorit
 int8_t CocoTable::insertInCocoTable(ResIterable* newNode, int8_t priority) {
     if(newNode == nullptr) return false;
     Resource* resource = (Resource*) newNode->mData;
+
+    // Should Resource be skipped?
+    if(resource->getResAction() == RES_SKIP) {
+        return false;
+    }
+
+    // Fetch the corresponding Resource Config
     ResConfInfo* rConf = this->mResourceRegistry->getResConf(resource->getResCode());
 
     // Each Resource is already indexed into the CocoTable
@@ -347,11 +354,12 @@ int8_t CocoTable::insertRequest(Request* req) {
         return false;
     }
 
+    int32_t appliedCount = 0;
     DL_ITERATE(req->getResDlMgr()) {
         // Expect ResIterable* iter to be provided by the macro
         if(iter == nullptr) continue;
         ResIterable* resIter = (ResIterable*) iter;
-        this->insertInCocoTable(resIter, req->getPriority());
+        appliedCount += this->insertInCocoTable(resIter, req->getPriority());
     }
 
     // Start the timer for this request
@@ -429,6 +437,11 @@ int8_t CocoTable::removeRequest(Request* request) {
         if(resIter == nullptr || resIter->mData == nullptr) continue;
 
         Resource* resource = (Resource*) resIter->mData;
+
+        // Was the Resource actually applied
+        if(resource->getResAction() == RES_SKIP) {
+            continue;
+        }
 
         int8_t priority = request->getPriority();
         int32_t primaryIndex = this->getCocoTablePrimaryIndex(resource->getResCode());

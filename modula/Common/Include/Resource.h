@@ -9,6 +9,11 @@
 
 #include "DLManager.h"
 
+typedef enum : uint8_t {
+    RES_FORWARD,
+    RES_SKIP
+} ResAction;
+
 /**
  * @brief Used to store information regarding Resources / Tunables which need to be
  *        Provisioned as part of the tuneResources API.
@@ -42,10 +47,13 @@ private:
         int32_t* valueArr; //!< Dynamically Allocated Array, for >= 3 values.
     } mResValue; //!< The value to be Configured for this Resource Node.
 
+    uint8_t mResAction;
+
 public:
-    Resource() : mResCode(0), mResInfo(0), mOptionalInfo(0), mNumValues(0) {
+    Resource() : mResCode(0), mResInfo(0), mOptionalInfo(0), mNumValues(0), mResAction(RES_FORWARD) {
         mResValue.valueArr = nullptr;
     }
+
     // Copy Constructor
     Resource(const Resource& resource);
 
@@ -58,6 +66,7 @@ public:
     uint32_t getResCode() const;
     int32_t getValuesCount() const;
     int32_t getValueAt(int32_t index) const;
+    uint8_t getResAction() const;
 
     void setCoreValue(int32_t core);
     void setClusterValue(int32_t cluster);
@@ -66,6 +75,7 @@ public:
     void setOptionalInfo(int32_t optionalInfo);
     void setNumValues(int32_t numValues);
     ErrCode setValueAt(int32_t index, int32_t value);
+    void setResAction(uint8_t action);
 };
 
 typedef ExtIterable1<Resource*> ResIterable;
