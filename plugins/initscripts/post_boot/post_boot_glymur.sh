@@ -13,3 +13,8 @@ echo 4 > /proc/sys/kernel/printk
 echo 0 > /proc/sys/vm/compaction_proactiveness
 
 echo 1 > /sys/devices/system/cpu/cpufreq/boost
+
+ps -e -o pid=,comm= | awk '$2 ~ /^crtc_event:/ {print $1}' | \
+while read pid; do
+    taskset -pc 0-5 "$pid"
+done
