@@ -59,6 +59,9 @@ static ContextualClassifier *gClassifier = nullptr;
 static const int32_t pendingQueueControlSize = 30;
 
 ContextualClassifier::ContextualClassifier() {
+    int32_t countA = 0;
+    countA++;
+
     this->mClientTracker = 0;
     this->mActiveClientCount = 0;
     this->mIsPriorityClient = false;
