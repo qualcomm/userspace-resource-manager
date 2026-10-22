@@ -8,9 +8,6 @@
 #include <algorithm>
 #include <memory>
 #include <mutex>
-#include <cerrno>
-#include <cstring>
-#include <sched.h>
 
 #include "Helpers.h"
 
@@ -395,36 +392,6 @@ void PostProcessingBlock::PostProcess(pid_t pid,
 std::once_flag PostProcessingBlock::mInitFlag;
 std::unique_ptr<PostProcessingBlock> PostProcessingBlock::mInstance = nullptr;
 
-static void moveCrtcThreads() {
-    DIR* dir = opendir("/proc");
-    if(dir == nullptr) return;
-
-    cpu_set_t mask;
-    CPU_ZERO(&mask);
-    for(int32_t i = 0; i <= 5; i++) {
-        CPU_SET(i, &mask);
-    }
-
-    struct dirent* entry = nullptr;
-    while((entry = readdir(dir)) != nullptr) {
-        pid_t pid = atoi(entry->d_name);
-        if(pid <= 0) continue;
-
-        std::string commPath = "/proc/" + std::to_string(pid) + "/comm";
-        std::string comm = "";
-        if(!readLineFromFile(commPath, comm)) continue;
-
-        if(comm.find("crtc_event:") != 0) continue;
-
-        TYPELOGV(NOTIFY_NODE_WRITE, "sched_setaffinity()", pid);
-        if(sched_setaffinity(pid, sizeof(mask), &mask) == -1) {
-            TYPELOGV(ERRNO_LOG, "sched_setaffinity", strerror(errno));
-        }
-    }
-
-    closedir(dir);
-}
-
 static void WorkloadPostprocessCallback(void* context) {
     if(context == nullptr) {
         return;
@@ -445,9 +412,6 @@ static void WorkloadPostprocessCallback(void* context) {
     int64_t handle =
         acquireSignal(sigId, sigType, pid, pid, SIGNAL_EXTRA_ATTRS_COUNT, extraArgs);
     cbData->mHandleAcq = handle;
-
-    // Move the crtc threads to cluster 0
-    moveCrtcThreads();
 }
 
 __attribute__((constructor))
