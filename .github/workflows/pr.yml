@@ -2,31 +2,35 @@ name: Build URM
 
 on:
   workflow_dispatch:
+    inputs:
+      docker_image:
+        description: 'Docker image to use for rootfs modification'
+        required: false
+        default: 'urm-image:ci'
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
       - main
+    # paths-ignore: #update if something has to be ignored.
 
-permissions:
-  contents: read
+env:
+  RB3GEN2_ROOTFS_KEY: qualcomm-linux-stg/meta-qcom/qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar
+  S3_BUCKET: qli-prd-cseperf-gh-artifacts
 
 jobs:
   build:
     runs-on:
       group: GHA-CSEPerf-prd-SelfHosted-RG
-      labels: [self-hosted, cseperf-prd-u2204-arm64-xlrg-od-ephem]
-
+      labels: ["self-hosted", "cseperf-prd-u2204-arm64-xlrg-od-ephem"]
     env:
       URM_BINS_DIR: urm-bins                     # base dir name
       URM_INSTALL_PREFIX: ./urm-bins/            # used by CMake
       TAR_NAME: urm-bins.tar.gz                  # output tarball name
 
     steps:
-      - name: Checkout URM image repo
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v5
         with:
           repository: qualcomm/urm-image
-          persist-credentials: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -62,22 +66,288 @@ jobs:
               set -euo pipefail
               mkdir -p build
               cd build
-              cmake .. -DBUILD_TESTS=ON -DBUILD_CLASSIFIER=ON -DCMAKE_INSTALL_PREFIX="${URM_INSTALL_PREFIX}"
+              cmake .. \
+                -DBUILD_TESTS=ON \
+                -DBUILD_CLASSIFIER=ON \
+                -DCMAKE_INSTALL_PREFIX="${URM_INSTALL_PREFIX}" \
+                -DCMAKE_INSTALL_BINDIR=usr/bin \
+                -DCMAKE_INSTALL_LIBDIR=usr/lib \
+                -DCMAKE_INSTALL_SYSCONFDIR=etc \
+                -DCMAKE_INSTALL_INCLUDEDIR=usr/include
               cmake --build .
               make install
             '
-
-      - name: Create a tar file of build
+       # --- Rootfs image handling ---
+      - name: Verify RB3 Gen2 rootfs image exists in S3
+        shell: bash
         run: |
+          set -euxo pipefail
+          aws s3api head-object \
+            --bucket "${{ env.S3_BUCKET }}" \
+            --key "${{ env.RB3GEN2_ROOTFS_KEY }}" \
+            >/dev/null 2>&1 || {
+              echo "ERROR: S3 key ${{ env.RB3GEN2_ROOTFS_KEY }} not found in bucket ${{ env.S3_BUCKET }}." >&2
+              exit 1
+            }
+
+      - name: Download RB3 Gen2 rootfs image
+        shell: bash
+        run: |
+          set -euxo pipefail
+          aws s3 cp "s3://${{ env.S3_BUCKET }}/${{ env.RB3GEN2_ROOTFS_KEY }}" .
+          ls -lh "./qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar"
+
+      # --- Normalize & record original tar top-level entries ---
+      - name: Inspect original tar top-level entries (normalized)
+        id: orig_tar_meta
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ORIG_TAR="./qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar"
+          mapfile -t TOPLEVELS < <(
+            tar -tzf "${ORIG_TAR}" \
+            | sed -E 's#^\./##' \
+            | awk -F/ '{print $1}' \
+            | awk 'NF && $0!="."' \
+            | sort -u
+          )
+          if [ ${#TOPLEVELS[@]} -eq 0 ]; then
+            echo "ERROR: No entries found in original tar" >&2
+            exit 1
+          fi
+          echo "Original tar normalized top-level entries:"
+          printf '%s\n' "${TOPLEVELS[@]}"
+          echo "TOPLEVELS=${TOPLEVELS[*]}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract RB3 Gen2 rootfs image (non-destructive)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          # Extract directly into current workspace (no extra 'rootfs/' folder)
+          tar -xzf qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar
+          echo "Extracted files (workspace top-level):"
+          ls -la | sed -n '1,200p'
+          echo "Expected top-level entries from original tar:"
+          echo "${{ steps.orig_tar_meta.outputs.TOPLEVELS }}"
+
+      # --- Locate rootfs image and capture mtime BEFORE modification ---
+      - name: Locate rootfs image
+        id: locate_img
+        shell: bash
+        run: |
+          set -euxo pipefail
+          IMG_PATH="$(find . -maxdepth 4 -type f \( -name 'rootfs*.img' -o -name '*.ext4' \) | head -n1 || true)"
+          if [ -z "${IMG_PATH}" ]; then
+            echo "ERROR: Could not find rootfs*.img (or *.ext4) in workspace." >&2
+            echo "Workspace contents (top-level):"; ls -la | sed -n '1,200p'
+            exit 1
+          fi
+          echo "IMG_PATH=${IMG_PATH}" >> "$GITHUB_OUTPUT"
+          echo "IMG_PATH=${IMG_PATH}" >> "$GITHUB_ENV"
+
+          echo "==> File type:"
+          file "${IMG_PATH}" || true
+
+          echo "==> Pre-modification timestamp of the image file:"
+          ls -la --time-style=full-iso "${IMG_PATH}"
+
+      - name: Capture image mtime (before)
+        id: mtime_before
+        shell: bash
+        run: |
+          set -euxo pipefail
+          IMG_PATH="${{ steps.locate_img.outputs.IMG_PATH }}"
+          MTIME_BEFORE="$(stat -c '%y' "${IMG_PATH}")"
+          echo "mtime_before=${MTIME_BEFORE}" >> "$GITHUB_OUTPUT"
+
+      # --- Modify rootfs INSIDE Docker (mount -o loop, copy, umount) ---
+      - name: Modify rootfs inside Docker
+        shell: bash
+        run: |
+          set -euxo pipefail
+          # Use the built urm-image or fallback from inputs
+          DOCKER_IMAGE="${{ inputs.docker_image || 'urm-image:ci' }}"
+
+          # Run as root in a privileged container, bind-mount the workspace
+          docker run --rm --privileged --user root \
+            -v "${{ github.workspace }}:${{ github.workspace }}" \
+            -w "${{ github.workspace }}" \
+            -e GITHUB_WORKSPACE="${{ github.workspace }}" \
+            "${DOCKER_IMAGE}" \
+            bash -lc '
+              set -euxo pipefail
+
+              # Locate image inside container
+              IMG_PATH="$(find ${GITHUB_WORKSPACE} -maxdepth 4 -type f \( -name "rootfs*.img" -o -name "*.ext4" \) | head -n1 || true)"
+              if [ -z "${IMG_PATH}" ]; then
+                echo "ERROR: Could not find rootfs image in ${GITHUB_WORKSPACE}" >&2
+                ls -la ${GITHUB_WORKSPACE} | sed -n "1,200p"
+                exit 1
+              fi
+              echo "Container: IMG_PATH=${IMG_PATH}"
+
+              # Detect URM build output root inside container
+              CANDIDATES=(
+                "${GITHUB_WORKSPACE}/build/urm-bins"
+              )
+              SRC_ROOT=""
+              for cand in "${CANDIDATES[@]}"; do
+                if [ -d "${cand}/usr/bin" ] || [ -d "${cand}/usr/lib" ]; then
+                  SRC_ROOT="${cand}"
+                  break
+                fi
+              done
+              if [ -z "${SRC_ROOT}" ]; then
+                echo "ERROR: No URM build output found with bin/ or lib/" >&2
+                echo "Checked locations:"
+                for cand in "${CANDIDATES[@]}"; do
+                  echo "  - ${cand} (exists: $([ -d "${cand}" ] && echo yes || echo no))"
+                done
+                ls -la ${GITHUB_WORKSPACE} | sed -n "1,200p"
+                exit 1
+              fi
+              echo "Container: Selected SRC_ROOT=${SRC_ROOT}"
+              ls -la --time-style=full-iso "${SRC_ROOT}" | sed -n "1,100p"
+
+              # Mount the image using loop (requires --privileged)
+              MNT_DIR="/mnt/rootfs"
+              mkdir -p "${MNT_DIR}"
+              mount -o rw,loop "${IMG_PATH}" "${MNT_DIR}"
+
+              echo "Container: Mounted filesystem details:"
+              df -hT "${MNT_DIR}" || true
+
+              echo "Container: Before copy - checking target directories:"
+              ls -la --time-style=full-iso "${MNT_DIR}/usr/bin" 2>/dev/null || echo "  /usr/bin not found"
+              ls -la --time-style=full-iso "${MNT_DIR}/usr/lib" 2>/dev/null || echo "  /usr/lib not found"
+              ls -la --time-style=full-iso "${MNT_DIR}/etc" 2>/dev/null || echo "  /etc not found"
+
+              # Copy with attributes preserved
+              copy_dir_contents () {
+                local src_dir="$1"
+                local dest_dir="$2"
+                if [ -d "${src_dir}" ]; then
+                  echo "Copying ${src_dir}/. -> ${dest_dir}/"
+                  mkdir -p "${dest_dir}"
+                  cp -av "${src_dir}/." "${dest_dir}/"
+                else
+                  echo "WARN: ${src_dir} not found. Skipping."
+                fi
+              }
+
+              # Copy URM components to appropriate locations
+              copy_dir_contents "${SRC_ROOT}/usr/bin" "${MNT_DIR}/usr/bin"
+              copy_dir_contents "${SRC_ROOT}/usr/lib" "${MNT_DIR}/usr/lib"
+              copy_dir_contents "${SRC_ROOT}/etc" "${MNT_DIR}/etc"
+              copy_dir_contents "${SRC_ROOT}/usr/include" "${MNT_DIR}/usr/include"
+
+              sync
+
+              echo "Container: After copy - verifying URM installations:"
+              ls -la --time-style=full-iso "${MNT_DIR}/usr/bin" | grep -E "urm|$" | sed -n "1,50p" || true
+              ls -la --time-style=full-iso "${MNT_DIR}/usr/lib" | grep -E "Urm|libUrm|$" | sed -n "1,50p" || true
+              ls -la --time-style=full-iso "${MNT_DIR}/etc/urm" 2>/dev/null | sed -n "1,50p" || echo "  /etc/urm not found"
+
+              # Unmount cleanly
+              umount "${MNT_DIR}"
+            '
+      - name: Verify image mtime changed (after)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          IMG_PATH="${{ steps.locate_img.outputs.IMG_PATH }}"
+          MTIME_AFTER="$(stat -c '%y' "${IMG_PATH}")"
+          echo "Before: ${{ steps.mtime_before.outputs.mtime_before }}"
+          echo "After:  ${MTIME_AFTER}"
+          if [ "${MTIME_AFTER}" = "${{ steps.mtime_before.outputs.mtime_before }}" ]; then
+            echo "ERROR: Image mtime did not change — copy may have failed." >&2
+            exit 1
+          fi
+          echo "==> Post-modification timestamp of the image file:"
+          ls -la --time-style=full-iso "${IMG_PATH}"
+
+      # --- Repack extracted folder (preserve original top-level layout & name) ---
+      - name: Create modified rootfs tar (preserve layout & name)
+        id: repack_rootfs
+        shell: bash
+        run: |
+          set -euxo pipefail
+          : "${GITHUB_WORKSPACE:=${{ github.workspace }}}"
+          ART_DIR="${GITHUB_WORKSPACE}/artifacts"
+          mkdir -p "${ART_DIR}"
+
+          MOD_TAR="${ART_DIR}/qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz"
+
+          # Read normalized top-levels
+          IFS=' ' read -r -a TOPLEVELS <<< "${{ steps.orig_tar_meta.outputs.TOPLEVELS }}"
+
+          cd "${GITHUB_WORKSPACE}"
+
+          # Exclude artifacts dir and the output tar itself to avoid "file changed as we read it"
+          tar --exclude='./artifacts' \
+              --exclude="${MOD_TAR}" \
+              -czf "${MOD_TAR}" "${TOPLEVELS[@]}"
+
+          echo "modified_tar=${MOD_TAR}" >> "$GITHUB_OUTPUT"
+          echo "==> Verify tar contents (first 100):"
+          tar -tzf "${MOD_TAR}" | sed -n '1,100p'
+
+      # === Upload BOTH build.tar and modified rootfs tar to S3 in a SINGLE call (avoid 409 conflicts) ===
+      - name: Create a tar file of URM build
+        run: |
+          set -euxo pipefail
+          # The urm-bins directory is created inside the build directory by CMake install
           cd build
           tar -cjf "${{ github.workspace }}/${{ env.TAR_NAME }}" "${{ env.URM_BINS_DIR }}"
           cd "${{ github.workspace }}"
-          touch file_list.txt
-          echo "${{ github.workspace }}/${{ env.TAR_NAME }}" >> file_list.txt
+          echo "Created tarball: ${{ env.TAR_NAME }}"
+          ls -lh "${{ github.workspace }}/${{ env.TAR_NAME }}"
 
-      - name: Upload artifacts to S3
+      - name: Create combined file list (URM binaries + modified rootfs)
+        id: make_file_list_all
+        shell: bash
+        run: |
+          set -euxo pipefail
+          workspace=${{ github.workspace }}
+
+          # Add modified rootfs tar
+          echo "${{ steps.repack_rootfs.outputs.modified_tar }}" > ${workspace}/artifacts/file_list.txt
+
+          # Add URM binaries tar
+          echo "${workspace}/${{ env.TAR_NAME }}" >> ${workspace}/artifacts/file_list.txt
+
+          echo "==> Combined artifacts list:"
+          cat ${workspace}/artifacts/file_list.txt
+          echo "file_list_all=${workspace}/artifacts/file_list.txt" >> "$GITHUB_OUTPUT"
+
+      - name: Upload all artifacts to S3
+        id: upload-artifacts
         uses: qualcomm/userspace-resource-manager/.github/actions/aws_s3_helper@main
         with:
           s3_bucket: qli-prd-cseperf-gh-artifacts
+          local_file: ${{ github.workspace }}/artifacts/file_list.txt
           mode: multi-upload
-          local_file: file_list.txt
+
+      - name: Clean up
+        run: |
+          rm -rf artifacts
+
+  publish_summary:
+    needs: [build]
+    runs-on: ubuntu-latest # This would take very less time to publish summary. CSE perf runners are taking very long time to pick this job.
+    if: success()
+    steps:
+      - name: Publish build summary
+        run: |
+          echo "# URM Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build completed successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Configuration:" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker image: ${{ inputs.docker_image || 'urm-image:ci' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- S3 bucket: qli-prd-cseperf-gh-artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- Run ID: ${{ github.run_id }}-${{ github.run_attempt }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Artifacts Uploaded:" >> $GITHUB_STEP_SUMMARY
+          echo "1. **URM Binaries**: urm-bins.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "2. **Modified Rootfs**: qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz" >> $GITHUB_STEP_SUMMARY
