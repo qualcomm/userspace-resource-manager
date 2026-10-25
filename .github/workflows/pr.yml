@@ -87,10 +87,10 @@ jobs:
         run: |
           set -euxo pipefail
           aws s3api head-object \
-            --bucket "${{ env.S3_BUCKET }}" \
-            --key "${{ env.TARGET_ROOTFS_KEY }}" \
+            --bucket "${S3_BUCKET}" \
+            --key "${TARGET_ROOTFS_KEY}" \
             >/dev/null 2>&1 || {
-              echo "ERROR: S3 key ${{ env.TARGET_ROOTFS_KEY }} not found in bucket ${{ env.S3_BUCKET }}." >&2
+              echo "ERROR: S3 key ${TARGET_ROOTFS_KEY} not found in bucket ${S3_BUCKET}." >&2
               exit 1
             }
 
@@ -98,7 +98,7 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          aws s3 cp "s3://${{ env.S3_BUCKET }}/${{ env.TARGET_ROOTFS_KEY }}" .
+          aws s3 cp "s3://${S3_BUCKET}/${TARGET_ROOTFS_KEY}" .
           ls -lh "./qcom-multimedia-image-iq-9075-evk.rootfs.qcomflash.tar.gz"
 
       # --- Normalize & record original tar top-level entries ---
@@ -125,6 +125,8 @@ jobs:
 
       - name: Extract iq-9075 rootfs image (non-destructive)
         shell: bash
+        env:
+          ORIG_TAR_TOPLEVELS: ${{ steps.orig_tar_meta.outputs.TOPLEVELS }}
         run: |
           set -euxo pipefail
           # Extract directly into current workspace (no extra 'rootfs/' folder)
@@ -132,7 +134,7 @@ jobs:
           echo "Extracted files (workspace top-level):"
           ls -la | sed -n '1,200p'
           echo "Expected top-level entries from original tar:"
-          echo "${{ steps.orig_tar_meta.outputs.TOPLEVELS }}"
+          echo "${ORIG_TAR_TOPLEVELS}"
 
       # --- Locate rootfs image and capture mtime BEFORE modification ---
       - name: Locate rootfs image
@@ -158,25 +160,26 @@ jobs:
       - name: Capture image mtime (before)
         id: mtime_before
         shell: bash
+        env:
+          IMG_PATH: ${{ steps.locate_img.outputs.IMG_PATH }}
         run: |
           set -euxo pipefail
-          IMG_PATH="${{ steps.locate_img.outputs.IMG_PATH }}"
           MTIME_BEFORE="$(stat -c '%y' "${IMG_PATH}")"
           echo "mtime_before=${MTIME_BEFORE}" >> "$GITHUB_OUTPUT"
 
       # --- Modify rootfs INSIDE Docker (mount -o loop, copy, umount) ---
       - name: Modify rootfs inside Docker
         shell: bash
+        env:
+          DOCKER_IMAGE: ${{ inputs.docker_image || 'urm-image:ci' }}
         run: |
           set -euxo pipefail
-          # Use the built urm-image or fallback from inputs
-          DOCKER_IMAGE="${{ inputs.docker_image || 'urm-image:ci' }}"
 
           # Run as root in a privileged container, bind-mount the workspace
           docker run --rm --privileged --user root \
-            -v "${{ github.workspace }}:${{ github.workspace }}" \
-            -w "${{ github.workspace }}" \
-            -e GITHUB_WORKSPACE="${{ github.workspace }}" \
+            -v "${GITHUB_WORKSPACE}:${GITHUB_WORKSPACE}" \
+            -w "${GITHUB_WORKSPACE}" \
+            -e GITHUB_WORKSPACE="${GITHUB_WORKSPACE}" \
             "${DOCKER_IMAGE}" \
             bash -lc '
               set -euxo pipefail
@@ -257,13 +260,15 @@ jobs:
             '
       - name: Verify image mtime changed (after)
         shell: bash
+        env:
+          IMG_PATH: ${{ steps.locate_img.outputs.IMG_PATH }}
+          MTIME_BEFORE: ${{ steps.mtime_before.outputs.mtime_before }}
         run: |
           set -euxo pipefail
-          IMG_PATH="${{ steps.locate_img.outputs.IMG_PATH }}"
           MTIME_AFTER="$(stat -c '%y' "${IMG_PATH}")"
-          echo "Before: ${{ steps.mtime_before.outputs.mtime_before }}"
+          echo "Before: ${MTIME_BEFORE}"
           echo "After:  ${MTIME_AFTER}"
-          if [ "${MTIME_AFTER}" = "${{ steps.mtime_before.outputs.mtime_before }}" ]; then
+          if [ "${MTIME_AFTER}" = "${MTIME_BEFORE}" ]; then
             echo "ERROR: Image mtime did not change — copy may have failed." >&2
             exit 1
           fi
@@ -274,24 +279,24 @@ jobs:
       - name: Create modified rootfs tar (preserve layout & name)
         id: repack_rootfs
         shell: bash
+        env:
+          ORIG_TAR_TOPLEVELS: ${{ steps.orig_tar_meta.outputs.TOPLEVELS }}
         run: |
           set -euxo pipefail
-          : "${GITHUB_WORKSPACE:=${{ github.workspace }}}"
           ART_DIR="${GITHUB_WORKSPACE}/artifacts"
           mkdir -p "${ART_DIR}"
 
           MOD_TAR="${ART_DIR}/qcom-multimedia-image-iq-9075-evk.rootfs.qcomflash.tar.gz"
 
           # Read normalized top-levels
-          IFS=' ' read -r -a TOPLEVELS <<< "${{ steps.orig_tar_meta.outputs.TOPLEVELS }}"
+          IFS=' ' read -r -a TOPLEVELS <<< "${ORIG_TAR_TOPLEVELS}"
 
           cd "${GITHUB_WORKSPACE}"
 
           # Exclude artifacts dir and the output tar itself to avoid "file changed as we read it"
           tar --exclude='./artifacts' \
               --exclude="${MOD_TAR}" \
-              -czf "${MOD_TAR}" "${TOPLEVELS[@]}"
-
+              -czf "${MOD_TAR}" -- "${TOPLEVELS[@]}"
           echo "modified_tar=${MOD_TAR}" >> "$GITHUB_OUTPUT"
           echo "==> Verify tar contents (first 100):"
           tar -tzf "${MOD_TAR}" | sed -n '1,100p'
@@ -302,26 +307,28 @@ jobs:
           set -euxo pipefail
           # The urm-bins directory is created inside the build directory by CMake install
           cd build
-          tar -cjf "${{ github.workspace }}/${{ env.TAR_NAME }}" "${{ env.URM_BINS_DIR }}"
-          cd "${{ github.workspace }}"
-          echo "Created tarball: ${{ env.TAR_NAME }}"
-          ls -lh "${{ github.workspace }}/${{ env.TAR_NAME }}"
+          tar -cjf "${GITHUB_WORKSPACE}/${TAR_NAME}" "${URM_BINS_DIR}"
+          cd "${GITHUB_WORKSPACE}"
+          echo "Created tarball: ${TAR_NAME}"
+          ls -lh "${GITHUB_WORKSPACE}/${TAR_NAME}"
 
       - name: Create combined file list (URM binaries + modified rootfs)
         id: make_file_list_all
         shell: bash
+        env:
+          MODIFIED_ROOTFS_TAR: ${{ steps.repack_rootfs.outputs.modified_tar }}
         run: |
           set -euxo pipefail
-          workspace=${{ github.workspace }}
+          workspace="${GITHUB_WORKSPACE}"
 
           # Add modified rootfs tar
-          echo "${{ steps.repack_rootfs.outputs.modified_tar }}" > ${workspace}/artifacts/file_list.txt
+          echo "${MODIFIED_ROOTFS_TAR}" > "${workspace}/artifacts/file_list.txt"
 
           # Add URM binaries tar
-          echo "${workspace}/${{ env.TAR_NAME }}" >> ${workspace}/artifacts/file_list.txt
+          echo "${workspace}/${TAR_NAME}" >> "${workspace}/artifacts/file_list.txt"
 
           echo "==> Combined artifacts list:"
-          cat ${workspace}/artifacts/file_list.txt
+          cat "${workspace}/artifacts/file_list.txt"
           echo "file_list_all=${workspace}/artifacts/file_list.txt" >> "$GITHUB_OUTPUT"
 
       - name: Upload all artifacts to S3
@@ -342,16 +349,20 @@ jobs:
     if: success()
     steps:
       - name: Publish build summary
+        env:
+          DOCKER_IMAGE: ${{ inputs.docker_image || 'urm-image:ci' }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
-          echo "# URM Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Build completed successfully!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Configuration:" >> $GITHUB_STEP_SUMMARY
-          echo "- Docker image: ${{ inputs.docker_image || 'urm-image:ci' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- S3 bucket: qli-prd-cseperf-gh-artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "- Run ID: ${{ github.run_id }}-${{ github.run_attempt }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Artifacts Uploaded:" >> $GITHUB_STEP_SUMMARY
-          echo "1. **URM Binaries**: urm-bins.tar.gz" >> $GITHUB_STEP_SUMMARY
-          echo "2. **Modified Rootfs**: qcom-multimedia-image-iq-9075-evk.rootfs.qcomflash.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "# URM Build Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "✅ Build completed successfully!" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Configuration:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Docker image: ${DOCKER_IMAGE}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- S3 bucket: qli-prd-cseperf-gh-artifacts" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Run ID: ${RUN_ID}-${RUN_ATTEMPT}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Artifacts Uploaded:" >> "$GITHUB_STEP_SUMMARY"
+          echo "1. **URM Binaries**: urm-bins.tar.gz" >> "$GITHUB_STEP_SUMMARY"
+          echo "2. **Modified Rootfs**: qcom-multimedia-image-iq-9075-evk.rootfs.qcomflash.tar.gz" >> "$GITHUB_STEP_SUMMARY"
