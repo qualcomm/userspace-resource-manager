@@ -66,6 +66,7 @@ public:
     void setOptionalInfo(int32_t optionalInfo);
     void setNumValues(int32_t numValues);
     ErrCode setValueAt(int32_t index, int32_t value);
+    ErrCode truncate(int32_t valueCount);
 };
 
 typedef ExtIterable1<Resource*> ResIterable;

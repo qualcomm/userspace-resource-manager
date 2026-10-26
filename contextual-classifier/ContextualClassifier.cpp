@@ -275,14 +275,15 @@ void ContextualClassifier::ClassifierMain() {
                         .mPid = ev.pid,
                         .mSigId = sigId,
                         .mSigType = sigType,
-                        .mNumArgs = 0,
-                        .mArgs = nullptr,
-                        .mHandleAcq = -1,
+                        .mHandlesAcqCount = 0,
+                        .mHandlesAcq = nullptr,
                     };
                     postCb((void*)&postProcessData);
 
                     // Record any Configurations made
-                    this->trackClient(postProcessData.mHandleAcq);
+                    for(int32_t idx = 0; idx < postProcessData.mHandlesAcqCount; idx++) {
+                        this->trackClient(postProcessData.mHandlesAcq[idx]);
+                    }
 
                 } else {
                     // Figure out workload type

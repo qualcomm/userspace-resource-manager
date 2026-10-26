@@ -396,6 +396,197 @@ URM_TEST(SignalParsingTests, {
     }
 })
 
+// Verifies parsing of variable-length signal resource values and invalid wildcard forms.
+URM_TEST(SignalVariableValuesParsingTests, {
+    // Parse the signal config containing wildcard value-list test cases.
+    {
+        ErrCode parsingStatus = RC_SUCCESS;
+        RestuneParser configProcessor;
+        parsingStatus = configProcessor.parseSignalConfigs(URM_TEST_DATA_DIR "configs/SignalsConfig.yaml");
+
+        E_ASSERT((SignalRegistry::getInstance() != nullptr));
+        E_ASSERT((parsingStatus == RC_SUCCESS));
+    }
+
+    // Verify wildcard-only Values reserve the default placeholder count.
+    {
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x0013), 0
+        );
+
+        E_ASSERT((signalInfo != nullptr));
+        E_ASSERT((strcmp((const char*)signalInfo->mSignalName.data(),
+                         "TEST_SIGNAL_VARIABLE_VALUES_ONLY") == 0));
+        E_ASSERT((signalInfo->mSignalResources != nullptr));
+        E_ASSERT((signalInfo->mSignalResources->size() == 1));
+
+        Resource* resource = signalInfo->mSignalResources->at(0);
+        E_ASSERT((resource->getResCode() == 0x00090030));
+        E_ASSERT((resource->getOptionalInfo() == OPT_VARIABLE_VALUES_LIST));
+        E_ASSERT((resource->getValuesCount() == 10));
+        for(int32_t i = 0; i < resource->getValuesCount(); i++) {
+            E_ASSERT((resource->getValueAt(i) == NSIG_PLACEHOLDER));
+        }
+    }
+
+    // Verify fixed prefix values are preserved before wildcard placeholders.
+    {
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x0014), 0
+        );
+
+        E_ASSERT((signalInfo != nullptr));
+        E_ASSERT((strcmp((const char*)signalInfo->mSignalName.data(),
+                         "TEST_SIGNAL_STATIC_PREFIX_VARIABLE_VALUES") == 0));
+        E_ASSERT((signalInfo->mSignalResources != nullptr));
+        E_ASSERT((signalInfo->mSignalResources->size() == 1));
+
+        Resource* resource = signalInfo->mSignalResources->at(0);
+        E_ASSERT((resource->getResCode() == 0x00090031));
+        E_ASSERT((resource->getOptionalInfo() == OPT_VARIABLE_VALUES_LIST));
+        E_ASSERT((resource->getValuesCount() == 11));
+        E_ASSERT((resource->getValueAt(0) == 801));
+        for(int32_t i = 1; i < resource->getValuesCount(); i++) {
+            E_ASSERT((resource->getValueAt(i) == NSIG_PLACEHOLDER));
+        }
+    }
+
+    // Verify explicit wildcard bound controls reserved placeholder count.
+    {
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x0015), 0
+        );
+
+        E_ASSERT((signalInfo != nullptr));
+        E_ASSERT((strcmp((const char*)signalInfo->mSignalName.data(),
+                         "TEST_SIGNAL_EXPLICIT_BOUND_VARIABLE_VALUES") == 0));
+        E_ASSERT((signalInfo->mSignalResources != nullptr));
+        E_ASSERT((signalInfo->mSignalResources->size() == 1));
+
+        Resource* resource = signalInfo->mSignalResources->at(0);
+        E_ASSERT((resource->getResCode() == 0x00090032));
+        E_ASSERT((resource->getOptionalInfo() == OPT_VARIABLE_VALUES_LIST));
+        E_ASSERT((resource != nullptr));
+        E_ASSERT((resource->getValuesCount() == 5));
+        E_ASSERT((resource->getValueAt(0) == 801));
+        for(int32_t i = 1; i < resource->getValuesCount(); i++) {
+            E_ASSERT((resource->getValueAt(i) == NSIG_PLACEHOLDER));
+        }
+    }
+
+    // Verify fixed Values remain unchanged and are not marked variable-length.
+    {
+        SignalInfo* signalInfo = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x0016), 0
+        );
+
+        E_ASSERT((signalInfo != nullptr));
+        E_ASSERT((strcmp((const char*)signalInfo->mSignalName.data(),
+                         "TEST_SIGNAL_FIXED_VALUES_REGRESSION") == 0));
+        E_ASSERT((signalInfo->mSignalResources != nullptr));
+        E_ASSERT((signalInfo->mSignalResources->size() == 1));
+
+        Resource* resource = signalInfo->mSignalResources->at(0);
+        E_ASSERT((resource->getResCode() == 0x00090033));
+        E_ASSERT((resource->getOptionalInfo() == 0));
+        E_ASSERT((resource != nullptr));
+        E_ASSERT((resource->getValuesCount() == 3));
+        E_ASSERT((resource->getValueAt(0) == 801));
+        E_ASSERT((resource->getValueAt(1) == 1001));
+        E_ASSERT((resource->getValueAt(2) == 1002));
+    }
+
+    // Verify invalid wildcard bounds/placement are rejected and not registered.
+    {
+        SignalInfo* zeroBoundSignal = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x0017), 0
+        );
+        E_ASSERT((zeroBoundSignal == nullptr));
+
+        SignalInfo* negativeBoundSignal = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x0018), 0
+        );
+        E_ASSERT((negativeBoundSignal == nullptr));
+
+        SignalInfo* middleWildcardSignal = SignalRegistry::getInstance()->getSignalConfigByIdAndType(
+            CONSTRUCT_SIG_CODE(0x0d, 0x0019), 0
+        );
+        E_ASSERT((middleWildcardSignal == nullptr));
+    }
+})
+
+// Verifies Resource::truncate preserves values across storage-size transitions.
+URM_TEST(ResourceTruncateTests, {
+    // Verify truncating a heap-backed Resource to another heap-backed size.
+    {
+        Resource resource;
+        resource.setResCode(0x00090030);
+        resource.setOptionalInfo(OPT_VARIABLE_VALUES_LIST);
+        resource.setNumValues(10);
+        for(int32_t i = 0; i < resource.getValuesCount(); i++) {
+            E_ASSERT((resource.setValueAt(i, i + 1) == RC_SUCCESS));
+        }
+
+        E_ASSERT((resource.truncate(3) == RC_SUCCESS));
+        E_ASSERT((resource.getValuesCount() == 3));
+        E_ASSERT((resource.getValueAt(0) == 1));
+        E_ASSERT((resource.getValueAt(1) == 2));
+        E_ASSERT((resource.getValueAt(2) == 3));
+    }
+
+    // Verify truncating a heap-backed Resource into inline storage.
+    {
+        Resource resource;
+        resource.setResCode(0x00090031);
+        resource.setOptionalInfo(OPT_VARIABLE_VALUES_LIST);
+        resource.setNumValues(5);
+        for(int32_t i = 0; i < resource.getValuesCount(); i++) {
+            E_ASSERT((resource.setValueAt(i, 100 + i) == RC_SUCCESS));
+        }
+
+        E_ASSERT((resource.truncate(2) == RC_SUCCESS));
+        E_ASSERT((resource.getValuesCount() == 2));
+        E_ASSERT((resource.getValueAt(0) == 100));
+        E_ASSERT((resource.getValueAt(1) == 101));
+    }
+
+    // Verify truncating an inline Resource keeps the requested prefix value.
+    {
+        Resource resource;
+        resource.setResCode(0x00090032);
+        resource.setOptionalInfo(OPT_VARIABLE_VALUES_LIST);
+        resource.setNumValues(2);
+        E_ASSERT((resource.setValueAt(0, 801) == RC_SUCCESS));
+        E_ASSERT((resource.setValueAt(1, 1001) == RC_SUCCESS));
+
+        E_ASSERT((resource.truncate(1) == RC_SUCCESS));
+        E_ASSERT((resource.getValuesCount() == 1));
+        E_ASSERT((resource.getValueAt(0) == 801));
+    }
+
+    // Verify invalid truncate sizes fail without mutating stored values.
+    {
+        Resource resource;
+        resource.setResCode(0x00090033);
+        resource.setNumValues(3);
+        E_ASSERT((resource.setValueAt(0, 801) == RC_SUCCESS));
+        E_ASSERT((resource.setValueAt(1, 1001) == RC_SUCCESS));
+        E_ASSERT((resource.setValueAt(2, 1002) == RC_SUCCESS));
+
+        E_ASSERT((resource.truncate(4) == RC_BAD_ARG));
+        E_ASSERT((resource.getValuesCount() == 3));
+        E_ASSERT((resource.getValueAt(0) == 801));
+        E_ASSERT((resource.getValueAt(1) == 1001));
+        E_ASSERT((resource.getValueAt(2) == 1002));
+
+        E_ASSERT((resource.truncate(-1) == RC_BAD_ARG));
+        E_ASSERT((resource.getValuesCount() == 3));
+        E_ASSERT((resource.getValueAt(0) == 801));
+        E_ASSERT((resource.getValueAt(1) == 1001));
+        E_ASSERT((resource.getValueAt(2) == 1002));
+    }
+})
+
 URM_TEST(InitConfigParsingTests, {
     std::shared_ptr<TargetRegistry> targetRegistry = TargetRegistry::getInstance();
 

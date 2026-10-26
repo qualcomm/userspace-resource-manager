@@ -204,6 +204,7 @@ public:
 
     ErrCode setResCode(const std::string& resCodeString);
     ErrCode setResInfo(const std::string& resInfoString);
+    ErrCode setOptionalInfo(int32_t optionalInfo);
     ErrCode setNumValues(int32_t valuesCount);
     ErrCode addValue(int32_t index, const std::string& value);
 

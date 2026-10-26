@@ -541,6 +541,15 @@ ErrCode ResourceBuilder::setResInfo(const std::string& resInfoString) {
     return RC_SUCCESS;
 }
 
+ErrCode ResourceBuilder::setOptionalInfo(int32_t optionalInfo) {
+    if(this->mResource == nullptr) {
+        return RC_MEMORY_ALLOCATION_FAILURE;
+    }
+
+    this->mResource->setOptionalInfo(optionalInfo);
+    return RC_SUCCESS;
+}
+
 ErrCode ResourceBuilder::setNumValues(int32_t valuesCount) {
     if(this->mResource == nullptr) {
         return RC_MEMORY_ALLOCATION_FAILURE;

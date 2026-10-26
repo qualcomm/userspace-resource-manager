@@ -31,6 +31,15 @@ SignalConfigs:
       - {ResCode: "RES_CPU_IDLE_DISABLE_ST2", ResInfo: "0x00000100", Values: [1]}
       - {ResCode: "RES_CPU_IDLE_DISABLE_ST2", ResInfo: "0x00000200", Values: [1]}
 
+  - SigId: "0x000a"
+    Category: "0x80"
+    Name: GST_CRTC_EVENT_AFFINITY
+    Enable: true
+    Permissions: ["system", "third_party"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_PER_TASK_AFFINITY", ResInfo: "0x00000000", Values: ["*"]}
+
   - SigId: "0x0123"
     Category: "0xf1"
     Name: GENIE_T2T_RUN

@@ -778,16 +778,71 @@ ErrCode RestuneParser::parseSignalConfigYamlNode(const std::string& filePath) {
 
                 if(topKey == SIGNAL_CONFIGS_ELEM_RESOURCE_VALUES) {
                     if(RC_IS_OK(rc)) {
-                        rc = resourceBuilder->setNumValues(resValues.size());
-                    }
+                        // At most one wildcard is supported per Resource
+                        int32_t staticArgCount = 0;
+                        int32_t wildcardArgCount = 0;
+                        int32_t lastWildcardIndex = -1;
 
-                    for(size_t idx = 0; idx < resValues.size(); idx++) {
-                        if(RC_IS_OK(rc)) {
-                            rc = resourceBuilder->addValue(idx, resValues[idx]);
+                        // Examine the Values list to check if any wildcard is specified
+                        // If it is, it should be either in the last position or second last
+                        // For example: [0, 1, 2, 5, "*"] is valid, However:
+                        // [0, 1, "*", 4, 5] is not.
+                        for(int32_t idx = 0; idx < (int32_t)resValues.size(); idx++) {
+                            if(resValues[idx] == "*") {
+                                if(lastWildcardIndex != -1) {
+                                    rc = RC_YAML_INVALID_SYNTAX;
+                                    break;
+                                } else {
+                                    lastWildcardIndex = idx;
+                                }
+                            } else {
+                                if(lastWildcardIndex == -1) {
+                                    staticArgCount++;
+                                }
+                            }
                         }
-                    }
 
-                    resValues.clear();
+                        // If we have a wildcard index validate the rules specified above.
+                        // By default upto 10 argument values are reserved corresponding to a wildcard.
+                        // Note: [0, 1, "*", 4] is considered valid, here the last value specifies the
+                        // number of arguments to reserve.
+                        if(lastWildcardIndex != -1) {
+                            if(lastWildcardIndex < (int32_t)resValues.size() - 2) {
+                                rc = RC_YAML_INVALID_SYNTAX;
+                            } else if(lastWildcardIndex == (int32_t)resValues.size() - 1) {
+                                wildcardArgCount = 10;
+                            } else {
+                                try {
+                                    wildcardArgCount = std::stoi(resValues.back());
+                                    if(wildcardArgCount <= 0) {
+                                        rc = RC_YAML_INVALID_SYNTAX;
+                                    }
+                                } catch(const std::exception& e) {
+                                    rc = RC_YAML_INVALID_SYNTAX;
+                                }
+                            }
+
+                            if(RC_IS_OK(rc)) {
+                                rc = resourceBuilder->setOptionalInfo(OPT_VARIABLE_VALUES_LIST);
+                            }
+                        }
+
+                        if(RC_IS_OK(rc)) {
+                            rc = resourceBuilder->setNumValues(staticArgCount + wildcardArgCount);
+                        }
+
+                        for(int32_t idx = 0; idx < staticArgCount + wildcardArgCount; idx++) {
+                            if(RC_IS_OK(rc)) {
+                                if(lastWildcardIndex != -1 && idx >= lastWildcardIndex) {
+                                    rc = resourceBuilder->addValue(idx, "%d");
+                                } else {
+                                    rc = resourceBuilder->addValue(idx, resValues[idx]);
+                                }
+                            }
+                        }
+
+                        resValues.clear();
+                    }
                 }
                 break;
 

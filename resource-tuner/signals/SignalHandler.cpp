@@ -150,7 +150,17 @@ static Request* createResourceTuningRequest(Signal* signal) {
                         resource->setValueAt(j, signal->getListArgAt(listIndex));
                         listIndex++;
                     } else {
-                        return nullptr;
+                        // If the Resource does not expects a variable Value List,
+                        // then certain placeholders cannot be filled.
+                        if(resource->getOptionalInfo() != OPT_VARIABLE_VALUES_LIST) {
+                            return nullptr;
+                        } else {
+                            // Truncate the Resource
+                            if(RC_IS_NOTOK(resource->truncate(j))) {
+                                return nullptr;
+                            }
+                            break;
+                        }
                     }
                 }
             }
@@ -358,6 +368,7 @@ static Request* createTuneRequestFromSignal(uint32_t sigId,
 
         std::vector<Resource*>* signalLocks = signalInfo->mSignalResources;
 
+        int32_t listIndex = 0;
         for(int32_t i = 0; i < (int32_t)signalLocks->size(); i++) {
             if((*signalLocks)[i] == nullptr) {
                 continue;
@@ -366,14 +377,24 @@ static Request* createTuneRequestFromSignal(uint32_t sigId,
             // Copy
             Resource* resource = MPLACEV(Resource, (*((*signalLocks)[i])));
 
-            // fill placeholders if any
-            int32_t listIndex = 0;
             for(int32_t j = 0; j < resource->getValuesCount(); j++) {
                 if(resource->getValueAt(j) == NSIG_PLACEHOLDER) {
                     if(args == nullptr) return nullptr;
                     if(listIndex >= 0 && listIndex < numArgs) {
                         resource->setValueAt(j, args[listIndex]);
                         listIndex++;
+                    } else {
+                        // If the Resource does not expects a variable Value List,
+                        // then certain placeholders cannot be filled.
+                        if(resource->getOptionalInfo() != OPT_VARIABLE_VALUES_LIST) {
+                            return nullptr;
+                        } else {
+                            // Truncate the Resource
+                            if(RC_IS_NOTOK(resource->truncate(j))) {
+                                return nullptr;
+                            }
+                            break;
+                        }
                     }
                 }
             }

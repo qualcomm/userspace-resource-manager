@@ -79,6 +79,73 @@ void Resource::setNumValues(int32_t numValues) {
     }
 }
 
+ErrCode Resource::truncate(int32_t valueCount) {
+    // Cannot truncate to a negative size and cannot extend the list.
+    if(valueCount < 0 || valueCount > this->mNumValues) {
+        return RC_BAD_ARG;
+    }
+
+    if(valueCount == this->mNumValues) {
+        return RC_SUCCESS;
+    }
+
+    // If mNumValues <= 2, there is no heap allocation. Return Success
+    if(this->mNumValues <= 2) {
+        this->mNumValues = valueCount;
+        return RC_SUCCESS;
+    }
+
+    int32_t* oldValues = this->mResValue.valueArr;
+
+    // Case 1:
+    // The truncated Resource still needs heap storage.
+    if(valueCount > 2) {
+        int32_t* newValues = new(std::nothrow) int32_t[valueCount];
+
+        // Allocation may fail because std::nothrow is used.
+        // If it fails, do not modify the existing Resource.
+        // The caller can reject the request safely.
+        if(newValues == nullptr) {
+            return RC_MEMORY_ALLOCATION_FAILURE;
+        }
+
+        // Copy only the values we want to keep.
+        for(int32_t i = 0; i < valueCount; i++) {
+            newValues[i] = oldValues[i];
+        }
+
+        // oldValues was allocated using new[], so it must be freed using delete[].
+        delete[] oldValues;
+
+        // Store the new smaller heap array and update the count.
+        this->mResValue.valueArr = newValues;
+        this->mNumValues = valueCount;
+
+        return RC_SUCCESS;
+    }
+
+    // Case 2:
+    // The truncated Resource now fits into inline storage.
+
+    int32_t inlineValues[2] = {0, 0};
+
+    for(int32_t i = 0; i < valueCount; i++) {
+        inlineValues[i] = oldValues[i];
+    }
+
+    // Free the old heap array before switching to inline storage.
+    delete[] oldValues;
+
+    this->mNumValues = valueCount;
+
+    // Copy the preserved values into inline storage.
+    for(int32_t i = 0; i < valueCount; i++) {
+        this->mResValue.values[i] = inlineValues[i];
+    }
+
+    return RC_SUCCESS;
+}
+
 ErrCode Resource::setValueAt(int32_t index, int32_t value) {
     if(index < 0 || index >= this->mNumValues) return RC_BAD_ARG;
     if(this->mNumValues > 2) {
@@ -94,7 +161,7 @@ ErrCode Resource::setValueAt(int32_t index, int32_t value) {
 
 Resource::~Resource() {
     if(this->mNumValues > 2 && this->mResValue.valueArr != nullptr) {
-        delete(this->mResValue.valueArr);
+        delete[] this->mResValue.valueArr;
         this->mResValue.valueArr = nullptr;
     }
 }

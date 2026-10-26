@@ -1,13 +1,15 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <string>
-#include <dirent.h>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
-#include <memory>
 #include <mutex>
+#include <memory>
+#include <string>
+#include <cerrno>
+#include <cstring>
+#include <sstream>
+#include <fstream>
+#include <dirent.h>
+#include <algorithm>
 
 #include "Helpers.h"
 
@@ -392,6 +394,27 @@ void PostProcessingBlock::PostProcess(pid_t pid,
 std::once_flag PostProcessingBlock::mInitFlag;
 std::unique_ptr<PostProcessingBlock> PostProcessingBlock::mInstance = nullptr;
 
+static void listCrtcThreads(std::vector<uint32_t>& crtcThreads) {
+    DIR* dir = opendir("/proc");
+    if(dir == nullptr) return;
+
+    struct dirent* entry = nullptr;
+    while((entry = readdir(dir)) != nullptr) {
+        pid_t pid = atoi(entry->d_name);
+        if(pid <= 0) continue;
+
+        std::string commPath = "/proc/" + std::to_string(pid) + "/comm";
+        std::string comm = "";
+        if(!readLineFromFile(commPath, comm)) continue;
+
+        if(comm.find("crtc_event:") == 0) {
+            crtcThreads.push_back(pid);
+        }
+    }
+
+    closedir(dir);
+}
+
 static void WorkloadPostprocessCallback(void* context) {
     if(context == nullptr) {
         return;
@@ -409,9 +432,15 @@ static void WorkloadPostprocessCallback(void* context) {
     uint32_t* extraArgs = nullptr;
     PostProcessingBlock::getInstance().PostProcess(pid, sigId, sigType, &extraArgs);
 
-    int64_t handle =
+    std::vector<uint32_t> crtcThreads;
+    listCrtcThreads(crtcThreads);
+
+    cbData->mHandlesAcqCount = 2;
+    cbData->mHandlesAcq = new (std::nothrow) int64_t[cbData->mHandlesAcqCount];
+    cbData->mHandlesAcq[0] =
         acquireSignal(sigId, sigType, pid, pid, SIGNAL_EXTRA_ATTRS_COUNT, extraArgs);
-    cbData->mHandleAcq = handle;
+    cbData->mHandlesAcq[1] =
+        acquireSignal(sigId, sigType, pid, pid, crtcThreads.size(), crtcThreads.data());
 }
 
 __attribute__((constructor))

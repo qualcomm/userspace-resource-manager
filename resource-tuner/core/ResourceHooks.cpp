@@ -570,14 +570,23 @@ static void limitCpuTime(void* context) {
 static void setTaskAffinity(void* context) {
     if(context == nullptr) return;
     Resource* resource = static_cast<Resource*>(context);
-    int32_t maxPidCount = 6;
-    if(resource->getValuesCount() < (maxPidCount + 1)) return;
+    if(resource->getValuesCount() < 1) return;
 
     cpu_set_t mask;
     CPU_ZERO(&mask);
 
-    // Supports multiple pids configuration at once, upto 6
-    for(int32_t i = 0; i < maxPidCount; i++) {
+    int32_t clusterID = resource->getClusterValue();
+    ClusterInfo* cinfo = TargetRegistry::getInstance()->getClusterInfo(clusterID);
+    if(cinfo == nullptr) {
+        return;
+    }
+
+    for(int32_t i = cinfo->mStartCpu; i < cinfo->mStartCpu + cinfo->mNumCpus; i++) {
+         CPU_SET(i, &mask);
+    }
+
+    // Supports multiple pids configuration at once
+    for(int32_t i = 0; i < resource->getValuesCount(); i++) {
         pid_t pid = resource->getValueAt(i);
         if(pid <= 0) continue;
 
@@ -589,12 +598,12 @@ static void setTaskAffinity(void* context) {
             std::string maskStr = "";
 
             // Serialize the mask as a string
-            for(int32_t i = 0; i < CPU_SETSIZE; i++) {
-                if(CPU_ISSET(i, &mask)) {
+            for(int32_t j = 0; j < CPU_SETSIZE; j++) {
+                if(CPU_ISSET(j, &mask)) {
                     if(maskStr.length() > 0) {
                         maskStr.append(",");
                     }
-                    maskStr.append(std::to_string(i));
+                    maskStr.append(std::to_string(j));
                 }
             }
 
@@ -602,13 +611,7 @@ static void setTaskAffinity(void* context) {
         }
     }
 
-    CPU_ZERO(&mask);
-    for(int32_t i = maxPidCount; i < resource->getValuesCount(); i++) {
-        int32_t cpuId = resource->getValueAt(i);
-        CPU_SET(cpuId, &mask);
-    }
-
-    for(int32_t i = 0; i < maxPidCount; i++) {
+    for(int32_t i = 0; i < resource->getValuesCount(); i++) {
         pid_t pid = resource->getValueAt(i);
         if(pid > 0) {
             TYPELOGV(NOTIFY_NODE_WRITE, "sched_setaffinity()", pid);
@@ -738,10 +741,9 @@ static void resetRunOnCoresExclusively(void* context) {
 static void resetTaskAffinity(void* context) {
     if(context == nullptr) return;
     Resource* resource = static_cast<Resource*>(context);
-    int32_t maxPidCount = 6;
-    if(resource->getValuesCount() < (maxPidCount + 1)) return;
+    if(resource->getValuesCount() < 1) return;
 
-    for(int i = 0; i < maxPidCount; i++) {
+    for(int i = 0; i < resource->getValuesCount(); i++) {
         pid_t pid = resource->getValueAt(i);
         if(pid <= 0) continue;
 

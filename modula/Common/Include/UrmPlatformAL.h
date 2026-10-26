@@ -18,6 +18,7 @@
 
 // Used to define the new config value, relative to the already configured value
 #define OPT_WITHREL 0X00000004
+#define OPT_VARIABLE_VALUES_LIST 0X00000008
 
 /**
  * @struct SysResource

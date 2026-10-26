@@ -23,9 +23,8 @@ typedef struct {
     pid_t mPid;
     uint32_t mSigId;
     uint32_t mSigType;
-    int32_t mNumArgs;
-    uint32_t* mArgs;
-    int64_t mHandleAcq;
+    int32_t mHandlesAcqCount;
+    int64_t* mHandlesAcq;
 } PostProcessCBData;
 
 /**
