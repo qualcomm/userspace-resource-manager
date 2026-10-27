@@ -124,6 +124,7 @@
 #define APP_CONFIGS_APP_NAME "App"
 #define APP_CONFIGS_THREAD_LIST "Threads"
 #define APP_CONFIGS_CONFIGURATION_LIST "Configurations"
+#define APP_CONFIGS_ALLOW_MOVEMENT "Movement"
 
 /**
  * The Resource Config file (ResourcesConfig.yaml) must follow a specific structure.

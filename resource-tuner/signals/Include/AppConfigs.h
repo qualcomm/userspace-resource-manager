@@ -20,6 +20,7 @@ typedef struct {
     int32_t* mCGroupIds;
     int32_t mNumSignals;
     uint32_t* mSignalCodes;
+    int8_t isMovementAllowed;
 } AppConfig;
 
 class AppConfigs {
@@ -57,6 +58,7 @@ public:
     ErrCode addThreadMapping(int32_t index, const std::string& threadName, const std::string& cGroup);
     ErrCode setNumSigCodes(int32_t sigCount);
     ErrCode addSigCode(int32_t index, const std::string& sigCodeStr);
+    ErrCode setMovementType(const std::string& movementAllowed);
 
     AppConfig* build();
 };

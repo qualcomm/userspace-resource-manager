@@ -16,6 +16,7 @@ AppConfig* AppConfigs::getAppConfig(const std::string& name) {
 
 AppConfigBuilder::AppConfigBuilder() {
     this->mAppConfig = new(std::nothrow) AppConfig();
+    this->mAppConfig->isMovementAllowed = true;
 }
 
 ErrCode AppConfigBuilder::setAppName(const std::string& name) {
@@ -24,6 +25,17 @@ ErrCode AppConfigBuilder::setAppName(const std::string& name) {
     }
 
     this->mAppConfig->mAppName = name;
+    return RC_SUCCESS;
+}
+
+ErrCode AppConfigBuilder::setMovementType(const std::string& movementAllowed) {
+    if(this->mAppConfig == nullptr) {
+        return RC_MEMORY_ALLOCATION_FAILURE;
+    }
+
+    if(movementAllowed != "true") {
+        this->mAppConfig->isMovementAllowed = false;
+    }
     return RC_SUCCESS;
 }
 

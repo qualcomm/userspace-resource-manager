@@ -16,3 +16,6 @@ PerAppConfigs:
 
   - App: "vlc"
     Configurations: ["0x000d000c"]
+
+  - App: "docker"
+    Movement: false
