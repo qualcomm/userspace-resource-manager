@@ -199,3 +199,41 @@ SignalConfigs:
       - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
       - {ResCode: "RES_SCHED_UTIL_CLAMP_MIN", Values: [0]}
       - {ResCode: "RES_SCHED_UTIL_CLAMP_MAX", Values: [716]}
+
+  # camera open tunings
+  # CPU cluster 0 Min Freq 3417600, Max Freq 3417600
+  # CPU cluster 1 Min Freq 4032000, Max Freq 4032000
+  # CPU cluster 2 Min Freq 4032000, Max Freq 4032000
+  - SigId: "0x1337"
+    Category: "0xea"
+    Name: "CAMERA_OPEN"
+    Enable: true
+    TargetsEnabled: ["glymur", "glymur-crd"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "0x00040000", ResInfo: "0x00000000", Values: [3417600]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000000", Values: [3417600]}
+      - {ResCode: "0x00040000", ResInfo: "0x00000100", Values: [4032000]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000100", Values: [4032000]}
+      - {ResCode: "0x00040000", ResInfo: "0x00000200", Values: [4032000]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000200", Values: [4032000]}
+
+  # camera close tunings
+  # CPU cluster 0 Min Freq 3417600, Max Freq 3417600
+  # CPU cluster 1 Min Freq 4032000, Max Freq 4032000
+  # CPU cluster 2 Min Freq 4032000, Max Freq 4032000
+  - SigId: "0x1338"
+    Category: "0xea"
+    Name: "CAMERA_CLOSE"
+    Enable: true
+    TargetsEnabled: ["glymur", "glymur-crd"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "0x00040000", ResInfo: "0x00000000", Values: [3417600]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000000", Values: [3417600]}
+      - {ResCode: "0x00040000", ResInfo: "0x00000100", Values: [4032000]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000100", Values: [4032000]}
+      - {ResCode: "0x00040000", ResInfo: "0x00000200", Values: [4032000]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000200", Values: [4032000]}
