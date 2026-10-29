@@ -99,7 +99,7 @@ jobs:
 
       - name: Render LAVA jobs for iq-9075-evk
         id: lava-test-plans-iq-9075-evk
-        uses: qualcomm-linux/lava-test-plans@e8001131dd21e4d3250f04febaca3f73270cf32f
+        uses: qualcomm-linux/lava-test-plans@1fe28dd1ff67524434ed9d8a09ca0e789eac7b99
         with:
           machines: iq-9075-evk
           distro_name: ${{ env.LAVA_DISTRO_NAME }}
@@ -125,7 +125,7 @@ jobs:
 
       - name: Render LAVA jobs for rb3gen2-core-kit
         id: lava-test-plans-rb3gen2-core-kit
-        uses: qualcomm-linux/lava-test-plans@e8001131dd21e4d3250f04febaca3f73270cf32f
+        uses: qualcomm-linux/lava-test-plans@1fe28dd1ff67524434ed9d8a09ca0e789eac7b99
         with:
           machines: rb3gen2-core-kit
           distro_name: ${{ env.LAVA_DISTRO_NAME }}
