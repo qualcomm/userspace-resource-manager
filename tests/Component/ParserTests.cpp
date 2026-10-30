@@ -949,6 +949,38 @@ URM_TEST(AppConfigParserTests, {
     }
 
     {
+        AppConfig* appConfigInfo = AppConfigs::getInstance()->getAppConfig("gst-launch-1.0");
+        E_ASSERT((appConfigInfo != nullptr));
+
+        E_ASSERT((appConfigInfo->mAppName == "gst-launch-1.0"));
+        E_ASSERT((appConfigInfo->mNumThreads == 0));
+
+        E_ASSERT((appConfigInfo->mThreadNameList == nullptr));
+        E_ASSERT((appConfigInfo->mCGroupIds == nullptr));
+
+        E_ASSERT((appConfigInfo->mNumSignals == 1));
+        E_ASSERT((appConfigInfo->mSignalCodes != nullptr));
+
+        E_ASSERT((appConfigInfo->mSignalCodes[0] == 0x000d000c));
+    }
+
+    {
+        AppConfig* appConfigInfo = AppConfigs::getInstance()->getAppConfig("firefox");
+        E_ASSERT((appConfigInfo != nullptr));
+
+        E_ASSERT((appConfigInfo->mAppName == "firefox"));
+        E_ASSERT((appConfigInfo->mNumThreads == 0));
+
+        E_ASSERT((appConfigInfo->mThreadNameList == nullptr));
+        E_ASSERT((appConfigInfo->mCGroupIds == nullptr));
+
+        E_ASSERT((appConfigInfo->mNumSignals == 1));
+        E_ASSERT((appConfigInfo->mSignalCodes != nullptr));
+
+        E_ASSERT((appConfigInfo->mSignalCodes[0] == 0x000d000c));
+    }
+
+    {
         AppConfig* appConfigInfo = AppConfigs::getInstance()->getAppConfig("vlc");
         E_ASSERT((appConfigInfo != nullptr));
 

@@ -1,0 +1,11 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause
+
+PerAppConfigs:
+  - App: ["firefox-esr", "gst-launch-1.0"]
+    Threads:
+       - {"AudioIP~allback": "GLYMUR_APP_CGRP_IDENTIFIER"}
+       - {"data.loop": "GLYMUR_APP_CGRP_IDENTIFIER"}
+       - {"crtc_event*": "GLYMUR_APP_CGRP_IDENTIFIER"}
+       - {"gpu-worker": "GLYMUR_APP_CGRP_IDENTIFIER"}
+    Configurations: ["0x00eb0001"]

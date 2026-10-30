@@ -110,6 +110,46 @@ static ResIterable* createMovePidResource(int32_t cGroupdId, pid_t pid) {
     return resIterable;
 }
 
+static void fetchPidsForCommPrefix(const std::string& pattern, std::vector<pid_t>& pids) {
+    if(pattern.empty() || pattern.back() != '*') {
+        pid_t pid = AuxRoutines::fetchPid(pattern);
+        if(pid != -1) {
+            pids.push_back(pid);
+        }
+        return;
+    }
+
+    std::string prefix = pattern.substr(0, pattern.size() - 1);
+    DIR* procDir = opendir("/proc");
+    if(procDir == nullptr) {
+        TYPELOGV(ERRNO_LOG, "opendir", strerror(errno));
+        return;
+    }
+
+    struct dirent* entry;
+    while((entry = readdir(procDir)) != nullptr) {
+        if(entry->d_type != DT_DIR || !AuxRoutines::isNumericString(entry->d_name)) {
+            continue;
+        }
+
+        std::string pidStr = entry->d_name;
+        std::ifstream commFile(COMM_S(pidStr));
+        if(!commFile.is_open()) {
+            continue;
+        }
+
+        std::string comm;
+        std::getline(commFile, comm);
+        if(comm.compare(0, prefix.size(), prefix) == 0) {
+            try {
+                pids.push_back(static_cast<pid_t>(std::stoi(pidStr)));
+            } catch(const std::exception& e) {}
+        }
+    }
+
+    closedir(procDir);
+}
+
 ContextualClassifier::~ContextualClassifier() {
     this->Terminate();
     if(this->mInference) {
@@ -557,14 +597,18 @@ void ContextualClassifier::MoveAppThreadsToCGroup(pid_t incomingPID,
         AppConfig* appConfig = AppConfigs::getInstance()->getAppConfig(comm);
         if(appConfig != nullptr && appConfig->mThreadNameList != nullptr) {
             int32_t numThreads = appConfig->mNumThreads;
-            // Go over the list of proc names (comm) and get their pids
+            // Go over the list of proc names (comm) and get their pids.
+            // PerApp thread names may include prefix wildcards, e.g. "crtc_event*".
             for(int32_t i = 0; i < numThreads; i++) {
                 std::string targetComm = appConfig->mThreadNameList[i];
-                pid_t targetPID = AuxRoutines::fetchPid(targetComm);
-                if(targetPID != -1 && targetPID != incomingPID) {
-                    // Get the CGroup
-                    int32_t currCGroupID = appConfig->mCGroupIds[i];
-                    request->addResource(createMovePidResource(currCGroupID, targetPID));
+                int32_t currCGroupID = appConfig->mCGroupIds[i];
+                std::vector<pid_t> targetPIDs;
+                fetchPidsForCommPrefix(targetComm, targetPIDs);
+
+                for(pid_t targetPID: targetPIDs) {
+                    if(targetPID != -1 && targetPID != incomingPID) {
+                        request->addResource(createMovePidResource(currCGroupID, targetPID));
+                    }
                 }
             }
         }

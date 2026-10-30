@@ -59,6 +59,7 @@ public:
     ErrCode addSigCode(int32_t index, const std::string& sigCodeStr);
 
     AppConfig* build();
+    AppConfig* build(const std::string& appName);
 };
 
 #endif
