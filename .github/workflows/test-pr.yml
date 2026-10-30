@@ -33,7 +33,7 @@ jobs:
       pr_url: ${{ steps.branch.outputs.pr_url }}
     steps:
       - name: Download event file
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: Event File
           run-id: ${{ github.event.workflow_run.id }}
@@ -152,13 +152,13 @@ jobs:
     steps:
       - name: Download Result Summary
         if: needs.test.outputs.summary_ids != ''
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           artifact-ids: ${{ needs.test.outputs.summary_ids }}
           path: results_summary
 
       - name: Download event file
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: Event File
           run-id: ${{ github.event.workflow_run.id }}
