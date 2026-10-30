@@ -18,6 +18,33 @@ on:
       summary_ids:
         description: "IDs of the test summary artifact"
         value: ${{ jobs.publish-lava-summary.outputs.summary_id }}
+      result_state:
+        description: "Final LAVA validation status for required URM devices"
+        value: ${{ jobs.evaluate-lava-summary.outputs.result_state }}
+      result_description:
+        description: "Human-readable final LAVA validation status"
+        value: ${{ jobs.evaluate-lava-summary.outputs.result_description }}
+      result_pass_count:
+        description: "Number of passing required LAVA results"
+        value: ${{ jobs.evaluate-lava-summary.outputs.result_pass_count }}
+      result_fail_count:
+        description: "Number of failing required LAVA results"
+        value: ${{ jobs.evaluate-lava-summary.outputs.result_fail_count }}
+      result_total_count:
+        description: "Number of completed required LAVA results"
+        value: ${{ jobs.evaluate-lava-summary.outputs.result_total_count }}
+      result_expected_count:
+        description: "Number of expected required LAVA results"
+        value: ${{ jobs.evaluate-lava-summary.outputs.result_expected_count }}
+      result_missing_count:
+        description: "Number of missing or still-running required LAVA results"
+        value: ${{ jobs.evaluate-lava-summary.outputs.result_missing_count }}
+      result_failed_devices:
+        description: "Required LAVA devices with failing results"
+        value: ${{ jobs.evaluate-lava-summary.outputs.result_failed_devices }}
+      result_missing_devices:
+        description: "Required LAVA devices with missing or still-running results"
+        value: ${{ jobs.evaluate-lava-summary.outputs.result_missing_devices }}
     secrets:
       LAVATOKEN:
         required: false
@@ -29,6 +56,7 @@ env:
   LAVA_TESTPLAN: pre-merge
   LAVA_TEST_PLANS_REF: e8001131dd21e4d3250f04febaca3f73270cf32f
   TESTKIT_REF: 3b2f942907843cd826e767ce2ca069d4bc2d64ff
+  REQUIRED_LAVA_RESULTS: 4
 
 jobs:
   check-lava-token:
@@ -96,6 +124,8 @@ jobs:
 
           read_rootfs_url "iq-9075-evk" "iq_9075_evk"
           read_rootfs_url "rb3gen2-core-kit" "rb3gen2_core_kit"
+          read_rootfs_url "iq-x7181-evk" "iq_x7181_evk"
+          read_rootfs_url "shikra-evk" "shikra_evk"
 
       - name: Render LAVA jobs for iq-9075-evk
         id: lava-test-plans-iq-9075-evk
@@ -155,6 +185,66 @@ jobs:
           set -euo pipefail
           mkdir -p rendered-jobs/rb3gen2-core-kit
           cp -a out/jobs/. rendered-jobs/rb3gen2-core-kit/
+          rm -rf out
+
+      - name: Render LAVA jobs for iq-x7181-evk
+        id: lava-test-plans-iq-x7181-evk
+        uses: qualcomm-linux/lava-test-plans@e8001131dd21e4d3250f04febaca3f73270cf32f
+        with:
+          machines: iq-x7181-evk
+          build_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ inputs.build_id }}
+          image_type: qcom-multimedia-image
+          os_info: qcom-distro
+          prefix: premerge-iq-x7181-evk-${{ env.LAVA_DISTRO_NAME }}
+          project: ${{ env.LAVA_PROJECT }}
+          testplan: ${{ env.LAVA_TESTPLAN }}
+          ref: ${{ needs.prepare-env.outputs.lava-test-plans-ref }}
+          testkit_ref: ${{ needs.prepare-env.outputs.testkit-ref }}
+          pr_number: ${{ inputs.pr_number }}
+          pr_url: ${{ inputs.pr_url }}
+          variables: |
+            AUTO_LOGIN_PASSWORD_PROMPT=Password
+            AUTO_LOGIN_PASSWORD=oelinux123
+            DOCKER_IMAGE_POSTPROCESS=ghcr.io/foundriesio/lava-lmp-sign:main
+            IMAGE_FILE_NAME=qcom-multimedia-image-iq-x7181-evk.rootfs.qcomflash.tar.gz
+            ROOTFS_URL=${{ steps.rootfs-urls.outputs.iq_x7181_evk }}
+
+      - name: Save iq-x7181 rendered jobs workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p rendered-jobs/iq-x7181-evk
+          cp -a out/jobs/. rendered-jobs/iq-x7181-evk/
+          rm -rf out
+
+      - name: Render LAVA jobs for shikra-evk
+        id: lava-test-plans-shikra-evk
+        uses: qualcomm-linux/lava-test-plans@e8001131dd21e4d3250f04febaca3f73270cf32f
+        with:
+          machines: shikra-evk
+          build_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ inputs.build_id }}
+          image_type: qcom-multimedia-image
+          os_info: qcom-distro
+          prefix: premerge-shikra-evk-${{ env.LAVA_DISTRO_NAME }}
+          project: ${{ env.LAVA_PROJECT }}
+          testplan: ${{ env.LAVA_TESTPLAN }}
+          ref: ${{ needs.prepare-env.outputs.lava-test-plans-ref }}
+          testkit_ref: ${{ needs.prepare-env.outputs.testkit-ref }}
+          pr_number: ${{ inputs.pr_number }}
+          pr_url: ${{ inputs.pr_url }}
+          variables: |
+            AUTO_LOGIN_PASSWORD_PROMPT=Password
+            AUTO_LOGIN_PASSWORD=oelinux123
+            DOCKER_IMAGE_POSTPROCESS=ghcr.io/foundriesio/lava-lmp-sign:main
+            IMAGE_FILE_NAME=qcom-multimedia-image-shikra-evk.rootfs.qcomflash.tar.gz
+            ROOTFS_URL=${{ steps.rootfs-urls.outputs.shikra_evk }}
+
+      - name: Save shikra rendered jobs workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p rendered-jobs/shikra-evk
+          cp -a out/jobs/. rendered-jobs/shikra-evk/
 
       - name: Combine LAVA job matrices
         id: combine-jobmatrix
@@ -162,6 +252,8 @@ jobs:
         env:
           IQ_ARTIFACT_ID: "${{ steps.lava-test-plans-iq-9075-evk.outputs.artifact_id }}"
           RB3_ARTIFACT_ID: "${{ steps.lava-test-plans-rb3gen2-core-kit.outputs.artifact_id }}"
+          IQ_X7181_ARTIFACT_ID: "${{ steps.lava-test-plans-iq-x7181-evk.outputs.artifact_id }}"
+          SHIKRA_ARTIFACT_ID: "${{ steps.lava-test-plans-shikra-evk.outputs.artifact_id }}"
         run: |
           set -euo pipefail
 
@@ -174,6 +266,8 @@ jobs:
           configs = [
               ("iq-9075-evk", os.environ["IQ_ARTIFACT_ID"], Path("rendered-jobs/iq-9075-evk")),
               ("rb3gen2-core-kit", os.environ["RB3_ARTIFACT_ID"], Path("rendered-jobs/rb3gen2-core-kit")),
+              ("iq-x7181-evk", os.environ["IQ_X7181_ARTIFACT_ID"], Path("rendered-jobs/iq-x7181-evk")),
+              ("shikra-evk", os.environ["SHIKRA_ARTIFACT_ID"], Path("rendered-jobs/shikra-evk")),
           ]
 
           for machine, artifact_id, jobs_dir in configs:
@@ -203,10 +297,12 @@ jobs:
     name: "LAVA ${{ matrix.target.name }}"
     needs: [prepare-lava-jobs]
     runs-on: ubuntu-latest
+    continue-on-error: true
     permissions:
       contents: read
       actions: read
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(needs.prepare-lava-jobs.outputs.jobmatrix) }}
     steps:
       - name: Download job templates
@@ -260,3 +356,113 @@ jobs:
       - name: Publish Test Job Details
         run: |
           cat userspace-resource-manager-test_job_summary >> "$GITHUB_STEP_SUMMARY"
+
+  evaluate-lava-summary:
+    name: "Evaluate LAVA Summary"
+    needs: [publish-lava-summary]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      result_state: ${{ steps.evaluate.outputs.result_state }}
+      result_description: ${{ steps.evaluate.outputs.result_description }}
+      result_pass_count: ${{ steps.evaluate.outputs.result_pass_count }}
+      result_fail_count: ${{ steps.evaluate.outputs.result_fail_count }}
+      result_total_count: ${{ steps.evaluate.outputs.result_total_count }}
+      result_expected_count: ${{ steps.evaluate.outputs.result_expected_count }}
+      result_missing_count: ${{ steps.evaluate.outputs.result_missing_count }}
+      result_failed_devices: ${{ steps.evaluate.outputs.result_failed_devices }}
+      result_missing_devices: ${{ steps.evaluate.outputs.result_missing_devices }}
+    steps:
+      - name: Download Summary
+        if: needs.publish-lava-summary.outputs.summary_id != ''
+        uses: actions/download-artifact@v7
+        with:
+          artifact-ids: ${{ needs.publish-lava-summary.outputs.summary_id }}
+
+      - name: Evaluate required device results
+        id: evaluate
+        shell: bash
+        env:
+          EXPECTED_TOTAL: ${{ env.REQUIRED_LAVA_RESULTS }}
+        run: |
+          set -euo pipefail
+
+          SUMMARY_FILE="$(find . -type f -name userspace-resource-manager-test_job_summary -print -quit)"
+          SUMMARY_FILE="${SUMMARY_FILE}" python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          expected = int(os.environ["EXPECTED_TOTAL"])
+          summary_path = os.environ.get("SUMMARY_FILE", "")
+
+          state = "failure"
+          description = "LAVA validation did not produce a summary"
+          pass_count = fail_count = total_count = 0
+          missing_count = expected
+          failed_devices = []
+          missing_devices = []
+
+          def out(name, value):
+              with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+                  print(f"{name}={value}", file=fh)
+
+          def clean_cell(cell):
+              return cell.strip().replace("<sub>", "").replace("</sub>", "")
+
+          if summary_path and Path(summary_path).is_file():
+              text = Path(summary_path).read_text(encoding="utf-8")
+              match = re.search(r"Pass:\s*(\d+)\s*\|\s*Fail:\s*(\d+)\s*\|\s*Total:\s*(\d+)", text)
+              if match:
+                  pass_count, fail_count, total_count = map(int, match.groups())
+                  missing_count = max(expected - total_count, 0)
+                  if pass_count == expected and fail_count == 0 and total_count == expected:
+                      state = "success"
+
+                  lines = text.splitlines()
+                  for idx, line in enumerate(lines):
+                      cells = [clean_cell(c) for c in line.strip().strip("|").split("|")]
+                      if len(cells) > 1 and cells[0] == "Test":
+                          devices = cells[1:]
+                          for row in lines[idx + 1:]:
+                              row_cells = [clean_cell(c) for c in row.strip().strip("|").split("|")]
+                              if not row_cells or row_cells[0] == "----":
+                                  continue
+                              if row_cells[0] != "userspace-resource-manager":
+                                  break
+                              for device, cell in zip(devices, row_cells[1:]):
+                                  value = cell.lower()
+                                  if "white_check_mark" in value or "[pass]" in value:
+                                      continue
+                                  if ":x:" in value or "[fail]" in value:
+                                      failed_devices.append(device)
+                                  else:
+                                      missing_devices.append(device)
+                              break
+                          break
+
+                  if failed_devices:
+                      description = f"LAVA: {pass_count}/{expected} passed, failed: {', '.join(failed_devices)}"
+                  elif missing_devices:
+                      description = f"LAVA: {pass_count}/{expected} passed, missing/running: {', '.join(missing_devices)}"
+                  else:
+                      description = f"LAVA: {pass_count}/{expected} passed, {fail_count} failed, {missing_count} missing/running"
+                  if len(description) > 140:
+                      description = f"LAVA: {pass_count}/{expected} passed, {fail_count} failed, {missing_count} missing/running"
+              else:
+                  description = "LAVA validation summary did not contain result counts"
+
+          out("result_state", state)
+          out("result_description", description)
+          out("result_pass_count", pass_count)
+          out("result_fail_count", fail_count)
+          out("result_total_count", total_count)
+          out("result_expected_count", expected)
+          out("result_missing_count", missing_count)
+          out("result_failed_devices", ", ".join(failed_devices))
+          out("result_missing_devices", ", ".join(missing_devices))
+          print(description)
+          PY

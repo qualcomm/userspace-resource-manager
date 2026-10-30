@@ -107,6 +107,8 @@ jobs:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           BUILD_RESULT: ${{ github.event.workflow_run.conclusion }}
           TEST_RESULT: ${{ needs.test.result }}
+          LAVA_RESULT: ${{ needs.test.outputs.result_state }}
+          LAVA_DESCRIPTION: ${{ needs.test.outputs.result_description }}
           WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
@@ -118,10 +120,13 @@ jobs:
           if [ "${BUILD_RESULT}" != "success" ]; then
             TITLE="LAVA validation was not run"
             DESCRIPTION="Build URM completed with '${BUILD_RESULT}'"
-          elif [ "${TEST_RESULT}" = "success" ]; then
+          elif [ "${LAVA_RESULT}" = "success" ]; then
             STATE="success"
             TITLE="LAVA validation passed"
-            DESCRIPTION="LAVA validation passed"
+            DESCRIPTION="${LAVA_DESCRIPTION}"
+          elif [ "${LAVA_RESULT}" = "failure" ]; then
+            TITLE="LAVA validation failed"
+            DESCRIPTION="${LAVA_DESCRIPTION}"
           elif [ "${TEST_RESULT}" = "cancelled" ]; then
             STATE="error"
             TITLE="LAVA validation was cancelled"
@@ -170,11 +175,81 @@ jobs:
         env:
           GH_EVENT_WORKFLOW_RUN_HEAD_SHA: "${{ github.event.workflow_run.head_sha }}"
           TEST_RESULT: "${{ needs.test.result }}"
+          LAVA_RESULT: "${{ needs.test.outputs.result_state }}"
+          LAVA_DESCRIPTION: "${{ needs.test.outputs.result_description }}"
+          LAVA_PASS_COUNT: "${{ needs.test.outputs.result_pass_count }}"
+          LAVA_FAIL_COUNT: "${{ needs.test.outputs.result_fail_count }}"
+          LAVA_TOTAL_COUNT: "${{ needs.test.outputs.result_total_count }}"
+          LAVA_EXPECTED_COUNT: "${{ needs.test.outputs.result_expected_count }}"
+          LAVA_MISSING_COUNT: "${{ needs.test.outputs.result_missing_count }}"
         run: |
           echo "## Test run [workflow](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})" > pr-comment.txt
           echo "## Test jobs for commit ${GH_EVENT_WORKFLOW_RUN_HEAD_SHA}" >> pr-comment.txt
           echo "" >> pr-comment.txt
-          echo "Workflow result: ${TEST_RESULT}" >> pr-comment.txt
+          echo "| Workflow | LAVA | Required | Completed | Passed | Failed | Missing/running |" >> pr-comment.txt
+          echo "| --- | --- | ---: | ---: | ---: | ---: | ---: |" >> pr-comment.txt
+          echo "| ${TEST_RESULT} | ${LAVA_RESULT:-unavailable} | ${LAVA_EXPECTED_COUNT:-0} | ${LAVA_TOTAL_COUNT:-0} | ${LAVA_PASS_COUNT:-0} | ${LAVA_FAIL_COUNT:-0} | ${LAVA_MISSING_COUNT:-0} |" >> pr-comment.txt
+          echo "" >> pr-comment.txt
+          if [ -d ./results_summary ]; then
+            python3 - <<'PY' >> pr-comment.txt
+          import re
+          from pathlib import Path
+
+          def clean_cell(cell):
+              return cell.strip().replace("<sub>", "").replace("</sub>", "")
+
+          summary_file = next(Path("results_summary").rglob("userspace-resource-manager-test_job_summary"), None)
+          if summary_file is None:
+              raise SystemExit(0)
+
+          text = summary_file.read_text(encoding="utf-8")
+          lines = text.splitlines()
+          devices = []
+          result_by_device = {}
+          jobs_by_device = {}
+
+          for idx, line in enumerate(lines):
+              cells = [clean_cell(c) for c in line.strip().strip("|").split("|")]
+              if len(cells) > 1 and cells[0] == "Test":
+                  devices = cells[1:]
+                  for row in lines[idx + 1:]:
+                      row_cells = [clean_cell(c) for c in row.strip().strip("|").split("|")]
+                      if not row_cells or row_cells[0] == "----":
+                          continue
+                      if row_cells[0] != "userspace-resource-manager":
+                          break
+                      for device, cell in zip(devices, row_cells[1:]):
+                          value = cell.lower()
+                          if "white_check_mark" in value or "[pass]" in value:
+                              result_by_device[device] = "PASS"
+                          elif ":x:" in value or "[fail]" in value:
+                              result_by_device[device] = "FAIL"
+                          elif "warning" in value or "[skip]" in value:
+                              result_by_device[device] = "SKIP"
+                          else:
+                              result_by_device[device] = "MISSING/RUNNING"
+                      break
+                  break
+
+          for line in lines:
+              cells = [clean_cell(c) for c in line.strip().strip("|").split("|")]
+              if len(cells) != 4 or cells[0] in ("Job ID", "----"):
+                  continue
+              job, device, state, health = cells
+              if re.search(r"\[\d+\]\(", job):
+                  jobs_by_device[device] = (job, state, health)
+
+          if devices:
+              print("### Required LAVA results by device")
+              print("")
+              print("| Device | Result | Job | State | Health |")
+              print("| --- | --- | --- | --- | --- |")
+              for device in devices:
+                  job, state, health = jobs_by_device.get(device, ("", "", ""))
+                  print(f"| {device} | {result_by_device.get(device, 'UNKNOWN')} | {job} | {state} | {health} |")
+              print("")
+          PY
+          fi
           PR_NUMBER="$(jq -r ".number" "artifacts/event.json")"
           if [ -d ./results_summary ]; then
             while IFS= read -r RESULT_FILE_NAME; do

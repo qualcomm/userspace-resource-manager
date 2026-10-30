@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 env:
-  TARGET_MACHINES: iq-9075-evk rb3gen2-core-kit
+  TARGET_MACHINES: iq-9075-evk rb3gen2-core-kit iq-x7181-evk shikra-evk
   S3_BUCKET: qli-prd-cseperf-gh-artifacts
 
 jobs:
@@ -210,6 +210,8 @@ jobs:
         env:
           IMG_PATH_iq_9075_evk: ${{ steps.locate_img.outputs.IMG_PATH_iq_9075_evk }}
           IMG_PATH_rb3gen2_core_kit: ${{ steps.locate_img.outputs.IMG_PATH_rb3gen2_core_kit }}
+          IMG_PATH_iq_x7181_evk: ${{ steps.locate_img.outputs.IMG_PATH_iq_x7181_evk }}
+          IMG_PATH_shikra_evk: ${{ steps.locate_img.outputs.IMG_PATH_shikra_evk }}
 
       - name: Modify rootfs inside Docker
         shell: bash
@@ -217,6 +219,8 @@ jobs:
           DOCKER_IMAGE: ${{ inputs.docker_image || 'urm-image:ci' }}
           IMG_PATH_iq_9075_evk: ${{ steps.locate_img.outputs.IMG_PATH_iq_9075_evk }}
           IMG_PATH_rb3gen2_core_kit: ${{ steps.locate_img.outputs.IMG_PATH_rb3gen2_core_kit }}
+          IMG_PATH_iq_x7181_evk: ${{ steps.locate_img.outputs.IMG_PATH_iq_x7181_evk }}
+          IMG_PATH_shikra_evk: ${{ steps.locate_img.outputs.IMG_PATH_shikra_evk }}
         run: |
           set -euxo pipefail
           SUDO=""
@@ -293,8 +297,12 @@ jobs:
         env:
           IMG_PATH_iq_9075_evk: ${{ steps.locate_img.outputs.IMG_PATH_iq_9075_evk }}
           IMG_PATH_rb3gen2_core_kit: ${{ steps.locate_img.outputs.IMG_PATH_rb3gen2_core_kit }}
+          IMG_PATH_iq_x7181_evk: ${{ steps.locate_img.outputs.IMG_PATH_iq_x7181_evk }}
+          IMG_PATH_shikra_evk: ${{ steps.locate_img.outputs.IMG_PATH_shikra_evk }}
           MTIME_BEFORE_iq_9075_evk: ${{ steps.mtime_before.outputs.mtime_before_iq_9075_evk }}
           MTIME_BEFORE_rb3gen2_core_kit: ${{ steps.mtime_before.outputs.mtime_before_rb3gen2_core_kit }}
+          MTIME_BEFORE_iq_x7181_evk: ${{ steps.mtime_before.outputs.mtime_before_iq_x7181_evk }}
+          MTIME_BEFORE_shikra_evk: ${{ steps.mtime_before.outputs.mtime_before_shikra_evk }}
         run: |
           set -euxo pipefail
           for machine in ${TARGET_MACHINES}; do
@@ -316,6 +324,8 @@ jobs:
         env:
           TOPLEVELS_iq_9075_evk: ${{ steps.orig_tar_meta.outputs.TOPLEVELS_iq_9075_evk }}
           TOPLEVELS_rb3gen2_core_kit: ${{ steps.orig_tar_meta.outputs.TOPLEVELS_rb3gen2_core_kit }}
+          TOPLEVELS_iq_x7181_evk: ${{ steps.orig_tar_meta.outputs.TOPLEVELS_iq_x7181_evk }}
+          TOPLEVELS_shikra_evk: ${{ steps.orig_tar_meta.outputs.TOPLEVELS_shikra_evk }}
         run: |
           set -euxo pipefail
           ART_DIR="${GITHUB_WORKSPACE}/artifacts"
@@ -386,6 +396,18 @@ jobs:
           name: rootfs-url_rb3gen2-core-kit
           path: rootfs-url_rb3gen2-core-kit
 
+      - name: Upload iq-x7181 modified rootfs URL artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: rootfs-url_iq-x7181-evk
+          path: rootfs-url_iq-x7181-evk
+
+      - name: Upload shikra modified rootfs URL artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: rootfs-url_shikra-evk
+          path: rootfs-url_shikra-evk
+
       - name: Clean up
         run: |
           rm -rf artifacts
@@ -414,3 +436,5 @@ jobs:
           echo "1. URM Binaries: urm-bins.tar.gz" >> "$GITHUB_STEP_SUMMARY"
           echo "2. Modified Rootfs: qcom-multimedia-image-iq-9075-evk.rootfs.qcomflash.tar.gz" >> "$GITHUB_STEP_SUMMARY"
           echo "3. Modified Rootfs: qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz" >> "$GITHUB_STEP_SUMMARY"
+          echo "4. Modified Rootfs: qcom-multimedia-image-iq-x7181-evk.rootfs.qcomflash.tar.gz" >> "$GITHUB_STEP_SUMMARY"
+          echo "5. Modified Rootfs: qcom-multimedia-image-shikra-evk.rootfs.qcomflash.tar.gz" >> "$GITHUB_STEP_SUMMARY"
