@@ -13,3 +13,8 @@ PerAppConfigs:
 
   - App: "nativehaltest"
     Configurations: ["0x00ea1337"] # open camera tuning signal
+
+  - App: "geekbench_aarch64"
+    Threads:
+       - {"geekbench_aarch64": "FOCUSED_CGROUP_IDENTIFIER"}
+    Configurations: ["0x00800201"]

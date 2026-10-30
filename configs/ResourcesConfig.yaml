@@ -257,9 +257,11 @@ ResourceConfigs:
     Name: "RES_CGRP_UCLAMP_MIN"
     Path: "/sys/fs/cgroup/%s/cpu.uclamp.min"
     Supported: true
+    HighThreshold: 1024
+    LowThreshold: 0
     Permissions: "system"
     Modes: ["display_on"]
-    Policy: "lower_is_better"
+    Policy: "higher_is_better"
     ApplyType: "cgroup"
 
   - ResType: "0x09"
@@ -267,9 +269,11 @@ ResourceConfigs:
     Name: "RES_CGRP_UCLAMP_MAX"
     Path: "/sys/fs/cgroup/%s/cpu.uclamp.max"
     Supported: true
+    HighThreshold: 1024
+    LowThreshold: 0
     Permissions: "system"
     Modes: ["display_on"]
-    Policy: "higher_is_better"
+    Policy: "lower_is_better"
     ApplyType: "cgroup"
 
   - ResType: "0x09"

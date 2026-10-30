@@ -41,6 +41,15 @@ SignalConfigs:
     - {ResCode: "0x00f00001", ResInfo: "0x00000000", Values: [0, 1, 2, 3, 4, 5]}
     - {ResCode: "0x00090002", ResInfo: "0x00000000", Values: [2, 0, 1, 2, 3, 4, 5]}
 
+  - SigId: "0x0201"
+    Category: "0x80"
+    Name: GB_FOCUSED_UCLAMP_BOOST
+    Enable: true
+    Permissions: ["system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_UCLAMP_MIN", Values: [4, 512]}
+
   - SigId: "0x1337"
     Category: "0xea"
     Name: "CAMERA_OPEN"
