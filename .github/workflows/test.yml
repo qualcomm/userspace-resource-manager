@@ -311,7 +311,9 @@ jobs:
           artifact-ids: ${{ matrix.target.artifact_id }}
 
       - name: Submit ${{ matrix.target.name }}
-        timeout-minutes: 120
+        # The LAVA job timeout is up to 160 minutes, and the action timeout
+        # includes time spent waiting in the device queue before the job starts.
+        timeout-minutes: 300
         uses: foundriesio/lava-action@v14
         with:
           lava_token: ${{ secrets.LAVATOKEN }}
