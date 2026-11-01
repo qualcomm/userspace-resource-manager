@@ -302,7 +302,6 @@ jobs:
       contents: read
       actions: read
     strategy:
-      fail-fast: false
       matrix: ${{ fromJson(needs.prepare-lava-jobs.outputs.jobmatrix) }}
     steps:
       - name: Download job templates
@@ -311,9 +310,9 @@ jobs:
           artifact-ids: ${{ matrix.target.artifact_id }}
 
       - name: Submit ${{ matrix.target.name }}
-        # The LAVA job timeout is up to 160 minutes, and the action timeout
-        # includes time spent waiting in the device queue before the job starts.
-        timeout-minutes: 300
+        # Set timeout to 2h. The timeout starts when the job is submitted
+        # and may include time spent waiting in the LAVA device queue.
+        timeout-minutes: 120
         uses: foundriesio/lava-action@v14
         with:
           lava_token: ${{ secrets.LAVATOKEN }}
