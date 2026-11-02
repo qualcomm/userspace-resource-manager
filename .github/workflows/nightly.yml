@@ -1,0 +1,426 @@
+name: Nightly Build
+run-name: "Nightly Build (${{ github.ref_name }})"
+
+on:
+  workflow_dispatch:
+    inputs:
+      docker_image:
+        description: 'Docker image to use for rootfs modification'
+        required: false
+        default: 'urm-image:ci'
+  schedule:
+    # GitHub schedules are UTC. This is 03:45 in Asia/Kolkata/Asia/Colombo.
+    - cron: "15 22 * * *"
+
+permissions:
+  contents: read
+
+env:
+  TARGET_MACHINES: iq-9075-evk rb3gen2-core-kit iq-x7181-evk shikra-evk
+  S3_BUCKET: qli-prd-cseperf-gh-artifacts
+
+jobs:
+  build-nightly:
+    runs-on:
+      group: GHA-CSEPerf-prd-SelfHosted-RG
+      labels: ["self-hosted", "cseperf-prd-u2204-arm64-xlrg-od-ephem"]
+    env:
+      URM_BINS_DIR: urm-bins
+      URM_INSTALL_PREFIX: /usr
+      TAR_NAME: urm-bins.tar.gz
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: qualcomm/urm-image
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build URM image (from Git URL) and load locally
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          tags: urm-image:ci
+          load: true
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Checkout userspace-resource-manager
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Build userspace-resource-manager in the URM container
+        run: |
+          docker run --rm \
+            -v "$PWD":/workspace \
+            -w /workspace \
+            -e URM_BINS_DIR="${URM_BINS_DIR}" \
+            -e URM_INSTALL_PREFIX="${URM_INSTALL_PREFIX}" \
+            -e TAR_NAME="${TAR_NAME}" \
+            urm-image:ci bash -lc '
+              set -euo pipefail
+              mkdir -p build
+              cd build
+              cmake .. \
+                -DBUILD_TESTS=ON \
+                -DBUILD_CLASSIFIER=ON \
+                -DCMAKE_INSTALL_PREFIX="${URM_INSTALL_PREFIX}" \
+                -DCMAKE_INSTALL_BINDIR=bin \
+                -DCMAKE_INSTALL_SBINDIR=sbin \
+                -DCMAKE_INSTALL_LIBDIR=lib \
+                -DCMAKE_INSTALL_LIBEXECDIR=libexec \
+                -DCMAKE_INSTALL_SYSCONFDIR=etc \
+                -DCMAKE_INSTALL_DATADIR=share \
+                -DCMAKE_INSTALL_INCLUDEDIR=include
+              cmake --build .
+              DESTDIR="${PWD}/${URM_BINS_DIR}" make install
+              install -D -m 0644 urm.service "${URM_BINS_DIR}/usr/lib/systemd/system/urm.service"
+              install -D -m 0644 urm-tmpfiles.conf "${URM_BINS_DIR}/usr/lib/tmpfiles.d/urm.conf"
+              test -x "${URM_BINS_DIR}/usr/sbin/urm"
+              test -f "${URM_BINS_DIR}/usr/lib/systemd/system/urm.service"
+              grep -q "^ExecStart=/usr/sbin/urm$" "${URM_BINS_DIR}/usr/lib/systemd/system/urm.service"
+              test -f "${URM_BINS_DIR}/usr/lib/tmpfiles.d/urm.conf"
+            '
+
+      - name: Verify rootfs images exist in S3
+        shell: bash
+        run: |
+          set -euxo pipefail
+          for machine in ${TARGET_MACHINES}; do
+            target_rootfs_key="qualcomm/meta-qcom/qcom-multimedia-image-${machine}.rootfs.qcomflash.tar.gz"
+            aws s3api head-object \
+              --bucket "${S3_BUCKET}" \
+              --key "${target_rootfs_key}" \
+              >/dev/null 2>&1 || {
+                echo "ERROR: S3 key ${target_rootfs_key} not found in bucket ${S3_BUCKET}." >&2
+                exit 1
+              }
+          done
+
+      - name: Download rootfs images
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p rootfs-input
+          for machine in ${TARGET_MACHINES}; do
+            tar_name="qcom-multimedia-image-${machine}.rootfs.qcomflash.tar.gz"
+            aws s3 cp "s3://${S3_BUCKET}/qualcomm/meta-qcom/${tar_name}" "rootfs-input/${tar_name}"
+            ls -lh "rootfs-input/${tar_name}"
+          done
+
+      - name: Inspect original tar top-level entries
+        id: orig_tar_meta
+        shell: bash
+        run: |
+          set -euxo pipefail
+          for machine in ${TARGET_MACHINES}; do
+            orig_tar="rootfs-input/qcom-multimedia-image-${machine}.rootfs.qcomflash.tar.gz"
+            mapfile -t TOPLEVELS < <(
+              tar -tzf "${orig_tar}" \
+              | sed -E 's#^\./##' \
+              | awk -F/ '{print $1}' \
+              | awk 'NF && $0!="."' \
+              | sort -u
+            )
+            if [ ${#TOPLEVELS[@]} -eq 0 ]; then
+              echo "ERROR: No entries found in ${orig_tar}" >&2
+              exit 1
+            fi
+            printf '%s\n' "${TOPLEVELS[@]}"
+            {
+              echo "TOPLEVELS_${machine//-/_}<<EOF"
+              printf '%s\n' "${TOPLEVELS[@]}"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          done
+
+      - name: Extract rootfs images
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p rootfs-work
+          for machine in ${TARGET_MACHINES}; do
+            work_dir="rootfs-work/${machine}"
+            mkdir -p "${work_dir}"
+            tar -xzf "rootfs-input/qcom-multimedia-image-${machine}.rootfs.qcomflash.tar.gz" -C "${work_dir}"
+            find "${work_dir}" -maxdepth 2 -type f | sed -n '1,200p'
+          done
+
+      - name: Locate rootfs image
+        id: locate_img
+        shell: bash
+        run: |
+          set -euxo pipefail
+          for machine in ${TARGET_MACHINES}; do
+            IMG_PATH="$(find "rootfs-work/${machine}" -maxdepth 4 -type f \( -name 'rootfs*.img' -o -name '*.ext4' \) | head -n1 || true)"
+            if [ -z "${IMG_PATH}" ]; then
+              echo "ERROR: Could not find rootfs*.img or *.ext4 for ${machine}." >&2
+              find "rootfs-work/${machine}" -maxdepth 2 -type f | sed -n '1,200p'
+              exit 1
+            fi
+            output_name="IMG_PATH_${machine//-/_}"
+            echo "${output_name}=${IMG_PATH}" >> "$GITHUB_OUTPUT"
+            file "${IMG_PATH}" || true
+            ls -la --time-style=full-iso "${IMG_PATH}"
+          done
+
+      - name: Capture image mtime before modification
+        id: mtime_before
+        shell: bash
+        run: |
+          set -euxo pipefail
+          for machine in ${TARGET_MACHINES}; do
+            var_name="IMG_PATH_${machine//-/_}"
+            img_path="${!var_name}"
+            mtime_before="$(stat -c '%y' "${img_path}")"
+            echo "mtime_before_${machine//-/_}=${mtime_before}" >> "$GITHUB_OUTPUT"
+          done
+        env:
+          IMG_PATH_iq_9075_evk: ${{ steps.locate_img.outputs.IMG_PATH_iq_9075_evk }}
+          IMG_PATH_rb3gen2_core_kit: ${{ steps.locate_img.outputs.IMG_PATH_rb3gen2_core_kit }}
+          IMG_PATH_iq_x7181_evk: ${{ steps.locate_img.outputs.IMG_PATH_iq_x7181_evk }}
+          IMG_PATH_shikra_evk: ${{ steps.locate_img.outputs.IMG_PATH_shikra_evk }}
+
+      - name: Modify rootfs inside Docker
+        shell: bash
+        env:
+          DOCKER_IMAGE: ${{ inputs.docker_image || 'urm-image:ci' }}
+          IMG_PATH_iq_9075_evk: ${{ steps.locate_img.outputs.IMG_PATH_iq_9075_evk }}
+          IMG_PATH_rb3gen2_core_kit: ${{ steps.locate_img.outputs.IMG_PATH_rb3gen2_core_kit }}
+          IMG_PATH_iq_x7181_evk: ${{ steps.locate_img.outputs.IMG_PATH_iq_x7181_evk }}
+          IMG_PATH_shikra_evk: ${{ steps.locate_img.outputs.IMG_PATH_shikra_evk }}
+        run: |
+          set -euxo pipefail
+          SUDO=""
+          if [ "$(id -u)" -ne 0 ]; then
+            SUDO="sudo"
+          fi
+
+          ${SUDO} modprobe loop || true
+          LOOP_DEVS=()
+          cleanup_loop() {
+            for loop_dev in "${LOOP_DEVS[@]}"; do
+              ${SUDO} losetup -d "${loop_dev}" || true
+            done
+          }
+          trap cleanup_loop EXIT
+
+          for machine in ${TARGET_MACHINES}; do
+            var_name="IMG_PATH_${machine//-/_}"
+            img_path="${!var_name}"
+            LOOP_DEV="$(${SUDO} losetup --find --show "${img_path}")"
+            LOOP_DEVS+=("${LOOP_DEV}")
+
+            docker run --rm --privileged --user root \
+              --device "${LOOP_DEV}:${LOOP_DEV}" \
+              -v "${GITHUB_WORKSPACE}:${GITHUB_WORKSPACE}" \
+              -w "${GITHUB_WORKSPACE}" \
+              -e GITHUB_WORKSPACE="${GITHUB_WORKSPACE}" \
+              -e LOOP_DEV="${LOOP_DEV}" \
+              -e MACHINE="${machine}" \
+              "${DOCKER_IMAGE}" \
+              bash -lc '
+                set -euxo pipefail
+                if [ -z "${LOOP_DEV}" ] || [ ! -b "${LOOP_DEV}" ]; then
+                  echo "ERROR: Loop device is not available inside container: ${LOOP_DEV}" >&2
+                  ls -la /dev/loop* 2>/dev/null || true
+                  exit 1
+                fi
+
+                SRC_ROOT="${GITHUB_WORKSPACE}/build/urm-bins"
+                if [ ! -d "${SRC_ROOT}/usr/bin" ] && [ ! -d "${SRC_ROOT}/usr/sbin" ] && [ ! -d "${SRC_ROOT}/usr/lib" ]; then
+                  echo "ERROR: No URM build output found in ${SRC_ROOT}" >&2
+                  ls -la ${GITHUB_WORKSPACE}/build | sed -n "1,200p"
+                  exit 1
+                fi
+
+                MNT_DIR="/mnt/rootfs"
+                mkdir -p "${MNT_DIR}"
+                mount -o rw "${LOOP_DEV}" "${MNT_DIR}"
+
+                cp -av "${SRC_ROOT}/." "${MNT_DIR}/"
+                rm -f "${MNT_DIR}/usr/bin/urm"
+                ln -s ../sbin/urm "${MNT_DIR}/usr/bin/urm"
+                test -x "${MNT_DIR}/usr/sbin/urm"
+                test -L "${MNT_DIR}/usr/bin/urm"
+                test -f "${MNT_DIR}/usr/lib/systemd/system/urm.service"
+                grep -q "^ExecStart=/usr/sbin/urm$" "${MNT_DIR}/usr/lib/systemd/system/urm.service"
+                test -f "${MNT_DIR}/usr/lib/tmpfiles.d/urm.conf"
+                sync
+
+                echo "Installed URM files for ${MACHINE}"
+                cat "${MNT_DIR}/usr/lib/systemd/system/urm.service"
+                ls -la --time-style=full-iso "${MNT_DIR}/usr/bin" | grep -E "urm|$" | sed -n "1,50p" || true
+                ls -la --time-style=full-iso "${MNT_DIR}/usr/sbin" | grep -E "urm|$" | sed -n "1,50p" || true
+                ls -la --time-style=full-iso "${MNT_DIR}/usr/lib" | grep -E "Urm|libUrm|$" | sed -n "1,50p" || true
+                ls -la --time-style=full-iso "${MNT_DIR}/usr/libexec/urm/initscripts/post_boot" 2>/dev/null | sed -n "1,50p" || true
+                ls -la --time-style=full-iso "${MNT_DIR}/usr/share/urm/tests/configs" 2>/dev/null | sed -n "1,50p" || true
+                ls -la --time-style=full-iso "${MNT_DIR}/etc/urm" 2>/dev/null | sed -n "1,50p" || true
+                umount "${MNT_DIR}"
+              '
+          done
+
+      - name: Verify image mtime changed
+        shell: bash
+        env:
+          IMG_PATH_iq_9075_evk: ${{ steps.locate_img.outputs.IMG_PATH_iq_9075_evk }}
+          IMG_PATH_rb3gen2_core_kit: ${{ steps.locate_img.outputs.IMG_PATH_rb3gen2_core_kit }}
+          IMG_PATH_iq_x7181_evk: ${{ steps.locate_img.outputs.IMG_PATH_iq_x7181_evk }}
+          IMG_PATH_shikra_evk: ${{ steps.locate_img.outputs.IMG_PATH_shikra_evk }}
+          MTIME_BEFORE_iq_9075_evk: ${{ steps.mtime_before.outputs.mtime_before_iq_9075_evk }}
+          MTIME_BEFORE_rb3gen2_core_kit: ${{ steps.mtime_before.outputs.mtime_before_rb3gen2_core_kit }}
+          MTIME_BEFORE_iq_x7181_evk: ${{ steps.mtime_before.outputs.mtime_before_iq_x7181_evk }}
+          MTIME_BEFORE_shikra_evk: ${{ steps.mtime_before.outputs.mtime_before_shikra_evk }}
+        run: |
+          set -euxo pipefail
+          for machine in ${TARGET_MACHINES}; do
+            img_var="IMG_PATH_${machine//-/_}"
+            mtime_var="MTIME_BEFORE_${machine//-/_}"
+            img_path="${!img_var}"
+            mtime_before="${!mtime_var}"
+            mtime_after="$(stat -c '%y' "${img_path}")"
+            echo "${machine} before: ${mtime_before}"
+            echo "${machine} after:  ${mtime_after}"
+            if [ "${mtime_after}" = "${mtime_before}" ]; then
+              echo "ERROR: ${machine} image mtime did not change; copy may have failed." >&2
+              exit 1
+            fi
+          done
+
+      - name: Create modified rootfs tar
+        shell: bash
+        env:
+          TOPLEVELS_iq_9075_evk: ${{ steps.orig_tar_meta.outputs.TOPLEVELS_iq_9075_evk }}
+          TOPLEVELS_rb3gen2_core_kit: ${{ steps.orig_tar_meta.outputs.TOPLEVELS_rb3gen2_core_kit }}
+          TOPLEVELS_iq_x7181_evk: ${{ steps.orig_tar_meta.outputs.TOPLEVELS_iq_x7181_evk }}
+          TOPLEVELS_shikra_evk: ${{ steps.orig_tar_meta.outputs.TOPLEVELS_shikra_evk }}
+        run: |
+          set -euxo pipefail
+          ART_DIR="${GITHUB_WORKSPACE}/artifacts"
+          mkdir -p "${ART_DIR}"
+          for machine in ${TARGET_MACHINES}; do
+            top_var="TOPLEVELS_${machine//-/_}"
+            mapfile -t TOPLEVELS <<< "${!top_var}"
+            MOD_TAR="${ART_DIR}/qcom-multimedia-image-${machine}.rootfs.qcomflash.tar.gz"
+            (
+              cd "${GITHUB_WORKSPACE}/rootfs-work/${machine}"
+              tar -czf "${MOD_TAR}" -- "${TOPLEVELS[@]}"
+            )
+            tar -tzf "${MOD_TAR}" | sed -n '1,100p'
+          done
+
+      - name: Create a tar file of URM build
+        run: |
+          set -euxo pipefail
+          cd build
+          tar -cjf "${GITHUB_WORKSPACE}/${TAR_NAME}" "${URM_BINS_DIR}"
+          cd "${GITHUB_WORKSPACE}"
+          ls -lh "${GITHUB_WORKSPACE}/${TAR_NAME}"
+
+      - name: Create combined file list
+        id: make_file_list_all
+        shell: bash
+        run: |
+          set -euxo pipefail
+          find "${GITHUB_WORKSPACE}/artifacts" -maxdepth 1 -name 'qcom-multimedia-image-*.rootfs.qcomflash.tar.gz' -type f | sort > "${GITHUB_WORKSPACE}/artifacts/file_list.txt"
+          echo "${GITHUB_WORKSPACE}/${TAR_NAME}" >> "${GITHUB_WORKSPACE}/artifacts/file_list.txt"
+          cat "${GITHUB_WORKSPACE}/artifacts/file_list.txt"
+          echo "file_list_all=${GITHUB_WORKSPACE}/artifacts/file_list.txt" >> "$GITHUB_OUTPUT"
+
+      - name: Upload all artifacts to S3
+        id: upload-artifacts
+        uses: qualcomm/userspace-resource-manager/.github/actions/aws_s3_helper@main
+        with:
+          s3_bucket: qli-prd-cseperf-gh-artifacts
+          local_file: ${{ github.workspace }}/artifacts/file_list.txt
+          mode: multi-upload
+
+      - name: Export modified rootfs URLs for LAVA
+        id: rootfs-url
+        shell: bash
+        run: |
+          set -euo pipefail
+          for machine in ${TARGET_MACHINES}; do
+            tar_name="qcom-multimedia-image-${machine}.rootfs.qcomflash.tar.gz"
+            rootfs_url="$(jq -r --arg tar_name "${tar_name}" 'to_entries[] | select((.key | endswith("/" + $tar_name)) or (.key | endswith($tar_name))) | .value' presigned_urls.json | head -n1)"
+            if [ -z "${rootfs_url}" ] || [ "${rootfs_url}" = "null" ]; then
+              echo "ERROR: modified rootfs URL for ${machine} not found in presigned_urls.json" >&2
+              cat presigned_urls.json >&2
+              exit 1
+            fi
+            printf '%s\n' "${rootfs_url}" > "rootfs-url_${machine}"
+            echo "rootfs_url_${machine//-/_}=${rootfs_url}" >> "$GITHUB_OUTPUT"
+          done
+
+      - name: Upload iq-9075 modified rootfs URL artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: rootfs-url_iq-9075-evk
+          path: rootfs-url_iq-9075-evk
+
+      - name: Upload rb3gen2 modified rootfs URL artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: rootfs-url_rb3gen2-core-kit
+          path: rootfs-url_rb3gen2-core-kit
+
+      - name: Upload iq-x7181 modified rootfs URL artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: rootfs-url_iq-x7181-evk
+          path: rootfs-url_iq-x7181-evk
+
+      - name: Upload shikra modified rootfs URL artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: rootfs-url_shikra-evk
+          path: rootfs-url_shikra-evk
+
+      - name: Clean up
+        run: |
+          rm -rf artifacts
+
+  publish_summary:
+    needs: [build-nightly]
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Publish build summary
+        env:
+          DOCKER_IMAGE: ${{ inputs.docker_image || 'urm-image:ci' }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          echo "# URM Nightly Build Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Build completed successfully." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Configuration:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Docker image: ${DOCKER_IMAGE}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- S3 bucket: qli-prd-cseperf-gh-artifacts" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Run ID: ${RUN_ID}-${RUN_ATTEMPT}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Artifacts Uploaded:" >> "$GITHUB_STEP_SUMMARY"
+          echo "1. URM Binaries: urm-bins.tar.gz" >> "$GITHUB_STEP_SUMMARY"
+          echo "2. Modified Rootfs: qcom-multimedia-image-iq-9075-evk.rootfs.qcomflash.tar.gz" >> "$GITHUB_STEP_SUMMARY"
+          echo "3. Modified Rootfs: qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz" >> "$GITHUB_STEP_SUMMARY"
+          echo "4. Modified Rootfs: qcom-multimedia-image-iq-x7181-evk.rootfs.qcomflash.tar.gz" >> "$GITHUB_STEP_SUMMARY"
+          echo "5. Modified Rootfs: qcom-multimedia-image-shikra-evk.rootfs.qcomflash.tar.gz" >> "$GITHUB_STEP_SUMMARY"
+
+  test-nightly:
+    needs: build-nightly
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      pull-requests: write
+    uses: ./.github/workflows/test.yml
+    secrets:
+      LAVATOKEN: ${{ secrets.LAVATOKEN }}
+    with:
+      build_id: ${{ github.run_id }}
