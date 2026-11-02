@@ -18,6 +18,12 @@ permissions:
 env:
   TARGET_MACHINES: iq-9075-evk rb3gen2-core-kit iq-x7181-evk shikra-evk
   S3_BUCKET: qli-prd-cseperf-gh-artifacts
+  META_QCOM_REPO: qualcomm-linux/meta-qcom
+  META_QCOM_WORKFLOWS: .github/workflows/push.yml .github/workflows/nightly-build.yml .github/workflows/extended-build.yml
+  META_QCOM_DISTRO: qcom-distro
+  META_QCOM_IMAGE_TYPE: qcom-multimedia-image
+  META_QCOM_ARTIFACT_BUCKET: qcom-prd-gh-artifacts
+  META_QCOM_RUN_LIMIT: 100
 
 jobs:
   event-file:
@@ -114,29 +120,64 @@ jobs:
               test -f "${URM_BINS_DIR}/usr/lib/tmpfiles.d/urm.conf"
             '
 
-      - name: Verify rootfs images exist in S3
+      - name: Download meta-qcom rootfs images
         shell: bash
         run: |
-          set -euxo pipefail
-          for machine in ${TARGET_MACHINES}; do
-            target_rootfs_key="qualcomm/meta-qcom/qcom-multimedia-image-${machine}.rootfs.qcomflash.tar.gz"
-            aws s3api head-object \
-              --bucket "${S3_BUCKET}" \
-              --key "${target_rootfs_key}" \
-              >/dev/null 2>&1 || {
-                echo "ERROR: S3 key ${target_rootfs_key} not found in bucket ${S3_BUCKET}." >&2
-                exit 1
-              }
+          set -euo pipefail
+          command -v jq >/dev/null || { echo "ERROR: jq is required to resolve meta-qcom rootfs images." >&2; exit 1; }
+
+          mkdir -p rootfs-input
+          runs_api="https://api.github.com/repos/${META_QCOM_REPO}/actions/runs?status=completed&per_page=${META_QCOM_RUN_LIMIT}"
+          candidate_runs_tsv="$(
+            curl -fsSL --retry 3 "${runs_api}" \
+              | jq -r '.workflow_runs[] | [.id, .run_attempt, .path, .head_branch, (.conclusion // ""), .html_url] | @tsv'
+          )"
+          if [ -z "${candidate_runs_tsv}" ]; then
+            echo "ERROR: No completed meta-qcom runs found." >&2
+            exit 1
+          fi
+          mapfile -t candidate_runs <<< "${candidate_runs_tsv}"
+
+          selected_run=""
+          selected_attempt=""
+          selected_run_url=""
+          for run_record in "${candidate_runs[@]}"; do
+            IFS=$'\t' read -r run_id run_attempt run_path run_branch run_conclusion run_url <<< "${run_record}"
+            case " ${META_QCOM_WORKFLOWS} " in
+              *" ${run_path} "*) ;;
+              *) continue ;;
+            esac
+            echo "Checking meta-qcom run ${run_id}-${run_attempt} (${run_path}, ${run_branch}, ${run_conclusion}): ${run_url}"
+            missing=0
+            for machine in ${TARGET_MACHINES}; do
+              tar_name="${META_QCOM_IMAGE_TYPE}-${machine}.rootfs.qcomflash.tar.gz"
+              source_key="${META_QCOM_REPO}/${run_id}-${run_attempt}/${META_QCOM_DISTRO}/${machine}/${tar_name}"
+              if ! aws s3api head-object --bucket "${META_QCOM_ARTIFACT_BUCKET}" --key "${source_key}" >/dev/null 2>&1; then
+                echo "Run ${run_id}-${run_attempt} does not have ${source_key}; trying an older successful run."
+                missing=1
+                break
+              fi
+            done
+
+            if [ "${missing}" -eq 0 ]; then
+              selected_run="${run_id}"
+              selected_attempt="${run_attempt}"
+              selected_run_url="${run_url}"
+              break
+            fi
           done
 
-      - name: Download rootfs images
-        shell: bash
-        run: |
-          set -euxo pipefail
-          mkdir -p rootfs-input
+          if [ -z "${selected_run}" ]; then
+            echo "ERROR: No recent completed meta-qcom build run has rootfs images for all target machines: ${TARGET_MACHINES}" >&2
+            exit 1
+          fi
+
+          echo "Using meta-qcom run ${selected_run}-${selected_attempt}: ${selected_run_url}"
           for machine in ${TARGET_MACHINES}; do
-            tar_name="qcom-multimedia-image-${machine}.rootfs.qcomflash.tar.gz"
-            aws s3 cp "s3://${S3_BUCKET}/qualcomm/meta-qcom/${tar_name}" "rootfs-input/${tar_name}"
+            tar_name="${META_QCOM_IMAGE_TYPE}-${machine}.rootfs.qcomflash.tar.gz"
+            source_key="${META_QCOM_REPO}/${selected_run}-${selected_attempt}/${META_QCOM_DISTRO}/${machine}/${tar_name}"
+            echo "Downloading ${machine} rootfs from s3://${META_QCOM_ARTIFACT_BUCKET}/${source_key}"
+            aws s3 cp "s3://${META_QCOM_ARTIFACT_BUCKET}/${source_key}" "rootfs-input/${tar_name}"
             ls -lh "rootfs-input/${tar_name}"
           done
 
