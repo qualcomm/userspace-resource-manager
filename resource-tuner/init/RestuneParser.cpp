@@ -967,10 +967,12 @@ ErrCode RestuneParser::parsePerAppConfigYamlNode(const std::string& filePath) {
     int8_t docMarker = false;
     int8_t inThreadList = false;
     int8_t inConfigList = false;
+    int8_t inAppList = false;
 
     std::string value;
     std::string topKey;
     std::vector<std::string> itemArray;
+    std::vector<std::string> appNameArray;
     std::stack<std::string> keyTracker;
 
     AppConfigBuilder* appConfigBuider = nullptr;
@@ -1004,8 +1006,11 @@ ErrCode RestuneParser::parsePerAppConfigYamlNode(const std::string& filePath) {
 
                 topKey = keyTracker.top();
                 if(topKey == APP_CONFIGS_ROOT) {
-                    // Add to registry
-                    AppConfigs::getInstance()->registerAppConfig(appConfigBuider->build());
+                    // Add one AppConfig entry for each app name in the App field.
+                    for(size_t i = 0; i < appNameArray.size(); i++) {
+                        AppConfigs::getInstance()->registerAppConfig(appConfigBuider->build(appNameArray[i]));
+                    }
+                    appNameArray.clear();
                     appConfigBuider = nullptr;
                 }
                 break;
@@ -1021,6 +1026,8 @@ ErrCode RestuneParser::parsePerAppConfigYamlNode(const std::string& filePath) {
                     inThreadList = true;
                 } else if(topKey == APP_CONFIGS_CONFIGURATION_LIST) {
                     inConfigList = true;
+                } else if(topKey == APP_CONFIGS_APP_NAME) {
+                    inAppList = true;
                 }
 
                 break;
@@ -1071,6 +1078,8 @@ ErrCode RestuneParser::parsePerAppConfigYamlNode(const std::string& filePath) {
 
                     itemArray.clear();
                     inConfigList = !inConfigList;
+                } else if(inAppList) {
+                    inAppList = !inAppList;
                 }
 
                 keyTracker.pop();
@@ -1091,18 +1100,13 @@ ErrCode RestuneParser::parsePerAppConfigYamlNode(const std::string& filePath) {
                 }
 
                 topKey =  keyTracker.top();
-                if(!inConfigList && !inThreadList) {
+                if(!inConfigList && !inThreadList && !inAppList) {
                     // Not in any list, pop out the key
                     keyTracker.pop();
                 }
 
                 if(topKey == APP_CONFIGS_APP_NAME) {
-                    if(RC_IS_OK(rc)) {
-                        rc = appConfigBuider->setAppName(value);
-                        if(RC_IS_NOTOK(rc)) {
-                            return RC_YAML_INVALID_SYNTAX;
-                        }
-                    }
+                    appNameArray.push_back(value);
                 } else if(topKey == APP_CONFIGS_THREAD_LIST || topKey == APP_CONFIGS_CONFIGURATION_LIST) {
                     itemArray.push_back(value);
                 }

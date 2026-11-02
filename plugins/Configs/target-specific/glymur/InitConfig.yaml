@@ -2,5 +2,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 InitConfigs:
+  - CgroupsInfo:
+    - Name: "urm.slice/glymur.focused.on.launch"
+      Create: true
+      ID: 5
+
   - IRQConfigs:
     - AffineIRQ: [-1, 0, 1, 2, 3, 4, 5, 6]

@@ -237,3 +237,13 @@ SignalConfigs:
       - {ResCode: "0x00040001", ResInfo: "0x00000100", Values: [4032000]}
       - {ResCode: "0x00040000", ResInfo: "0x00000200", Values: [4032000]}
       - {ResCode: "0x00040001", ResInfo: "0x00000200", Values: [4032000]}
+
+  - SigId: "0x0001"
+    Category: "0xeb"
+    Name: "GLYMUR_AFFINITY_ON_APP_LAUNCH_TRIGGER"
+    Enable: true
+    TargetsEnabled: ["glymur", "glymur-crd"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [5, 0,1,2,3,4,5]}
