@@ -8,7 +8,6 @@ for policy in `ls -d /sys/devices/system/cpu/cpufreq/policy*`;
     do echo schedutil > $policy/scaling_governor;
 done
 
-echo s2idle > /sys/power/mem_sleep
 echo 100 > /proc/sys/vm/swappiness
 
 # 15GB threshold = 15360 MB
