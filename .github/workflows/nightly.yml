@@ -23,7 +23,10 @@ env:
   META_QCOM_DISTRO: qcom-distro
   META_QCOM_IMAGE_TYPE: qcom-multimedia-image
   META_QCOM_ARTIFACT_BUCKET: qcom-prd-gh-artifacts
+  META_QCOM_ARTIFACT_BASE_URL: https://qli-prod-artifacts.qualcomm.com/qcom-prd-gh-artifacts
   META_QCOM_RUN_LIMIT: 100
+  S3_ROOTFS_PREFIX: qualcomm/meta-qcom
+  QLI_ARTIFACT_AUTH_HEADER: QLIAuthorization
 
 jobs:
   build-nightly:
@@ -95,9 +98,15 @@ jobs:
 
       - name: Download meta-qcom rootfs images
         shell: bash
+        env:
+          QLI_ARTIFACT_TOKEN: ${{ secrets.QLI_ARTIFACT_TOKEN }}
         run: |
           set -euo pipefail
           command -v jq >/dev/null || { echo "ERROR: jq is required to resolve meta-qcom rootfs images." >&2; exit 1; }
+          if [ -z "${QLI_ARTIFACT_TOKEN}" ]; then
+            echo "ERROR: QLI_ARTIFACT_TOKEN is not configured." >&2
+            exit 1
+          fi
 
           mkdir -p rootfs-input
           runs_api="https://api.github.com/repos/${META_QCOM_REPO}/actions/runs?status=completed&per_page=${META_QCOM_RUN_LIMIT}"
@@ -125,8 +134,14 @@ jobs:
             for machine in ${TARGET_MACHINES}; do
               tar_name="${META_QCOM_IMAGE_TYPE}-${machine}.rootfs.qcomflash.tar.gz"
               source_key="${META_QCOM_REPO}/${run_id}-${run_attempt}/${META_QCOM_DISTRO}/${machine}/${tar_name}"
-              if ! aws s3api head-object --bucket "${META_QCOM_ARTIFACT_BUCKET}" --key "${source_key}" >/dev/null 2>&1; then
-                echo "Run ${run_id}-${run_attempt} does not have ${source_key}; trying an older successful run."
+              artifact_url="${META_QCOM_ARTIFACT_BASE_URL%/}/${source_key}"
+              if ! wget \
+                  --spider \
+                  --header="${QLI_ARTIFACT_AUTH_HEADER}: ${QLI_ARTIFACT_TOKEN}" \
+                  --tries=1 \
+                  --timeout=30 \
+                  "${artifact_url}" >/dev/null 2>&1; then
+                echo "Run ${run_id}-${run_attempt} does not have ${artifact_url}; trying an older successful run."
                 missing=1
                 break
               fi
@@ -149,8 +164,27 @@ jobs:
           for machine in ${TARGET_MACHINES}; do
             tar_name="${META_QCOM_IMAGE_TYPE}-${machine}.rootfs.qcomflash.tar.gz"
             source_key="${META_QCOM_REPO}/${selected_run}-${selected_attempt}/${META_QCOM_DISTRO}/${machine}/${tar_name}"
-            echo "Downloading ${machine} rootfs from s3://${META_QCOM_ARTIFACT_BUCKET}/${source_key}"
-            aws s3 cp "s3://${META_QCOM_ARTIFACT_BUCKET}/${source_key}" "rootfs-input/${tar_name}"
+            artifact_url="${META_QCOM_ARTIFACT_BASE_URL%/}/${source_key}"
+            canonical_rootfs_key="${S3_ROOTFS_PREFIX}/${tar_name}"
+            qli_download="rootfs-input/${tar_name}.qli"
+
+            echo "Downloading ${machine} rootfs from ${artifact_url}"
+            wget \
+              --header="${QLI_ARTIFACT_AUTH_HEADER}: ${QLI_ARTIFACT_TOKEN}" \
+              --tries=3 \
+              --timeout=120 \
+              --continue \
+              --progress=dot:giga \
+              -O "${qli_download}" \
+              "${artifact_url}"
+            test -s "${qli_download}"
+
+            echo "Publishing ${machine} rootfs to s3://${S3_BUCKET}/${canonical_rootfs_key}"
+            aws s3 cp "${qli_download}" "s3://${S3_BUCKET}/${canonical_rootfs_key}"
+            rm -f "${qli_download}"
+            aws s3api head-object --bucket "${S3_BUCKET}" --key "${canonical_rootfs_key}" >/dev/null
+            aws s3 cp "s3://${S3_BUCKET}/${canonical_rootfs_key}" "rootfs-input/${tar_name}"
+            sha256sum "rootfs-input/${tar_name}"
             ls -lh "rootfs-input/${tar_name}"
           done
 
