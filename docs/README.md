@@ -1883,6 +1883,6 @@ For questions, suggestions, or contributions, feel free to reach out:
 
 # 9. License
 
-This project is licensed under the BSD 3-Clause Clear License.
+This project is licensed under the BSD 3-Clause License.
 
 <div style="page-break-after: always;"></div>
