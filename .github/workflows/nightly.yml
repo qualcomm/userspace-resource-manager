@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 env:
   TARGET_MACHINES: iq-9075-evk rb3gen2-core-kit iq-x7181-evk shikra-evk
@@ -99,6 +100,7 @@ jobs:
       - name: Download meta-qcom rootfs images
         shell: bash
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           QLI_ARTIFACT_TOKEN: ${{ secrets.QLI_ARTIFACT_TOKEN }}
         run: |
           set -euo pipefail
@@ -111,7 +113,10 @@ jobs:
           mkdir -p rootfs-input
           runs_api="https://api.github.com/repos/${META_QCOM_REPO}/actions/runs?status=completed&per_page=${META_QCOM_RUN_LIMIT}"
           candidate_runs_tsv="$(
-            curl -fsSL --retry 3 "${runs_api}" \
+            curl -fsSL --retry 3 \
+              --header "Authorization: Bearer ${GITHUB_TOKEN}" \
+              --header "X-GitHub-Api-Version: 2022-11-28" \
+              "${runs_api}" \
               | jq -r '.workflow_runs[] | [.id, .run_attempt, .path, .head_branch, (.conclusion // ""), .html_url] | @tsv'
           )"
           if [ -z "${candidate_runs_tsv}" ]; then
