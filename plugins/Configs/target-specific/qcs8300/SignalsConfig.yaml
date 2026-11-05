@@ -116,6 +116,56 @@ SignalConfigs:
       - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [2054400]}
       - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_PLUS_ALL_CORES", Values: [2208000]}
 
+  # camera encode
+  # Default encode - 4k 30fps case for qtiqmmfsrc source
+  - SigId: "0x0003"
+    Category: "0x03"
+    Name: "URM_SIG_CAMERA_ENCODE"
+    Enable: true
+    TargetsEnabled: ["qcs8300", "qcs8275", "sa7255p"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    ExtraAttrs:
+      - Fps: 30
+      - Height: 2160
+      - Width: 3840
+      - MmSrc: "qtiqmmfsrc"
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0,1,2,3]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 4,5,6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [3, 90]}
+      - {ResCode: "RES_CGRP_HIGH_MEM", Values: [3, 1048576]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [4, 0,1,2,3,4,5,6,7]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [4, 150]}
+      - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
+      - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
+      - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [1881600]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [2054400]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_PLUS_ALL_CORES", Values: [2208000]}
+
+  # camera encode
+  # Default encode - 4k 30fps case for libcamerasrc source
+  - SigId: "0x0003"
+    Category: "0x03"
+    Name: "URM_SIG_CAMERA_ENCODE"
+    Enable: true
+    TargetsEnabled: ["qcs8300", "qcs8275", "sa7255p"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    ExtraAttrs:
+      - Fps: 30
+      - Height: 2160
+      - Width: 3840
+      - MmSrc: "libcamerasrc"
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0,1]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 0,1]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [4, 2,3]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [1958400]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [2112000]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_PLUS_ALL_CORES", Values: [2361600]}
+
   # camera encode multi-stream
   # encode (0-12 streams)
   - SigId: "0x0004"
