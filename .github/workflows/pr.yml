@@ -106,6 +106,12 @@ jobs:
                 -DCMAKE_INSTALL_INCLUDEDIR=include
               cmake --build .
               DESTDIR="${PWD}/${URM_BINS_DIR}" make install
+              install -D -m 0644 urm.service "${URM_BINS_DIR}/usr/lib/systemd/system/urm.service"
+              install -D -m 0644 urm-tmpfiles.conf "${URM_BINS_DIR}/usr/lib/tmpfiles.d/urm.conf"
+              test -x "${URM_BINS_DIR}/usr/sbin/urm"
+              test -f "${URM_BINS_DIR}/usr/lib/systemd/system/urm.service"
+              grep -q "^ExecStart=/usr/sbin/urm$" "${URM_BINS_DIR}/usr/lib/systemd/system/urm.service"
+              test -f "${URM_BINS_DIR}/usr/lib/tmpfiles.d/urm.conf"
             '
 
       - name: Verify rootfs images exist in S3
@@ -261,9 +267,17 @@ jobs:
                 mount -o rw "${LOOP_DEV}" "${MNT_DIR}"
 
                 cp -av "${SRC_ROOT}/." "${MNT_DIR}/"
+                rm -f "${MNT_DIR}/usr/bin/urm"
+                ln -s ../sbin/urm "${MNT_DIR}/usr/bin/urm"
+                test -x "${MNT_DIR}/usr/sbin/urm"
+                test -L "${MNT_DIR}/usr/bin/urm"
+                test -f "${MNT_DIR}/usr/lib/systemd/system/urm.service"
+                grep -q "^ExecStart=/usr/sbin/urm$" "${MNT_DIR}/usr/lib/systemd/system/urm.service"
+                test -f "${MNT_DIR}/usr/lib/tmpfiles.d/urm.conf"
                 sync
 
                 echo "Installed URM files for ${MACHINE}"
+                cat "${MNT_DIR}/usr/lib/systemd/system/urm.service"
                 ls -la --time-style=full-iso "${MNT_DIR}/usr/bin" | grep -E "urm|$" | sed -n "1,50p" || true
                 ls -la --time-style=full-iso "${MNT_DIR}/usr/sbin" | grep -E "urm|$" | sed -n "1,50p" || true
                 ls -la --time-style=full-iso "${MNT_DIR}/usr/lib" | grep -E "Urm|libUrm|$" | sed -n "1,50p" || true

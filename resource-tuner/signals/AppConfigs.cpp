@@ -16,6 +16,13 @@ AppConfig* AppConfigs::getAppConfig(const std::string& name) {
 
 AppConfigBuilder::AppConfigBuilder() {
     this->mAppConfig = new(std::nothrow) AppConfig();
+    if(this->mAppConfig != nullptr) {
+        this->mAppConfig->mNumThreads = 0;
+        this->mAppConfig->mThreadNameList = nullptr;
+        this->mAppConfig->mCGroupIds = nullptr;
+        this->mAppConfig->mNumSignals = 0;
+        this->mAppConfig->mSignalCodes = nullptr;
+    }
 }
 
 ErrCode AppConfigBuilder::setAppName(const std::string& name) {
@@ -110,4 +117,15 @@ ErrCode AppConfigBuilder::addSigCode(int32_t index, const std::string& sigCodeSt
 
 AppConfig* AppConfigBuilder::build() {
     return this->mAppConfig;
+}
+
+AppConfig* AppConfigBuilder::build(const std::string& appName) {
+    AppConfig* appConfig = new(std::nothrow) AppConfig();
+    if(appConfig == nullptr || this->mAppConfig == nullptr) {
+        return nullptr;
+    }
+
+    *appConfig = *this->mAppConfig;
+    appConfig->mAppName = appName;
+    return appConfig;
 }

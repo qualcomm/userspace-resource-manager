@@ -50,8 +50,33 @@ jobs:
           echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
           echo "pr_url=${PR_URL}" >> "$GITHUB_OUTPUT"
 
-  test:
+  create-lava-status:
+    name: "Create LAVA PR status"
     needs: determine-target-branch
+    if: needs.determine-target-branch.outputs.branch == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - name: Create pending status
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          gh api "repos/${GH_REPO}/statuses/${HEAD_SHA}" \
+            --method POST \
+            --field state="pending" \
+            --field context="userspace-resource-manager_tests" \
+            --field description="LAVA validation is running" \
+            --field target_url="${WORKFLOW_URL}"
+
+  test:
+    needs: [determine-target-branch, create-lava-status]
     if: github.event.workflow_run.conclusion == 'success' && needs.determine-target-branch.outputs.branch == 'main'
     permissions:
       contents: read
@@ -66,9 +91,58 @@ jobs:
       pr_number: ${{ needs.determine-target-branch.outputs.pr_number }}
       pr_url: ${{ needs.determine-target-branch.outputs.pr_url }}
 
+  finish-lava-status:
+    name: "Finish LAVA PR status"
+    needs: [determine-target-branch, create-lava-status, test]
+    if: always() && needs.create-lava-status.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - name: Update status conclusion
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          BUILD_RESULT: ${{ github.event.workflow_run.conclusion }}
+          TEST_RESULT: ${{ needs.test.result }}
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          STATE="failure"
+          TITLE="LAVA validation failed"
+          DESCRIPTION="LAVA validation failed"
+
+          if [ "${BUILD_RESULT}" != "success" ]; then
+            TITLE="LAVA validation was not run"
+            DESCRIPTION="Build URM completed with '${BUILD_RESULT}'"
+          elif [ "${TEST_RESULT}" = "success" ]; then
+            STATE="success"
+            TITLE="LAVA validation passed"
+            DESCRIPTION="LAVA validation passed"
+          elif [ "${TEST_RESULT}" = "cancelled" ]; then
+            STATE="error"
+            TITLE="LAVA validation was cancelled"
+            DESCRIPTION="LAVA validation was cancelled"
+          elif [ "${TEST_RESULT}" = "skipped" ]; then
+            TITLE="LAVA validation was skipped"
+            DESCRIPTION="LAVA validation was skipped"
+          fi
+
+          gh api "repos/${GH_REPO}/statuses/${HEAD_SHA}" \
+            --method POST \
+            --field state="${STATE}" \
+            --field context="userspace-resource-manager_tests" \
+            --field description="${DESCRIPTION}" \
+            --field target_url="${WORKFLOW_URL}"
+
+          echo "${TITLE}"
+
   comment-on-pr:
     name: "Comment on PR"
-    needs: test
+    needs: [test, finish-lava-status]
     if: always() && needs.test.result != 'skipped'
     runs-on: ubuntu-latest
     permissions:
@@ -86,6 +160,7 @@ jobs:
       - name: Download event file
         uses: actions/download-artifact@v7
         with:
+          name: Event File
           run-id: ${{ github.event.workflow_run.id }}
           path: artifacts
           github-token: ${{ github.token }}
@@ -100,7 +175,7 @@ jobs:
           echo "## Test jobs for commit ${GH_EVENT_WORKFLOW_RUN_HEAD_SHA}" >> pr-comment.txt
           echo "" >> pr-comment.txt
           echo "Workflow result: ${TEST_RESULT}" >> pr-comment.txt
-          PR_NUMBER="$(jq -r ".number" "artifacts/Event File/event.json")"
+          PR_NUMBER="$(jq -r ".number" "artifacts/event.json")"
           if [ -d ./results_summary ]; then
             while IFS= read -r RESULT_FILE_NAME; do
               grep "summary" "${RESULT_FILE_NAME}" | grep -v "All jobs summary" >> pr-comment.txt || true

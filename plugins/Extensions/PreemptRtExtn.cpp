@@ -27,8 +27,12 @@
 static bool gLogInit = false;
 static bool gLogEnabled = false;
 static constexpr const char* kLogTag = "urm-ext-rt";
-static constexpr uint64_t CPU_COUNT = 8;
-constexpr uint64_t VALID_MASK = (1ULL << CPU_COUNT) - 1;
+
+static uint64_t getValidMask() {
+    uint64_t coreCount = GET_TARGET_INFO(GET_CORE_COUNT, 0, nullptr);
+    if (coreCount == 0 || coreCount > 64) coreCount = 64;
+    return (1ULL << coreCount) - 1;
+}
 
 static bool parseBoolEnv(const char* v) {
     if (!v) return false;
@@ -160,7 +164,8 @@ static void irqAffinityApplierCallback(void* /*context*/) {
 
     int32_t args[2] = {GET_MAX_CLUSTER, -1};
     uint64_t hexMask = GET_TARGET_INFO(GET_MASK, 2, args);
-    std::string maskStr = cpuMaskToHex((~(hexMask) & VALID_MASK ));
+    uint64_t validMask = getValidMask();
+    std::string maskStr = cpuMaskToHex((~(hexMask) & validMask));
 
     DIR* dir = opendir(IRQ_DIR_PATH);
     if (!dir) return;
@@ -225,7 +230,8 @@ static void workqueueApplierCallback(void* /*context*/) {
 
     int32_t args[2] = {GET_MAX_CLUSTER, -1};
     uint64_t hexMask = GET_TARGET_INFO(GET_MASK, 2, args);
-    std::string maskStr = cpuMaskToHex((~(hexMask) & VALID_MASK));
+    uint64_t validMask = getValidMask();
+    std::string maskStr = cpuMaskToHex((~(hexMask) & validMask));
 
     DIR* dir = opendir(WQ_DIR_PATH);
     if (!dir) return;

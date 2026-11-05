@@ -102,11 +102,10 @@ jobs:
         uses: qualcomm-linux/lava-test-plans@e8001131dd21e4d3250f04febaca3f73270cf32f
         with:
           machines: iq-9075-evk
-          distro_name: ${{ env.LAVA_DISTRO_NAME }}
           build_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ inputs.build_id }}
           image_type: qcom-multimedia-image
           os_info: qcom-distro
-          prefix: premerge-iq-9075-evk
+          prefix: premerge-iq-9075-evk-${{ env.LAVA_DISTRO_NAME }}
           project: ${{ env.LAVA_PROJECT }}
           testplan: ${{ env.LAVA_TESTPLAN }}
           ref: ${{ needs.prepare-env.outputs.lava-test-plans-ref }}
@@ -117,22 +116,26 @@ jobs:
             AUTO_LOGIN_PASSWORD_PROMPT=Password
             AUTO_LOGIN_PASSWORD=oelinux123
             DOCKER_IMAGE_POSTPROCESS=ghcr.io/foundriesio/lava-lmp-sign:main
+            IMAGE_FILE_NAME=qcom-multimedia-image-iq-9075-evk.rootfs.qcomflash.tar.gz
             ROOTFS_URL=${{ steps.rootfs-urls.outputs.iq_9075_evk }}
 
-      - name: Reset rendered jobs workspace
+      - name: Save iq-9075 rendered jobs workspace
         shell: bash
-        run: rm -rf out
+        run: |
+          set -euo pipefail
+          mkdir -p rendered-jobs/iq-9075-evk
+          cp -a out/jobs/. rendered-jobs/iq-9075-evk/
+          rm -rf out
 
       - name: Render LAVA jobs for rb3gen2-core-kit
         id: lava-test-plans-rb3gen2-core-kit
         uses: qualcomm-linux/lava-test-plans@e8001131dd21e4d3250f04febaca3f73270cf32f
         with:
           machines: rb3gen2-core-kit
-          distro_name: ${{ env.LAVA_DISTRO_NAME }}
           build_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ inputs.build_id }}
           image_type: qcom-multimedia-image
           os_info: qcom-distro
-          prefix: premerge-rb3gen2-core-kit
+          prefix: premerge-rb3gen2-core-kit-${{ env.LAVA_DISTRO_NAME }}
           project: ${{ env.LAVA_PROJECT }}
           testplan: ${{ env.LAVA_TESTPLAN }}
           ref: ${{ needs.prepare-env.outputs.lava-test-plans-ref }}
@@ -143,26 +146,52 @@ jobs:
             AUTO_LOGIN_PASSWORD_PROMPT=Password
             AUTO_LOGIN_PASSWORD=oelinux123
             DOCKER_IMAGE_POSTPROCESS=ghcr.io/foundriesio/lava-lmp-sign:main
+            IMAGE_FILE_NAME=qcom-multimedia-image-rb3gen2-core-kit.rootfs.qcomflash.tar.gz
             ROOTFS_URL=${{ steps.rootfs-urls.outputs.rb3gen2_core_kit }}
+
+      - name: Save rb3gen2 rendered jobs workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p rendered-jobs/rb3gen2-core-kit
+          cp -a out/jobs/. rendered-jobs/rb3gen2-core-kit/
 
       - name: Combine LAVA job matrices
         id: combine-jobmatrix
         shell: bash
         env:
-          IQ_JOBMATRIX: "${{ steps.lava-test-plans-iq-9075-evk.outputs.jobmatrix }}"
-          RB3_JOBMATRIX: "${{ steps.lava-test-plans-rb3gen2-core-kit.outputs.jobmatrix }}"
+          IQ_ARTIFACT_ID: "${{ steps.lava-test-plans-iq-9075-evk.outputs.artifact_id }}"
+          RB3_ARTIFACT_ID: "${{ steps.lava-test-plans-rb3gen2-core-kit.outputs.artifact_id }}"
         run: |
           set -euo pipefail
 
-          IQ_JOBMATRIX="${IQ_JOBMATRIX:-{}}"
-          RB3_JOBMATRIX="${RB3_JOBMATRIX:-{}}"
+          JOBMATRIX="$(python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
 
-          JOBMATRIX="$(jq -c -n \
-            --argjson iq "${IQ_JOBMATRIX}" \
-            --argjson rb3 "${RB3_JOBMATRIX}" \
-            '{target: (($iq.target // []) + ($rb3.target // []))}')"
+          targets = []
+          configs = [
+              ("iq-9075-evk", os.environ["IQ_ARTIFACT_ID"], Path("rendered-jobs/iq-9075-evk")),
+              ("rb3gen2-core-kit", os.environ["RB3_ARTIFACT_ID"], Path("rendered-jobs/rb3gen2-core-kit")),
+          ]
 
-          if [ "$(echo "${JOBMATRIX}" | jq '.target | length')" -eq 0 ]; then
+          for machine, artifact_id, jobs_dir in configs:
+              if not artifact_id:
+                  raise SystemExit(f"No LAVA job artifact id was returned for {machine}")
+              for job_path in sorted(jobs_dir.rglob("*.yaml")):
+                  targets.append({
+                      "path": job_path.relative_to(jobs_dir).as_posix(),
+                      "artifact_id": artifact_id,
+                      "result_file": f"premerge-{machine}-userspace-resource-manager-{machine}-{job_path.name}",
+                      "name": machine,
+                  })
+
+          print(json.dumps({"target": targets}, separators=(",", ":")))
+          PY
+          )"
+
+          if [ "$(python3 -c 'import json,sys; print(len(json.load(sys.stdin)["target"]))' <<< "${JOBMATRIX}")" -eq 0 ]; then
             echo "No LAVA job YAML files were rendered"
             exit 1
           fi
@@ -183,7 +212,7 @@ jobs:
       - name: Download job templates
         uses: actions/download-artifact@v7
         with:
-          name: ${{ matrix.target.artifact }}
+          artifact-ids: ${{ matrix.target.artifact_id }}
 
       - name: Submit ${{ matrix.target.name }}
         timeout-minutes: 120
