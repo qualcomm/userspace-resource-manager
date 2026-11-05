@@ -1,0 +1,27 @@
+var searchData=
+[
+  ['sample_20cgroup_20config_0',['Sample Cgroup config',['../usage.html#autotoc_md104',1,'']]],
+  ['sample_20device_20config_20file_1',['Sample Device Config file',['../usage.html#autotoc_md107',1,'']]],
+  ['sample_20properties_20config_20file_2',['Sample Properties config file.',['../usage.html#autotoc_md110',1,'']]],
+  ['sample_20resource_20config_20file_20with_20two_20resources_3',['Sample Resource config file with two resources.',['../usage.html#autotoc_md98',1,'']]],
+  ['scenario_20tuning_4',['1.3.2 Use-case/Workload/Scenario Tuning',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md7',1,'']]],
+  ['send_20a_20getprop_20request_5',['Send a getProp Request',['../client_cli.html#autotoc_md84',1,'4. Send a getProp Request'],['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md44',1,'5.4. Send a getProp Request']]],
+  ['send_20a_20retune_20request_6',['Send a Retune Request',['../client_cli.html#autotoc_md83',1,'3. Send a Retune Request'],['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md43',1,'5.3. Send a Retune Request']]],
+  ['send_20a_20tune_20request_7',['Send a Tune Request',['../client_cli.html#autotoc_md81',1,'1. Send a Tune Request'],['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md41',1,'5.1. Send a Tune Request']]],
+  ['send_20a_20tunesignal_20request_8',['Send a tuneSignal Request',['../client_cli.html#autotoc_md85',1,'5. Send a tuneSignal Request'],['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md45',1,'5.5. Send a tuneSignal Request']]],
+  ['send_20an_20untune_20request_9',['Send an Untune Request',['../client_cli.html#autotoc_md82',1,'2. Send an Untune Request'],['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md42',1,'5.2. Send an Untune Request']]],
+  ['should_20the_20extfeaturesconfig_20yaml_20be_20placed_10',['3. Where should the ExtFeaturesConfig.yaml be placed?',['../ext_features.html#autotoc_md95',1,'']]],
+  ['sigcode_11',['6. How to create a Resource Opcode (ResCode) and Signal Opcode (SigCode)',['../usage.html#autotoc_md111',1,'']]],
+  ['signal_20code_20construction_12',['4.2.4.1. Signal Code Construction',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md27',1,'']]],
+  ['signal_20configs_13',['Signal Configs',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md37',1,'4.3.4. Signal Configs'],['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md56',1,'6.2.4. Signal Configs']]],
+  ['signal_20opcode_20sigcode_14',['6. How to create a Resource Opcode (ResCode) and Signal Opcode (SigCode)',['../usage.html#autotoc_md111',1,'']]],
+  ['signals_15',['Signals',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md11',1,'3. Configurable Resources and Signals'],['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md13',1,'3.2. Signals']]],
+  ['signals_20and_20features_16',['1. Making Use of Relay Signals and Features',['../ext_features.html#autotoc_md91',1,'']]],
+  ['started_17',['2. Getting Started',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md10',1,'']]],
+  ['structure_18',['7.1. Project Structure',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md60',1,'']]],
+  ['subsequent_20cleanup_19',['7.6. Pulse Monitor: Detection of Dead Clients and Subsequent Cleanup',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md69',1,'']]],
+  ['sysresource_20',['4.2.1.1. SysResource',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md18',1,'']]],
+  ['system_20abuse_21',['7.7. Rate Limiter: Preventing System Abuse',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md70',1,'']]],
+  ['system_20resource_20tuning_20framework_22',['Userspace Resource Manager: A System Resource Tuning Framework',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md0',1,'']]],
+  ['system_20resources_23',['1.3.1 Provisioning System Resources',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md6',1,'']]]
+];
