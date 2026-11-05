@@ -122,12 +122,28 @@ jobs:
           set -euo pipefail
 
           mkdir -p rootfs-input
+          missing=0
+          for machine in ${TARGET_MACHINES}; do
+            tar_name="${META_QCOM_IMAGE_TYPE}-${machine}.rootfs.qcomflash.tar.gz"
+            canonical_rootfs_key="${S3_ROOTFS_PREFIX}/${tar_name}"
+
+            echo "Checking cached ${machine} rootfs at s3://${S3_BUCKET}/${canonical_rootfs_key}"
+            if ! aws s3api head-object --bucket "${S3_BUCKET}" --key "${canonical_rootfs_key}" >/dev/null; then
+              echo "ERROR: Missing cached ${machine} rootfs: s3://${S3_BUCKET}/${canonical_rootfs_key}" >&2
+              missing=1
+            fi
+          done
+
+          if [ "${missing}" -ne 0 ]; then
+            echo "ERROR: One or more cached rootfs images are missing. Run the trusted nightly cache refresh before PR validation." >&2
+            exit 1
+          fi
+
           for machine in ${TARGET_MACHINES}; do
             tar_name="${META_QCOM_IMAGE_TYPE}-${machine}.rootfs.qcomflash.tar.gz"
             canonical_rootfs_key="${S3_ROOTFS_PREFIX}/${tar_name}"
 
             echo "Downloading cached ${machine} rootfs from s3://${S3_BUCKET}/${canonical_rootfs_key}"
-            aws s3api head-object --bucket "${S3_BUCKET}" --key "${canonical_rootfs_key}" >/dev/null
             aws s3 cp "s3://${S3_BUCKET}/${canonical_rootfs_key}" "rootfs-input/${tar_name}"
             test -s "rootfs-input/${tar_name}"
             sha256sum "rootfs-input/${tar_name}"
