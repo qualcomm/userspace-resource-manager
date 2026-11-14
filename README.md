@@ -1,5 +1,7 @@
 # Userspace Resource Manager (URM)
 
+[![Nightly Build](https://img.shields.io/github/actions/workflow/status/qualcomm/userspace-resource-manager/nightly.yml?label=Nightly%20Build)](https://github.com/qualcomm/userspace-resource-manager/actions/workflows/nightly.yml)
+
 Official repo of URM project. Includes:
 - resource-tuner
 - contextual-classifier
