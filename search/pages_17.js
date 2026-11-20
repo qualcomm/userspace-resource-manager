@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['packaging_0',['7.12. Flexible Packaging',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md75',1,'']]],
+  ['parsing_1',['4.4. Urm Config Parsing',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md39',1,'']]],
+  ['per_20app_20configs_2',['4.3.5. Per App Configs',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md38',1,'']]],
+  ['per_20app_20tuning_3',['1.3.3 Per-App tuning',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md8',1,'']]],
+  ['permissions_4',['7.3. Client-Level Permissions',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md66',1,'']]],
+  ['physical_20mapping_5',['7.9. Dynamic Mapper: Logical to Physical Mapping',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md72',1,'']]],
+  ['placed_6',['3. Where should the ExtFeaturesConfig.yaml be placed?',['../ext_features.html#autotoc_md95',1,'']]],
+  ['platform_20abstraction_20layer_7',['4.1. Platform Abstraction Layer',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md15',1,'']]],
+  ['points_8',['7.2. Userspace Resource Manager Key Points',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md61',1,'']]],
+  ['policies_9',['7.4. Resource-Level Policies',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md67',1,'']]],
+  ['post_20processing_20callbacks_10',['Post Processing Callbacks',['../extensions_usage.html#autotoc_md88',1,'3. Post-Processing Callbacks'],['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md49',1,'6.1.2. Registering Post-Processing Callbacks']]],
+  ['pre_20allocate_20capacity_20for_20efficiency_11',['7.13. Pre-Allocate Capacity for efficiency',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md76',1,'']]],
+  ['preventing_20system_20abuse_12',['7.7. Rate Limiter: Preventing System Abuse',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md70',1,'']]],
+  ['priorities_13',['7.5. Request-Level Priorities',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md68',1,'']]],
+  ['processing_14',['7.2.4. Request Processing',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md65',1,'']]],
+  ['processing_20callbacks_15',['Processing Callbacks',['../extensions_usage.html#autotoc_md88',1,'3. Post-Processing Callbacks'],['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md49',1,'6.1.2. Registering Post-Processing Callbacks']]],
+  ['project_20structure_16',['7.1. Project Structure',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md60',1,'']]],
+  ['properties_20config_17',['Properties Config',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md36',1,'4.3.3. Properties Config'],['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md55',1,'6.2.3. Properties Config']]],
+  ['properties_20config_20file_18',['Sample Properties config file.',['../usage.html#autotoc_md110',1,'']]],
+  ['property_19',['5. How to add a new Property',['../usage.html#autotoc_md109',1,'']]],
+  ['provisioning_20system_20resources_20',['1.3.1 Provisioning System Resources',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md6',1,'']]],
+  ['pulse_20monitor_3a_20detection_20of_20dead_20clients_20and_20subsequent_20cleanup_21',['7.6. Pulse Monitor: Detection of Dead Clients and Subsequent Cleanup',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md69',1,'']]]
+];
