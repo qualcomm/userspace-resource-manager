@@ -6,6 +6,7 @@ SignalConfigs:
 
   # Video decode
   # Default decode
+  # 0x00030001
   - SigId: "0x0001"
     Category: "0x03"
     SigType: 0
@@ -28,9 +29,11 @@ SignalConfigs:
       - {ResCode: "RES_CGRP_UCLAMP_MAX", Values: [4, 20]}
       - {ResCode: "RES_SCHED_UTIL_CLAMP_MIN", Values: [0]}
       - {ResCode: "RES_SCHED_UTIL_CLAMP_MAX", Values: [358]}
+      - {ResCode: "0x00050004", Values: [844800000]}
 
   # Video decode
   # Decode 5+ concurrent sessions
+  # 0x00030001
   - SigId: "0x0001"
     Category: "0x03"
     SigType: 5
@@ -53,9 +56,11 @@ SignalConfigs:
       - {ResCode: "RES_CGRP_UCLAMP_MAX", Values: [4, 20]}
       - {ResCode: "RES_SCHED_UTIL_CLAMP_MIN", Values: [0]}
       - {ResCode: "RES_SCHED_UTIL_CLAMP_MAX", Values: [358]}
+      - {ResCode: "0x00050004", Values: [844800000]}
 
   # Video decode
   # Decode 20+ concurrent sessions
+  # 0x00030001
   - SigId: "0x0001"
     Category: "0x03"
     SigType: 20
@@ -74,9 +79,11 @@ SignalConfigs:
       - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
       - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
       - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+      - {ResCode: "0x00050004", Values: [844800000]}
 
   # Camera preview
   # Default preview - 30fps
+  # 0x00030002
   - SigId: "0x0002"
     Category: "0x03"
     Name: "URM_SIG_CAMERA_PREVIEW"
@@ -101,6 +108,7 @@ SignalConfigs:
 
   # Camera encode
   # Default encode - 30fps
+  # 0x00030003
   - SigId: "0x0003"
     Category: "0x03"
     Name: "URM_SIG_CAMERA_ENCODE"
@@ -125,6 +133,7 @@ SignalConfigs:
 
   # Camera encode multi-stream
   # encode (0-12 streams)
+  # 0x00030004
   - SigId: "0x0004"
     Category: "0x03"
     SigType: 0
@@ -150,6 +159,7 @@ SignalConfigs:
 
   # Camera encode multi-stream
   # encode (12+ streams)
+  # 0x00030004
   - SigId: "0x0004"
     Category: "0x03"
     SigType: 13
