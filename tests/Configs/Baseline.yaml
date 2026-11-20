@@ -78,3 +78,24 @@ TestConfigs:
         PhyId: 6
     NumClusters: 2
     NumCores: 8
+
+  - TargetName: ["nord", "SA8797P"]
+    # Nord
+    # Total Core Count - 18
+    # Total cluster count - 3
+    # Cluster to Core Mapping
+    # 0 -> 0, 1, 2, 3, 4, 5 (count: 6)
+    # 6 -> 6, 7, 8, 9, 10, 11 (count: 6)
+    # 12 -> 12, 13, 14, 15, 16, 17 (count: 6)
+    # Logical Cluster: 0 maps to Physical Cluster: 0
+    # Logical Cluster: 1 maps to Physical Cluster: 6
+    # Logical Cluster: 2 maps to Physical Cluster: 12
+    ClusterExpectations:
+      - LgcId: 0
+        PhyId: 0
+      - LgcId: 1
+        PhyId: 6
+      - LgcId: 2
+        PhyId: 12
+    NumClusters: 3
+    NumCores: 18

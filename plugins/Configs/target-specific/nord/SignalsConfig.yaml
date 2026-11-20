@@ -1,0 +1,227 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause
+
+SignalConfigs:
+  # Multimedia: category 3
+  # Video decode
+  # Default decode
+  - SigId: "0x0001"
+    Category: "0x03"
+    SigType: 0
+    Name: "URM_SIG_VIDEO_DECODE"
+    Enable: true
+    TargetsEnabled: ["nord", "sa8797p", "sa8797p-ride-embedded"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0, 1, 2, 3, 4, 5]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 6, 7, 8, 9, 10, 11]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [3, 90]}
+      - {ResCode: "RES_CGRP_HIGH_MEM", Values: [3, 1048576]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [4, 150]}
+      - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
+      - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
+      - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [1382400]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [1382400]}
+
+  # Video decode
+  # Decode 5+ concurrent sessions
+  - SigId: "0x0001"
+    Category: "0x03"
+    SigType: 5
+    Name: "URM_SIG_VIDEO_DECODE"
+    Enable: true
+    TargetsEnabled: ["nord", "sa8797p", "sa8797p-ride-embedded"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0, 1, 2, 3, 4, 5]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 6, 7, 8, 9, 10, 11]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [3, 90]}
+      - {ResCode: "RES_CGRP_HIGH_MEM", Values: [3, 1048576]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [4, 150]}
+      - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
+      - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
+      - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [1536000]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [1536000]}
+
+  # Video decode
+  # Decode 20+ concurrent sessions
+  - SigId: "0x0001"
+    Category: "0x03"
+    SigType: 20
+    Name: "URM_SIG_VIDEO_DECODE"
+    Enable: true
+    TargetsEnabled: ["nord", "sa8797p", "sa8797p-ride-embedded"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0, 1, 2, 3, 4, 5]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 6, 7, 8, 9, 10, 11]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [3, 90]}
+      - {ResCode: "RES_CGRP_HIGH_MEM", Values: [3, 1048576]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [4, 150]}
+      - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
+      - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
+      - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+
+  # Camera preview
+  # Default preview - 30fps
+  - SigId: "0x0002"
+    Category: "0x03"
+    Name: "URM_SIG_CAMERA_PREVIEW"
+    Enable: true
+    TargetsEnabled: ["nord", "sa8797p", "sa8797p-ride-embedded"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0, 1, 2, 3, 4, 5]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 6, 7, 8, 9, 10, 11]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [3, 90]}
+      - {ResCode: "RES_CGRP_HIGH_MEM", Values: [3, 1048576]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [4, 150]}
+      - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
+      - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
+      - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [1382400]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [1382400]}
+
+  # camera encode
+  # Default encode - 30fps
+  - SigId: "0x0003"
+    Category: "0x03"
+    Name: "URM_SIG_CAMERA_ENCODE"
+    Enable: true
+    TargetsEnabled: ["nord", "sa8797p", "sa8797p-ride-embedded"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0, 1, 2, 3, 4, 5]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 6, 7, 8, 9, 10, 11]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [3, 90]}
+      - {ResCode: "RES_CGRP_HIGH_MEM", Values: [3, 1048576]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [4, 150]}
+      - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
+      - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
+      - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [2265600]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [1363200]}
+
+  # camera encode multi-stream
+  # encode (0-12 streams) [sigtype : 0 for normal load (≤12 stream)]
+  - SigId: "0x0004"
+    Category: "0x03"
+    SigType: 0
+    Name: "URM_SIG_CAMERA_ENCODE_MULTI_STREAMS"
+    Enable: true
+    TargetsEnabled: ["nord", "sa8797p", "sa8797p-ride-embedded"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0, 1, 2, 3, 4, 5]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 6, 7, 8, 9, 10, 11]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [3, 90]}
+      - {ResCode: "RES_CGRP_HIGH_MEM", Values: [3, 1048576]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [4, 150]}
+      - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
+      - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
+      - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_LITTLE_ALL_CORES", Values: [1382400]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "CLUSTER_BIG_ALL_CORES", Values: [1382400]}
+
+  # camera encode multi-stream
+  # encode (12+ streams) [sigtype : 13 for high load (>12 stream)]
+  - SigId: "0x0004"
+    Category: "0x03"
+    SigType: 13
+    Name: "URM_SIG_CAMERA_ENCODE_MULTI_STREAMS"
+    Enable: true
+    TargetsEnabled: ["nord", "sa8797p", "sa8797p-ride-embedded"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [2, 0, 1, 2, 3, 4, 5]}
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [3, 6, 7, 8, 9, 10, 11]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [3, 90]}
+      - {ResCode: "RES_CGRP_HIGH_MEM", Values: [3, 1048576]}
+      - {ResCode: "RES_CGRP_REL_CPU_WEIGHT", Values: [4, 150]}
+      - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
+      - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
+      - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+
+  # camera open tunings
+  # CPU cluster 0 Min Freq 3014400, Max Freq 3014400
+  # CPU cluster 1 Freq 3014400, Max Freq 3014400
+  - SigId: "0x1337"
+    Category: "0xea"
+    Name: "CAMERA_OPEN"
+    Enable: true
+    TargetsEnabled: ["nord", "sa8797p", "sa8797p-ride-embedded"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "0x00040000", ResInfo: "0x00000000", Values: [3014400]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000000", Values: [3014400]}
+      - {ResCode: "0x00040000", ResInfo: "0x00000100", Values: [3014400]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000100", Values: [3014400]}
+      - {ResCode: "0x00040000", ResInfo: "0x00000200", Values: [3014400]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000200", Values: [3014400]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000001", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000002", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000003", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000004", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000101", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000102", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000103", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000104", Values: [1000]}
+
+  # camera close tunings
+  # CPU cluster 0 Min Freq 3014400, Max Freq 3014400
+  # CPU cluster 1 Freq 3014400, Max Freq 3014400
+  - SigId: "0x1338"
+    Category: "0xea"
+    Name: "CAMERA_CLOSE"
+    Enable: true
+    TargetsEnabled: ["nord", "sa8797p", "sa8797p-ride-embedded"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "0x00040000", ResInfo: "0x00000000", Values: [3014400]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000000", Values: [3014400]}
+      - {ResCode: "0x00040000", ResInfo: "0x00000100", Values: [3014400]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000100", Values: [3014400]}
+      - {ResCode: "0x00040000", ResInfo: "0x00000200", Values: [3014400]}
+      - {ResCode: "0x00040001", ResInfo: "0x00000200", Values: [3014400]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000001", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000002", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000003", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000004", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000101", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000102", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000103", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000104", Values: [1000]}
+
+  - SigId: "0x0001"
+    Category: "0x8c"
+    Name: SIG_GST_BOOST
+    Enable: true
+    TargetsEnabled: ["nord", "sa8797p", "sa8797p-ride-embedded"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "0x00000000", Values: [3014400]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "0x00000000", Values: [3014400]}
+      - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "0x00000100", Values: [3014400]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "0x00000100", Values: [3014400]}
+      - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "0x00000200", Values: [3014400]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "0x00000200", Values: [3014400]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000001", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000002", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000003", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000004", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000101", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000102", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000103", Values: [1000]}
+      - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000201", Values: [1000]}
