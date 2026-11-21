@@ -129,7 +129,7 @@ jobs:
 
       - name: Render LAVA jobs for iq-9075-evk
         id: lava-test-plans-iq-9075-evk
-        uses: qualcomm-linux/lava-test-plans@2bd0dfe3b6384c5e6f0cbb898d4370e6a31a4bc8
+        uses: qualcomm-linux/lava-test-plans@b835e62592d05966a404de16cf84e1ae204c0031
         with:
           machines: iq-9075-evk
           build_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ inputs.build_id }}
@@ -159,7 +159,7 @@ jobs:
 
       - name: Render LAVA jobs for rb3gen2-core-kit
         id: lava-test-plans-rb3gen2-core-kit
-        uses: qualcomm-linux/lava-test-plans@2bd0dfe3b6384c5e6f0cbb898d4370e6a31a4bc8
+        uses: qualcomm-linux/lava-test-plans@b835e62592d05966a404de16cf84e1ae204c0031
         with:
           machines: rb3gen2-core-kit
           build_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ inputs.build_id }}
@@ -189,7 +189,7 @@ jobs:
 
       - name: Render LAVA jobs for iq-x7181-evk
         id: lava-test-plans-iq-x7181-evk
-        uses: qualcomm-linux/lava-test-plans@2bd0dfe3b6384c5e6f0cbb898d4370e6a31a4bc8
+        uses: qualcomm-linux/lava-test-plans@b835e62592d05966a404de16cf84e1ae204c0031
         with:
           machines: iq-x7181-evk
           build_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ inputs.build_id }}
@@ -219,7 +219,7 @@ jobs:
 
       - name: Render LAVA jobs for shikra-evk
         id: lava-test-plans-shikra-evk
-        uses: qualcomm-linux/lava-test-plans@2bd0dfe3b6384c5e6f0cbb898d4370e6a31a4bc8
+        uses: qualcomm-linux/lava-test-plans@b835e62592d05966a404de16cf84e1ae204c0031
         with:
           machines: shikra-evk
           build_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ inputs.build_id }}
