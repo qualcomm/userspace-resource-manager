@@ -121,8 +121,23 @@ static int32_t readCpuCapacity(int32_t cpuID) {
 }
 
 void TargetRegistry::generatePolicyBasedMapping(std::vector<std::string>& policyDirs) {
-    // Sort the directories, to ensure processing always starts with policy0
-    std::sort(policyDirs.begin(), policyDirs.end());
+    // Sort the directories by their numeric suffix, to ensure processing always
+    // starts with policy0 and proceeds in CPU order. A plain string sort would
+    // place "policy12" before "policy6" on targets with 10 or more CPUs, and the
+    // physical cluster IDs assigned below depend on this order.
+    auto policyIndex = [](const std::string& dirName) -> int64_t {
+        try {
+            return std::stoll(dirName.substr(6));
+        } catch(const std::exception&) {
+            return std::numeric_limits<int64_t>::max();
+        }
+    };
+    std::sort(policyDirs.begin(), policyDirs.end(),
+              [&policyIndex](const std::string& a, const std::string& b) {
+                  int64_t ia = policyIndex(a);
+                  int64_t ib = policyIndex(b);
+                  return (ia != ib) ? (ia < ib) : (a < b);
+              });
 
     // Number of policy directories, is equivalent to number of clusters
     UrmSettings::targetConfigs.mTotalClusterCount = policyDirs.size();
