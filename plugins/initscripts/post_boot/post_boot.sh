@@ -85,11 +85,14 @@ if [ -n "$machine" ]; then
         qcs8845)
             machine="alorp"
             ;;
-        hamoa-iot-som|x1e80100)
+        hamoa-iot-evk|hamoa-iot-som|x1e80100)
             machine="hamoa"
             ;;
-        purwa-iot-som|x1p42100)
+        purwa-iot-evk|purwa-iot-som|x1p42100)
             machine="purwa"
+            ;;
+        glymur-crd)
+            machine="glymur"
             ;;
         sa8797p|sa8797p-ride-embedded)
             machine="nord"
