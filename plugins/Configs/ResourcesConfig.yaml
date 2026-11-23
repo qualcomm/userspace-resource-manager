@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 ResourceConfigs:
+  # 0x00050003
   - ResType: "0x05"
     ResID: "0x0003"
     Name: "RES_KGSL_DEF_PWRLEVEL"
@@ -13,6 +14,7 @@ ResourceConfigs:
     Policy: "lower_is_better"
     ApplyType: "global"
 
+  # 0x00050004
   - ResType: "0x05"
     ResID: "0x0004"
     Name: "RES_KGSL_DEVFREQ_MAX"
@@ -23,6 +25,7 @@ ResourceConfigs:
     Policy: "lower_is_better"
     ApplyType: "global"
 
+  # 0x00050005
   - ResType: "0x05"
     ResID: "0x0005"
     Name: "RES_KGSL_DEVFREQ_MIN"
@@ -33,6 +36,7 @@ ResourceConfigs:
     Policy: "higher_is_better"
     ApplyType: "global"
 
+  # 0x00050006
   - ResType: "0x05"
     ResID: "0x0006"
     Name: "RES_KGSL_IDLE_TIMER"
@@ -44,6 +48,7 @@ ResourceConfigs:
     Policy: "lower_is_better"
     ApplyType: "global"
 
+  # 0x00050007
   - ResType: "0x05"
     ResID: "0x0007"
     Name: "RES_KGSL_MAX_PWRLEVEL"
@@ -55,6 +60,7 @@ ResourceConfigs:
     Policy: "lower_is_better"
     ApplyType: "global"
 
+  # 0x00050008
   - ResType: "0x05"
     ResID: "0x0008"
     Name: "RES_KGSL_MIN_PWRLEVEL"
@@ -66,6 +72,7 @@ ResourceConfigs:
     Policy: "lower_is_better"
     ApplyType: "global"
 
+  # 0x00050009
   - ResType: "0x05"
     ResID: "0x0009"
     Name: "RES_KGSL_TOUCH_WAKE"
@@ -77,6 +84,7 @@ ResourceConfigs:
     Policy: "lower_is_better"
     ApplyType: "global"
 
+  # 0x0009000f
   - ResType: "0x09"
     ResID: "0x000f"
     Name: "RES_CGRP_IO_WEIGHT"
@@ -88,6 +96,7 @@ ResourceConfigs:
     ApplyType: "cgroup"
 
   # Reserve "80" for RT Benchmarking(cyclictest)
+  # 0x00800000
   - ResType: "0x80"
     ResID: "0x0000"
     Name: "RES_TIMER_MIGRATION"
@@ -98,6 +107,7 @@ ResourceConfigs:
     Policy: "pass_through"
     ApplyType: "global"
 
+  # 0x00800001
   - ResType: "0x80"
     ResID: "0x0001"
     Name: "RES_CPU_FREQ_GOV"
@@ -108,6 +118,7 @@ ResourceConfigs:
     Policy: "pass_through"
     ApplyType: "global"
 
+  # 0x00800002
   - ResType: "0x80"
     ResID: "0x0002"
     Name: "RES_IRQ_AFFINITY"
@@ -118,6 +129,7 @@ ResourceConfigs:
     Policy: "pass_through"
     ApplyType: "global"
 
+  # 0x00800003
   - ResType: "0x80"
     ResID: "0x0003"
     Name: "RES_CPU_WQ_AFFINITY"
@@ -128,6 +140,7 @@ ResourceConfigs:
     Policy: "pass_through"
     ApplyType: "global"
 
+  # 0x00800004
   - ResType: "0x80"
     ResID: "0x0004"
     Name: "RES_TRACING"
@@ -138,6 +151,7 @@ ResourceConfigs:
     Policy: "pass_through"
     ApplyType: "global"
 
+  # 0x00f00001
   - ResType: "0xf0"
     ResID: "0x0001"
     Name: "RES_IRQ_AFFINE_ALL"
