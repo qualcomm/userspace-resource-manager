@@ -1,22 +1,25 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "AuxRoutines.h"
-#include "FeatureExtractor.h"
-#include "FeaturePruner.h"
-#include "Logger.h"
-#include <algorithm>
+
+#include <regex>
 #include <cerrno>
 #include <chrono>
 #include <cstdarg>
-#include <cstring>
-#include <dirent.h>
 #include <fstream>
-#include <iostream>
-#include <regex>
+#include <cstring>
 #include <sstream>
-#include <sys/stat.h>
 #include <unistd.h>
+#include <iostream>
+#include <dirent.h>
+#include <algorithm>
+#include <sys/stat.h>
+#include <sys/wait.h>
+
+#include "Logger.h"
+#include "AuxRoutines.h"
+#include "FeaturePruner.h"
+#include "FeatureExtractor.h"
 
 #define PRUNED_DIR URM_CACHE_PRUNED_DIR
 #define UNFILTERED_DIR URM_CACHE_UNFILTERED_DIR
@@ -564,20 +567,81 @@ FeatureExtractor::ReadJournalForPid(pid_t pid, uint32_t numLines) {
         LOGE(SCANNER_TAG, format_string("Failed to open /proc/%d/comm", pid));
         return lines;
     }
-    std::string cmd = "journalctl --no-pager -n " + std::to_string(numLines) +
-                      " _COMM=" + comm;
-    FILE *pipe = popen(cmd.c_str(), "r");
-    if (!pipe) {
-        LOGE(SCANNER_TAG, format_string("popen failed: %s", strerror(errno)));
+
+    int32_t pipeFds[2];
+    int32_t rc = pipe(pipeFds);
+    if(rc == -1) {
+        LOGE(SCANNER_TAG, format_string("pipe failed: %s", strerror(errno)));
         return lines;
     }
+
+    std::string numLinesArg = std::to_string(numLines);
+    std::string commArg = "_COMM=" + comm;
+
+    // Use argv instead of popen(). The process name remains one journalctl
+    // argument, so names with spaces or punctuation are handled as data.
+    pid_t childPid = fork();
+    if(childPid == -1) {
+        LOGE(SCANNER_TAG, format_string("fork failed: %s", strerror(errno)));
+        close(pipeFds[0]);
+        close(pipeFds[1]);
+        return lines;
+    }
+
+    if(childPid == 0) {
+        // Child sends journalctl stdout to the pipe and then overlays itself
+        // with journalctl. No shell is involved in this process.
+        close(pipeFds[0]);
+        if(dup2(pipeFds[1], STDOUT_FILENO) == -1) {
+            _exit(127);
+        }
+        if(pipeFds[1] != STDOUT_FILENO) {
+            close(pipeFds[1]);
+        }
+
+        char *journalArgs[] = {
+            const_cast<char *>("journalctl"),
+            const_cast<char *>("--no-pager"),
+            const_cast<char *>("-n"),
+            const_cast<char *>(numLinesArg.c_str()),
+            const_cast<char *>(commArg.c_str()),
+            nullptr,
+        };
+        execvp(journalArgs[0], journalArgs);
+        _exit(127);
+    }
+
+    // Parent reads journalctl output through the pipe, matching the old popen()
+    // behavior while retaining direct child-process status handling.
+    close(pipeFds[1]);
+    FILE *journalPipe = fdopen(pipeFds[0], "r");
+    if(!journalPipe) {
+        LOGE(SCANNER_TAG, format_string("fdopen failed: %s", strerror(errno)));
+        close(pipeFds[0]);
+        waitpid(childPid, nullptr, 0);
+        return lines;
+    }
+
     char buffer[4096];
-    while (fgets(buffer, sizeof(buffer), pipe)) {
+    while (fgets(buffer, sizeof(buffer), journalPipe)) {
         lines.emplace_back(buffer);
     }
-    int rc = pclose(pipe);
-    if (rc == -1) {
-        LOGE(SCANNER_TAG, format_string("pclose failed: %s", strerror(errno)));
+    if(fclose(journalPipe) == EOF) {
+        LOGE(SCANNER_TAG, format_string("fclose failed: %s", strerror(errno)));
+    }
+
+    // Reap the child so URM does not leave a zombie journalctl process behind.
+    int32_t status = 0;
+    if(waitpid(childPid, &status, 0) == -1) {
+        LOGE(SCANNER_TAG, format_string("waitpid failed: %s", strerror(errno)));
+    } else if(WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+        LOGE(SCANNER_TAG,
+             format_string("journalctl exited with status %d",
+                           WEXITSTATUS(status)));
+    } else if(WIFSIGNALED(status)) {
+        LOGE(SCANNER_TAG,
+             format_string("journalctl terminated by signal %d",
+                           WTERMSIG(status)));
     }
     return lines;
 }
