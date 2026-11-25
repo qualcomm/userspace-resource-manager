@@ -1,5 +1,22 @@
 # Final Project Report: Supervised Classification of System Behavior
 
+## Source and License
+
+The training corpus, split files, reports, and scripts in this directory were
+generated or authored by Qualcomm Technologies, Inc. for URM contextual
+classifier development. They are licensed under BSD-3-Clause; see `LICENSE.txt`.
+
+Generated model binaries are not stored in this source tree. Recreate them from
+the corpus using the scripts in `Scripts/` when a model artifact is needed.
+
+## floret and fastText
+
+URM's runtime classifier is integrated with floret, so the primary training
+script uses the Python floret bindings to generate compatible model artifacts.
+Some analysis scripts still refer to fastText because floret keeps fastText-like
+training and model APIs. Those scripts are for offline analysis only and do not
+install fastText or floret binaries into the source tree.
+
 ## 1. Introduction
 
 ### 1.1. Project Objective

@@ -68,10 +68,16 @@ endif()
 install(TARGETS ContextualClassifier DESTINATION ${CMAKE_INSTALL_LIBDIR})
 if(FLORET_FOUND)
     install(TARGETS ml_inference_lib DESTINATION ${CMAKE_INSTALL_LIBDIR})
-    install(
-        FILES ${CMAKE_SOURCE_DIR}/contextual-classifier/Artifacts/floret_model_supervised.bin
-        DESTINATION ${URM_DATA_DIR}/classifier
-    )
+    set(CLASSIFIER_MODEL_ARTIFACT
+        ${CMAKE_SOURCE_DIR}/contextual-classifier/Artifacts/floret_model_supervised.bin)
+    if(EXISTS ${CLASSIFIER_MODEL_ARTIFACT})
+        install(
+            FILES ${CLASSIFIER_MODEL_ARTIFACT}
+            DESTINATION ${URM_DATA_DIR}/classifier
+        )
+    else()
+        message(STATUS "No prebuilt classifier model artifact found; skipping model install")
+    endif()
 endif()
 
 install(

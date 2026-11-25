@@ -1,3 +1,6 @@
 build/
 html/
 obj-*/
+contextual-classifier/Artifacts/*.bin
+contextual-classifier/Training/Models/**/*.bin
+contextual-classifier/Training/supervised/**/*.bin
