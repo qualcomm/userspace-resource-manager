@@ -292,3 +292,41 @@ SignalConfigs:
     - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000102", Values: [1000]}
     - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000103", Values: [1000]}
     - {ResCode: "RES_PM_QOS_LATENCY", ResInfo: "0x00000201", Values: [1000]}
+
+  # camera open tunings
+  # CPU cluster 0 Min Freq 1958400, Max Freq 1958400
+  # CPU cluster 1 Min Freq 2400000, Max Freq 2400000
+  # CPU cluster 2 Min Freq 2707200, Max Freq 2707200
+  - SigId: "0x1337"
+    Category: "0xea"
+    Name: "CAMERA_OPEN"
+    Enable: true
+    TargetsEnabled: ["qcm6490", "qcs6490"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "0x00000000", Values: [1958400]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "0x00000000", Values: [1958400]}
+      - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "0x00000100", Values: [2400000]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "0x00000100", Values: [2400000]}
+      - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "0x00000200", Values: [2707200]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "0x00000200", Values: [2707200]}
+
+  # camera close tunings
+  # CPU cluster 0 Min Freq 1958400, Max Freq 1958400
+  # CPU cluster 1 Min Freq 2400000, Max Freq 2400000
+  # CPU cluster 2 Min Freq 2707200, Max Freq 2707200
+  - SigId: "0x1338"
+    Category: "0xea"
+    Name: "CAMERA_CLOSE"
+    Enable: true
+    TargetsEnabled: ["qcm6490", "qcs6490"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "0x00000000", Values: [1958400]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "0x00000000", Values: [1958400]}
+      - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "0x00000100", Values: [2400000]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "0x00000100", Values: [2400000]}
+      - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "0x00000200", Values: [2707200]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "0x00000200", Values: [2707200]}
