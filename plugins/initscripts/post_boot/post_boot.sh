@@ -79,7 +79,7 @@ if [ -n "$machine" ]; then
         qcs6490)
             machine="qcm6490"
             ;;
-        cq2390s|iq2390s)
+        cq2390s|iq2390s|shikra-iqs-evk|shikra-iqs-som)
             machine="cq2390m"
             ;;
         qcs8845)
