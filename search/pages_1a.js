@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['table_20of_20contents_0',['Table of Contents',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md1',1,'']]],
+  ['target_20configs_1',['6.2.5. Target Configs',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md57',1,'']]],
+  ['target_20information_2',['6.1.3. Fetching Target Information',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md50',1,'']]],
+  ['teardown_20callbacks_3',['2. Applier and Teardown Callbacks',['../extensions_usage.html#autotoc_md87',1,'']]],
+  ['teardown_20capabilities_4',['2. Defining feature init, relay and teardown capabilities',['../ext_features.html#autotoc_md93',1,'']]],
+  ['the_20extfeaturesconfig_20yaml_20be_20placed_5',['3. Where should the ExtFeaturesConfig.yaml be placed?',['../ext_features.html#autotoc_md95',1,'']]],
+  ['the_20resource_20tune_20and_20untune_20functionalities_6',['2. How to override the Resource tune and untune functionalities.',['../usage.html#autotoc_md101',1,'']]],
+  ['to_20add_20a_20custom_20resource_7',['1. How to add a custom resource',['../usage.html#autotoc_md97',1,'']]],
+  ['to_20add_20a_20new_20property_8',['5. How to add a new Property',['../usage.html#autotoc_md109',1,'']]],
+  ['to_20add_20init_20configs_9',['3. How to add init configs',['../usage.html#autotoc_md103',1,'']]],
+  ['to_20create_20a_20resource_20opcode_20rescode_20and_20signal_20opcode_20sigcode_10',['6. How to create a Resource Opcode (ResCode) and Signal Opcode (SigCode)',['../usage.html#autotoc_md111',1,'']]],
+  ['to_20enforce_20cpu_20architecture_20details_11',['4. How to enforce CPU architecture details',['../usage.html#autotoc_md106',1,'']]],
+  ['to_20override_20the_20resource_20tune_20and_20untune_20functionalities_12',['2. How to override the Resource tune and untune functionalities.',['../usage.html#autotoc_md101',1,'']]],
+  ['to_20physical_20mapping_13',['7.9. Dynamic Mapper: Logical to Physical Mapping',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md72',1,'']]],
+  ['tune_20and_20untune_20functionalities_14',['2. How to override the Resource tune and untune functionalities.',['../usage.html#autotoc_md101',1,'']]],
+  ['tune_20request_15',['Tune Request',['../client_cli.html#autotoc_md81',1,'1. Send a Tune Request'],['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md41',1,'5.1. Send a Tune Request']]],
+  ['tune_20requests_20formulation_20guide_16',['&quot;Tune&quot; Requests Formulation Guide',['../requests_formulation.html',1,'']]],
+  ['tuner_17',['7.2.2. Resource Tuner',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md63',1,'']]],
+  ['tuneresources_18',['4.2.1. tuneResources',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md17',1,'']]],
+  ['tunesignal_19',['4.2.4. tuneSignal',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md26',1,'']]],
+  ['tunesignal_20request_20',['tuneSignal Request',['../client_cli.html#autotoc_md85',1,'5. Send a tuneSignal Request'],['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md45',1,'5.5. Send a tuneSignal Request']]],
+  ['tuning_21',['1.3.2 Use-case/Workload/Scenario Tuning',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md7',1,'']]],
+  ['tuning_22',['1.3.3 Per-App tuning',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md8',1,'']]],
+  ['tuning_20framework_23',['Userspace Resource Manager: A System Resource Tuning Framework',['../dir_49e56c817e5e54854c35e136979f97ca.html#autotoc_md0',1,'']]],
+  ['two_20resources_24',['Sample Resource config file with two resources.',['../usage.html#autotoc_md98',1,'']]]
+];
