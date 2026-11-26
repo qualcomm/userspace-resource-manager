@@ -171,3 +171,33 @@ SignalConfigs:
       - {ResCode: "RES_CGRP_CPU_LATENCY", Values: [4, -20]}
       - {ResCode: "RES_CGRP_LOW_MEM", Values: [4, 507256]}
       - {ResCode: "RES_CGRP_MIN_MEM", Values: [4, 116631]}
+
+  # camera open tunings
+  # CPU cluster 0 Min Freq 1804800, Max Freq 1804800
+  # CPU cluster 1 Min Freq 1900800, Max Freq 1900800
+  - SigId: "0x1337"
+    Category: "0xea"
+    Name: "CAMERA_OPEN"
+    Enable: true
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "0x00000000", Values: [1804800]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "0x00000000", Values: [1804800]}
+      - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "0x00000100", Values: [1900800]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "0x00000100", Values: [1900800]}
+
+  # camera close tunings
+  # CPU cluster 0 Min Freq 1804800, Max Freq 1804800
+  # CPU cluster 1 Min Freq 1900800, Max Freq 1900800
+  - SigId: "0x1338"
+    Category: "0xea"
+    Name: "CAMERA_CLOSE"
+    Enable: true
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "0x00000000", Values: [1804800]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "0x00000000", Values: [1804800]}
+      - {ResCode: "RES_SCALE_MIN_FREQ", ResInfo: "0x00000100", Values: [1900800]}
+      - {ResCode: "RES_SCALE_MAX_FREQ", ResInfo: "0x00000100", Values: [1900800]}
