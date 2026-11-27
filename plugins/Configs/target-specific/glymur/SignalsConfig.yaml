@@ -2,6 +2,16 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 SignalConfigs:
+  - SigId: "0x0001"
+    Category: "0x02"
+    Name: "URM_APP_OPEN"
+    Enable: true
+    TargetsEnabled: ["glymur", "glymur-crd"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [4, 6, 7, 8, 9, 10, 11]}
+
   # Video decode
   # Default decode 30 fps
   - SigId: "0x0001"
@@ -247,3 +257,13 @@ SignalConfigs:
     Timeout: -1
     Resources:
       - {ResCode: "RES_CGRP_RUN_CORES", Values: [5, 0,1,2,3,4,5]}
+
+  - SigId: "0x0002"
+    Category: "0xeb"
+    Name: "QNN-NET-RUN-AFFINITY"
+    Enable: true
+    TargetsEnabled: ["glymur", "glymur-crd"]
+    Permissions: ["third_party", "system"]
+    Timeout: -1
+    Resources:
+      - {ResCode: "RES_CGRP_RUN_CORES", Values: [4, 6,7,8,9,10,11]}
