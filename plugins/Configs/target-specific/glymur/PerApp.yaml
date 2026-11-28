@@ -9,3 +9,8 @@ PerAppConfigs:
        - {"crtc_event*": "GLYMUR_APP_CGRP_IDENTIFIER"}
        - {"gpu-worker": "GLYMUR_APP_CGRP_IDENTIFIER"}
     Configurations: ["0x00eb0001"]
+
+  - App: "qnn-net-run"
+    Threads:
+       - {"kgsl_hwsched": "FOCUSED_CGROUP_IDENTIFIER"}
+    Configurations: ["0x00eb0002"]

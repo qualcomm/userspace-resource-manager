@@ -187,7 +187,7 @@ ResourceConfigs:
     Name: "RES_CGRP_MOVE_PID"
     Path: "/sys/fs/cgroup/%s/cgroup.procs"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "pass_through_append"
     ApplyType: "cgroup"
@@ -197,7 +197,7 @@ ResourceConfigs:
     Name: "RES_CGRP_MOVE_TID"
     Path: "/sys/fs/cgroup/%s/cgroup.threads"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "pass_through_append"
     ApplyType: "cgroup"
@@ -207,7 +207,7 @@ ResourceConfigs:
     Name: "RES_CGRP_RUN_CORES"
     Path: "/sys/fs/cgroup/%s/cpuset.cpus"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "instant_apply"
     ApplyType: "cgroup"
@@ -217,7 +217,7 @@ ResourceConfigs:
     Name: "RES_CGRP_RUN_CORES_EXCL"
     Path: "/sys/fs/cgroup/%s/cpuset.cpus.partition"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "instant_apply"
     ApplyType: "cgroup"
@@ -227,7 +227,7 @@ ResourceConfigs:
     Name: "RES_CGRP_FREEZE"
     Path: "/sys/fs/cgroup/%s/cgroup.freeze"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "instant_apply"
     ApplyType: "cgroup"
@@ -237,7 +237,7 @@ ResourceConfigs:
     Name: "RES_CGRP_LIMIT_CPU_TIME"
     Path: "/sys/fs/cgroup/%s/cpu.max"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "higher_is_better"
     ApplyType: "cgroup"
@@ -247,7 +247,7 @@ ResourceConfigs:
     Name: "RES_CGRP_RUN_WHEN_CPU_IDLE"
     Path: "/sys/fs/cgroup/%s/cpu.idle"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "instant_apply"
     ApplyType: "cgroup"
@@ -257,7 +257,7 @@ ResourceConfigs:
     Name: "RES_CGRP_UCLAMP_MIN"
     Path: "/sys/fs/cgroup/%s/cpu.uclamp.min"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "lower_is_better"
     ApplyType: "cgroup"
@@ -267,7 +267,7 @@ ResourceConfigs:
     Name: "RES_CGRP_UCLAMP_MAX"
     Path: "/sys/fs/cgroup/%s/cpu.uclamp.max"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "higher_is_better"
     ApplyType: "cgroup"
@@ -277,7 +277,7 @@ ResourceConfigs:
     Name: "RES_CGRP_REL_CPU_WEIGHT"
     Path: "/sys/fs/cgroup/%s/cpu.weight"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "instant_apply"
     ApplyType: "cgroup"
@@ -288,7 +288,7 @@ ResourceConfigs:
     Name: "RES_CGRP_HIGH_MEM"
     Path: "/sys/fs/cgroup/%s/memory.high"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "higher_is_better"
     ApplyType: "cgroup"
@@ -299,7 +299,7 @@ ResourceConfigs:
     Name: "RES_CGRP_MAX_MEM"
     Path: "/sys/fs/cgroup/%s/memory.max"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "higher_is_better"
     ApplyType: "cgroup"
@@ -310,7 +310,7 @@ ResourceConfigs:
     Name: "RES_CGRP_LOW_MEM"
     Path: "/sys/fs/cgroup/%s/memory.low"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "lower_is_better"
     ApplyType: "cgroup"
@@ -321,7 +321,7 @@ ResourceConfigs:
     Name: "RES_CGRP_MIN_MEM"
     Path: "/sys/fs/cgroup/%s/memory.min"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "lower_is_better"
     ApplyType: "cgroup"
@@ -332,7 +332,7 @@ ResourceConfigs:
     Name: "RES_CGRP_SWAP_MAX_MEMORY"
     Path: "/sys/fs/cgroup/%s/memory.swap.max"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "higher_is_better"
     ApplyType: "cgroup"
@@ -342,7 +342,7 @@ ResourceConfigs:
     Name: "RES_CGRP_IO_WEIGHT"
     Path: "/sys/fs/cgroup/%s/io.weight"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "instant_apply"
     ApplyType: "cgroup"
@@ -352,7 +352,7 @@ ResourceConfigs:
     Name: "RES_CGRP_CPU_LATENCY"
     Path: "/sys/fs/cgroup/%s/cpu.weight.nice"
     Supported: true
-    Permissions: "system"
+    Permissions: "third_party"
     Modes: ["display_on"]
     Policy: "lower_is_better"
     ApplyType: "cgroup"
